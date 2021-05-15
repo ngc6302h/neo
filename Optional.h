@@ -17,120 +17,118 @@
 
 #pragma once
 
-#include <new>
-#include "Types.h"
 #include "Assert.h"
 #include "Iterator.h"
+#include "Types.h"
+#include <new>
 
 namespace neo
 {
-    template<typename T>
-    class alignas(T) Optional
+template <typename T>
+class alignas(T) Optional
+{
+public:
+    constexpr Optional() = default;
+
+    constexpr Optional(const T& other)
+        : m_has_value(true)
     {
-    public:
-        constexpr Optional() = default;
-        
-        constexpr Optional(const T& other) : m_has_value(true)
+        new (&m_value) T(other);
+    }
+
+    constexpr Optional(T&& other)
+        : m_has_value(true)
+    {
+        new (&m_value) T(move(other));
+    }
+
+    constexpr Optional(Optional&& other)
+        : m_has_value(other.m_has_value)
+    {
+        if (other.has_value())
         {
-            new (&m_value) T(other);
+            new (&m_value) Optional(other.release_value());
+            other.m_has_value = false;
         }
-        
-        constexpr Optional(T&& other) : m_has_value(true)
+    }
+
+    constexpr Optional& operator=(const Optional& other)
+    {
+        if (this != &other)
         {
-            new (&m_value) T(move(other));
-        }
-        
-        constexpr Optional(Optional&& other) : m_has_value(other.m_has_value)
-        {
+            clear();
+            m_has_value = other.m_has_value;
             if (other.has_value())
             {
-                new (&m_value) Optional(other.release_value());
+                new (&m_value) T(other.release_value());
+            }
+        }
+        return *this;
+    }
+
+    constexpr Optional& operator=(Optional&& other)
+    {
+        if (this != &other)
+        {
+            clear();
+            m_has_value = other.m_has_value;
+            if (other.has_value())
+            {
+                new (&m_value) T(other.release_value());
                 other.m_has_value = false;
             }
         }
-        
-        constexpr Optional& operator=(const Optional& other)
-        {
-            if (this != &other)
-            {
-                clear();
-                m_has_value  = other.m_has_value;
-                if (other.has_value())
-                {
-                    new (&m_value) T(other.release_value());
-                }
-            }
-            return *this;
-        }
-    
-        constexpr Optional& operator=(Optional&& other)
-        {
-            if (this != &other)
-            {
-                clear();
-                m_has_value  = other.m_has_value;
-                if (other.has_value())
-                {
-                    new (&m_value) T(other.release_value());
-                    other.m_has_value = false;
-                }
-            }
-            return  *this;
-        }
-        
-        constexpr explicit operator bool()
-        {
-            return m_has_value;
-        }
-        
-        constexpr explicit operator T&()
-        {
-            VERIFY(has_value());
+        return *this;
+    }
+
+    constexpr explicit operator bool()
+    {
+        return m_has_value;
+    }
+
+    constexpr explicit operator T&()
+    {
+        VERIFY(has_value());
+        return value();
+    }
+
+    [[nodiscard]] constexpr bool has_value()
+    {
+        return m_has_value;
+    }
+
+    [[nodiscard]] constexpr T& value()
+    {
+        VERIFY(has_value());
+        return *reinterpret_cast<T*>(&m_value);
+    }
+
+    [[nodiscard]] constexpr T release_value()
+    {
+        VERIFY(has_value());
+        return *reinterpret_cast<T*>(&m_value);
+    }
+
+    [[nodiscard]] T value_or(const T& fallback)
+    {
+        if (m_has_value)
             return value();
-        }
-    
-        [[nodiscard]]
-        constexpr bool has_value()
+        return fallback;
+    }
+
+    void clear()
+    {
+        if (m_has_value)
         {
-            return m_has_value;
+            value().~T();
+            m_has_value = false;
         }
-        
-        [[nodiscard]]
-        constexpr T& value()
-        {
-            VERIFY(has_value());
-            return *reinterpret_cast<T*>(&m_value);
-        }
-        
-        [[nodiscard]]
-        constexpr T release_value()
-        {
-            VERIFY(has_value());
-            return *reinterpret_cast<T*>(&m_value);
-        }
-    
-        [[nodiscard]]
-        T value_or(const T& fallback)
-        {
-            if (m_has_value)
-                return value();
-            return fallback;
-        }
-        
-        void clear()
-        {
-            if (m_has_value)
-            {
-                value().~T();
-                m_has_value = false;
-            }
-        }
-        
-    private:
-        u8 m_value[sizeof(T)] { 0 };
-        bool m_has_value { false };
-    };
-    
-    
+    }
+
+private:
+    u8 m_value[sizeof(T)] { 0 };
+    bool m_has_value { false };
+};
+
 }
 using neo::Optional;
