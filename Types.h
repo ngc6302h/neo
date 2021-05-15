@@ -39,37 +39,40 @@ using uint64_t = u64;
 
 namespace neo
 {
-    
-    template<typename T>
-    struct make_signed
+
+template <typename T>
+struct make_signed
+{
+    using type = Conditional<sizeof(T) == 1, int8_t,
+        Conditional<sizeof(T) == 2, int16_t,
+            Conditional<sizeof(T) == 4, int32_t, int64_t>>>;
+};
+
+template <typename T>
+using make_signed_t = typename make_signed<T>::type;
+
+template <typename T>
+struct ReferenceWrapper
+{
+    constexpr ReferenceWrapper(T& obj)
+        : ref(obj)
     {
-        using type = Conditional<sizeof(T) == 1, int8_t,
-                Conditional<sizeof(T) == 2, int16_t,
-                        Conditional<sizeof(T) == 4, int32_t, int64_t>>>;
-    };
-    
-    template<typename T>
-    using make_signed_t = typename make_signed<T>::type;
-    
-    template<typename T>
-    struct ReferenceWrapper
+    }
+
+    constexpr operator T&()
     {
-        constexpr ReferenceWrapper(T& obj) : ref(obj)
-        {}
-        
-        constexpr operator T&()
-        {
-            return ref;
-        }
-        
-        T& ref;
-    };
-    
-    template<typename T>
-    constexpr ReferenceWrapper<T> ref(T& obj) { return ReferenceWrapper(obj); }
+        return ref;
+    }
+
+    T& ref;
+};
+
+template <typename T>
+constexpr ReferenceWrapper<T> ref(T& obj) { return ReferenceWrapper(obj); }
 }
 using size_t = __SIZE_TYPE__;
 using ssize_t = neo::make_signed_t<size_t>;
+using nullptr_t = decltype(nullptr);
 
 using neo::make_signed;
 using neo::make_signed_t;

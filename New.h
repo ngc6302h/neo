@@ -18,5 +18,5 @@
 #pragma once
 #include "Types.h"
 
-constexpr void* operator new(size_t , void* where) { return where; }
+constexpr void* operator new(size_t, void* where) { return where; }
 constexpr void* operator new[](size_t, void* where) { return where; }

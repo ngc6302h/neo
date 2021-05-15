@@ -19,9 +19,9 @@
 
 #ifdef DEBUG
 [[noreturn]] void __assertion_failed(const char* msg, const char* file, unsigned line, const char* func);
-#    define VERIFY(expr) assert(expr) //(static_cast<bool>(expr) ? void(0) : __assertion_failed(#    expr, __FILE__, __LINE__, __PRETTY_FUNCTION__))
-#    define VERIFY_NOT_REACHED() VERIFY(false)
+#define VERIFY(expr) assert(expr) //(static_cast<bool>(expr) ? void(0) : __assertion_failed(#    expr, __FILE__, __LINE__, __PRETTY_FUNCTION__))
+#define VERIFY_NOT_REACHED() VERIFY(false)
 #else
-#    define VERIFY(expr)
-#    define VERIFY_NOT_REACHED()  /*abort()*/__builtin_trap()
+#define VERIFY(expr)
+#define VERIFY_NOT_REACHED() /*abort()*/ __builtin_trap()
 #endif
