@@ -19,7 +19,7 @@ Not yet. It's on a very early stage so everything is subject to change.
 ## Is it usable?
 Mostly, if you don't care about the usual API breaks.
 
-## What determines what is added to neo*
+## What determines what is added to neo?
 Features are added on demand.
 
 ## I discovered a bug
