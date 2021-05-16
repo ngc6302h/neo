@@ -17,7 +17,13 @@ No. I've only recently begun writing it.
 Not yet. It's on a very early stage so everything is subject to change.
 
 ## Is it usable?
-Mostly.
+Mostly, if you don't care about the usual API breaks.
+
+## I discovered a bug
+Open an issue please.
+
+## Why is almost everything market constexpr?
+Because I want everything to be able to execute at compile time! Yes, I know some stuff can't be run at compile time yet, like heap allocations or accesing the byte representation of objects, but I expect it to be possible in the future. Some functions that use things like memcpy or strlen have compile time switches that make it use either manual loops (for compile time) or calling those functions (for runtime). And because it's easier to mark everything constexpr now while I build it instead of going through everything at a later stage.
 
 ## Do you accept contributions?
 Not yet. Maybe in the future when it's more advanced. If this interests you, however, you can instead head to SerenityOS and contribute to the project!
