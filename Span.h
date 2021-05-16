@@ -20,63 +20,62 @@
 #include "Types.h"
 namespace neo
 {
-template <typename T>
-class Span
-{
-public:
-    constexpr Span() = default;
-
-    constexpr Span(T* data, size_t size)
-        : m_data(data)
-        , m_size(size)
+    template<typename T>
+    class Span
     {
-    }
+    public:
+        constexpr Span() = default;
 
-    [[nodiscard]] constexpr T* data() const
-    {
-        return m_data;
-    }
+        constexpr Span(T* data, size_t size) :
+            m_data(data), m_size(size)
+        {
+        }
 
-    [[nodiscard]] constexpr Span slice(size_t start) const
-    {
-        VERIFY(start < m_size);
-        return { m_data + start, m_size - start };
-    }
+        [[nodiscard]] constexpr T* data() const
+        {
+            return m_data;
+        }
 
-    [[nodiscard]] constexpr Span slice(size_t start, size_t length)
-    {
-        VERIFY(start < m_size);
-        VERIFY(start + length < m_size);
-        return { m_data + start, length };
-    }
+        [[nodiscard]] constexpr Span slice(size_t start) const
+        {
+            VERIFY(start < m_size);
+            return { m_data + start, m_size - start };
+        }
 
-    [[nodiscard]] constexpr size_t size() const
-    {
-        return m_size;
-    }
+        [[nodiscard]] constexpr Span slice(size_t start, size_t length)
+        {
+            VERIFY(start < m_size);
+            VERIFY(start + length < m_size);
+            return { m_data + start, length };
+        }
 
-    template <typename U>
-    [[nodiscard]] constexpr Span<U> as() const
-    {
-        VERIFY(sizeof(T) % sizeof(U) == 0);
-        VERIFY(size() >= sizeof(U));
-        return { reinterpret_cast<U*>(m_data), (size() * sizeof(T)) / sizeof(U) };
-    }
+        [[nodiscard]] constexpr size_t size() const
+        {
+            return m_size;
+        }
 
-    [[nodiscard]] constexpr Span<const T> as_readonly() const
-    {
-        return { m_data, m_size };
-    }
+        template<typename U>
+        [[nodiscard]] constexpr Span<U> as() const
+        {
+            VERIFY(sizeof(T) % sizeof(U) == 0);
+            VERIFY(size() >= sizeof(U));
+            return { reinterpret_cast<U*>(m_data), (size() * sizeof(T)) / sizeof(U) };
+        }
 
-    [[nodiscard]] constexpr T& operator[](size_t index) const
-    {
-        VERIFY(index < m_size);
-        return m_data[index];
-    }
+        [[nodiscard]] constexpr Span<const T> as_readonly() const
+        {
+            return { m_data, m_size };
+        }
 
-private:
-    T* m_data;
-    size_t m_size;
-};
+        [[nodiscard]] constexpr T& operator[](size_t index) const
+        {
+            VERIFY(index < m_size);
+            return m_data[index];
+        }
+
+    private:
+        T* m_data;
+        size_t m_size;
+    };
 }
 using neo::Span;

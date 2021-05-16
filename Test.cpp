@@ -24,6 +24,7 @@
 #include "TypeTraits.h"
 #include "Variant.h"
 #include "Vector.h"
+#include "SmartPtr.h"
 #include <stdio.h>
 
 int main()
@@ -33,8 +34,9 @@ int main()
     for (auto c : string)
         printf("%c_", c);
     printf("\n%s\n", (char*)string);
-
-    String utf8string { "This is a\xC0\x80 UTF-8 string \U0001F304!! こ んにちは ہیلو Привет 你好" };
+    
+    Variant<char, long> v(0x242424L);
+    String utf8string { "This is a UTF-8 string \U0001F304!! こ んにちは ہیلو Привет 你好" };
     printf("String is %zu codepoints long\n", codepoint_length_of(utf8string));
     for (Utf8Char c : utf8string) {
         printf("%c_", c);
@@ -60,7 +62,16 @@ int main()
     lang_list.getref("spanish").value().ref.span()[0] = 'm';
     printf("%s\n", (char*)lang_list.get("spanish").value());
     assert("hello"_s != "world"_s);
-    assert("hell0"_s <=> "hell0"_s == 0);
+    assert("hell01"_s <=> "hell11"_s == -1);
     Stack<int> s;
+    
+    UniquePtr<String> p(new String("Hello"));
+    [[maybe_unused]] auto ptr2 = move(p);
+    auto ptr3 = UniquePtr<String>::make("hello everyone!");
+    printf("%s\n", ptr3->span().data());
+    RefPtr<int> ref_ptr = RefPtr<int>::make(1);
+    auto copy = ref_ptr;
+    auto weak = copy.make_weak();
+    printf("is valid? %s. Refcount=%zu. Value=%d", weak.is_valid() ? "yes" : "no", weak.ref_count(), *weak);
     return 0;
 }
