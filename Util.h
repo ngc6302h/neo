@@ -18,25 +18,25 @@
 #pragma once
 #define this_is_constexpr() __builtin_is_constant_evaluated()
 
-template <typename T>
+template<typename T>
 constexpr T max(const T& a, const T& b)
 {
     return a > b ? a : b;
 }
 
-template <typename T, typename... Rest>
+template<typename T, typename... Rest>
 constexpr T max(T x, T y, Rest... values)
 {
     return max(max(x, y), values...);
 }
 
-template <typename T>
+template<typename T>
 constexpr T min(const T& a, const T& b)
 {
     return a < b ? a : b;
 }
 
-template <typename T, typename... Rest>
+template<typename T, typename... Rest>
 constexpr T min(T x, T y, Rest... values)
 {
     return min(min(x, y), values...);

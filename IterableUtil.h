@@ -21,40 +21,40 @@
 
 namespace neo
 {
-template <typename T, typename TConstIter>
-constexpr Iter find(TConstIter begin, TConstIter end, const T& element)
-{
-    do
+    template<typename T, typename TConstIter>
+    constexpr Iter find(TConstIter begin, TConstIter end, const T& element)
     {
-        if (*begin == element)
-            return begin;
-    } while (begin++ != end);
-}
-
-template <typename TConstIter, typename T>
-constexpr bool contains(TConstIter begin, TConstIter end, const T& element)
-{
-    do
-    {
-        if (*begin == element)
-            return true;
-    } while (begin++ != end);
-}
-
-template <typename TIter, typename TSortingFunc>
-constexpr bool sort(TIter begin, TIter end, TSortingFunc predicate) //TODO: Conceptify this
-{
-    for (TIter x = begin; x != end; x++)
-    {
-        for (TIter y = begin; y != end; y++)
+        do
         {
-            if (predicate(*x, *y))
+            if (*begin == element)
+                return begin;
+        } while (begin++ != end);
+    }
+
+    template<typename TConstIter, typename T>
+    constexpr bool contains(TConstIter begin, TConstIter end, const T& element)
+    {
+        do
+        {
+            if (*begin == element)
+                return true;
+        } while (begin++ != end);
+    }
+
+    template<typename TIter, typename TSortingFunc>
+    constexpr bool sort(TIter begin, TIter end, TSortingFunc predicate) //TODO: Conceptify this
+    {
+        for (TIter x = begin; x != end; x++)
+        {
+            for (TIter y = begin; y != end; y++)
             {
-                swap(*x, *y);
+                if (predicate(*x, *y))
+                {
+                    swap(*x, *y);
+                }
             }
         }
     }
-}
 }
 
 using neo::contains;

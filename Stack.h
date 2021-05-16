@@ -19,7 +19,7 @@
 
 namespace neo
 {
-template <typename T>
-using Stack = Queue<T>;
+    template<typename T>
+    using Stack = Queue<T>;
 }
 using neo::Stack;

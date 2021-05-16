@@ -26,402 +26,403 @@
 
 namespace neo
 {
-using Utf8Char = u32;
+    using Utf8Char = u32;
 
-struct StringIteratorContainer
-{
-    char* data;
-    //using TReturn = Utf8Char;
-
-    constexpr StringIteratorContainer(char* ptr)
-        : data(ptr)
+    struct StringIteratorContainer
     {
-    }
+        char* data;
+        //using TReturn = Utf8Char;
 
-    constexpr Utf8Char operator*() const
-    {
-        //TODO: Research how to make this branchless
-        int codepoint_size;
-        char* ptr = data;
-        if (((*ptr >> 7) & 1) == 0)
-            codepoint_size = 1;
-        else if (((*ptr >> 5) & 7) == 6)
-            codepoint_size = 2;
-        else if (((*ptr >> 4) & 0xF) == 0xE)
-            codepoint_size = 3;
-        else if (((*ptr >> 3) & 0x1F) == 0x1E)
-            codepoint_size = 4;
-        else
-            codepoint_size = 1;
-        Utf8Char codepoint;
-        switch (codepoint_size)
+        constexpr StringIteratorContainer(char* ptr) :
+            data(ptr)
         {
-        case 1:
-            codepoint = ptr[0];
-            break;
-        case 2:
-            codepoint = (((u32)ptr[1]) & 0x3F) | (((u32)ptr[0]) & 0x1F) << 6;
-            break;
-        case 3:
-            codepoint = (((u32)ptr[2]) & 0x3F) | (((u32)ptr[1]) & 0x3F) << 6 | (((u32)ptr[0]) & 0xF) << 12;
-            break;
-        case 4:
-            codepoint = (((u32)ptr[3]) & 0x3F) | (((u32)ptr[2]) & 0x3F) << 6 | (((u32)ptr[1]) & 0x3F) << 12 | (((u32)ptr[0]) & 7) << 18;
-            break;
-        default:
-            __builtin_unreachable();
         }
-        VERIFY(codepoint != 0);
-        return codepoint;
-    }
 
-    constexpr StringIteratorContainer& operator++()
-    {
-        char* ptr = data;
-        if (((*ptr >> 7) & 1) == 0)
-            ptr++;
-        else if (((*ptr >> 5) & 7) == 6)
-            ptr += 2;
-        else if (((*ptr >> 4) & 0xF) == 0xE)
-            ptr += 3;
-        else if (((*ptr >> 3) & 0x1F) == 0x1E)
-            ptr += 4;
-        else
-            ptr++; //TODO: Verify this is correct behavior
-        data = ptr;
-        return *this;
-    }
-
-    constexpr StringIteratorContainer operator++(int)
-    {
-        auto prev = *this;
-        char* ptr = data;
-        if (((*ptr >> 7) & 1) == 0)
-            ptr++;
-        else if (((*ptr >> 5) & 7) == 6)
-            ptr += 2;
-        else if (((*ptr >> 4) & 0xF) == 0xE)
-            ptr += 3;
-        else if (((*ptr >> 3) & 0x1F) == 0x1E)
-            ptr += 4;
-        else
-            ptr++; //TODO: verify this is correct behavior
-        data = ptr;
-        return prev;
-    }
-
-    constexpr StringIteratorContainer& operator--()
-    {
-        while ((((*data) >> 6) & 3) == 2)
-            data--;
-        return *this;
-    }
-
-    constexpr StringIteratorContainer operator--(int)
-    {
-        auto prev = *this;
-        while ((((*data) >> 6) & 3) == 2)
-            data--;
-        return prev;
-    }
-
-    constexpr bool operator!=(const StringIteratorContainer& other) const
-    {
-        return data != other.data;
-    }
-
-    constexpr bool operator==(const StringIteratorContainer& other) const
-    {
-        return data == other.data;
-    }
-};
-
-using StringBidIt = BidirectionalIterator<char*, StringIteratorContainer>;
-
-class String
-{
-public:
-    explicit constexpr String() = default;
-
-    constexpr String(const String& other)
-        : m_byte_length(other.m_byte_length)
-    {
-        m_buffer = new char[other.m_byte_length + 1];
-        m_buffer[other.m_byte_length] = 0;
-        if (this_is_constexpr())
+        constexpr Utf8Char operator*() const
         {
-            for (size_t i = 0; i < other.m_byte_length; i++)
-                m_buffer[i] = other.m_buffer[i];
+            //TODO: Research how to make this branchless
+            int codepoint_size;
+            char* ptr = data;
+            if (((*ptr >> 7) & 1) == 0)
+                codepoint_size = 1;
+            else if (((*ptr >> 5) & 7) == 6)
+                codepoint_size = 2;
+            else if (((*ptr >> 4) & 0xF) == 0xE)
+                codepoint_size = 3;
+            else if (((*ptr >> 3) & 0x1F) == 0x1E)
+                codepoint_size = 4;
+            else
+                codepoint_size = 1;
+            Utf8Char codepoint;
+            switch (codepoint_size)
+            {
+            case 1:
+                codepoint = ptr[0];
+                break;
+            case 2:
+                codepoint = (((u32)ptr[1]) & 0x3F) | (((u32)ptr[0]) & 0x1F) << 6;
+                break;
+            case 3:
+                codepoint = (((u32)ptr[2]) & 0x3F) | (((u32)ptr[1]) & 0x3F) << 6 | (((u32)ptr[0]) & 0xF) << 12;
+                break;
+            case 4:
+                codepoint = (((u32)ptr[3]) & 0x3F) | (((u32)ptr[2]) & 0x3F) << 6 | (((u32)ptr[1]) & 0x3F) << 12 | (((u32)ptr[0]) & 7) << 18;
+                break;
+            default:
+                __builtin_unreachable();
+            }
+            VERIFY(codepoint != 0);
+            return codepoint;
         }
-        else
-            memcpy(m_buffer, other.m_buffer, other.m_byte_length);
-    }
 
-    constexpr String(String&& other)
-    {
-        m_buffer = other.m_buffer;
-        other.m_buffer = nullptr;
-        other.m_byte_length = 0;
-    }
-
-    constexpr String(const AsciiString& other)
-        : m_byte_length(other.size())
-    {
-        m_buffer = new char[other.size() + 1];
-        m_buffer[other.size()] = 0;
-        m_byte_length = other.size();
-        if (this_is_constexpr())
+        constexpr StringIteratorContainer& operator++()
         {
-            for (size_t i = 0; i < other.size(); i++)
-                m_buffer[i] = other.m_buffer[i];
+            char* ptr = data;
+            if (((*ptr >> 7) & 1) == 0)
+                ptr++;
+            else if (((*ptr >> 5) & 7) == 6)
+                ptr += 2;
+            else if (((*ptr >> 4) & 0xF) == 0xE)
+                ptr += 3;
+            else if (((*ptr >> 3) & 0x1F) == 0x1E)
+                ptr += 4;
+            else
+                ptr++; //TODO: Verify this is correct behavior
+            data = ptr;
+            return *this;
         }
-        else
-            memcpy(m_buffer, other.m_buffer, other.size());
-    }
 
-    constexpr String(AsciiString&& other)
-        : m_byte_length(other.size())
-    {
-        m_buffer = other.m_buffer;
-        m_byte_length = other.m_length;
-        other.m_length = 0;
-    }
-
-    constexpr String(const char* cstring)
-    {
-        size_t length;
-        if (this_is_constexpr())
+        constexpr StringIteratorContainer operator++(int)
         {
-            length = 0;
-            while (cstring[length] != 0)
-                length++;
+            auto prev = *this;
+            char* ptr = data;
+            if (((*ptr >> 7) & 1) == 0)
+                ptr++;
+            else if (((*ptr >> 5) & 7) == 6)
+                ptr += 2;
+            else if (((*ptr >> 4) & 0xF) == 0xE)
+                ptr += 3;
+            else if (((*ptr >> 3) & 0x1F) == 0x1E)
+                ptr += 4;
+            else
+                ptr++; //TODO: verify this is correct behavior
+            data = ptr;
+            return prev;
         }
-        else
-            length = strlen(cstring);
 
-        VERIFY(length != 0);
-
-        m_buffer = new char[length + 1];
-        m_buffer[length] = 0;
-        m_byte_length = length;
-        if (this_is_constexpr())
+        constexpr StringIteratorContainer& operator--()
         {
-            for (size_t i = 0; i < length; i++)
+            while ((((*data) >> 6) & 3) == 2)
+                data--;
+            return *this;
+        }
+
+        constexpr StringIteratorContainer operator--(int)
+        {
+            auto prev = *this;
+            while ((((*data) >> 6) & 3) == 2)
+                data--;
+            return prev;
+        }
+
+        constexpr bool operator!=(const StringIteratorContainer& other) const
+        {
+            return data != other.data;
+        }
+
+        constexpr bool operator==(const StringIteratorContainer& other) const
+        {
+            return data == other.data;
+        }
+    };
+
+    using StringBidIt = BidirectionalIterator<char*, StringIteratorContainer>;
+
+    class String
+    {
+    public:
+        explicit constexpr String() = default;
+
+        constexpr String(const String& other) :
+            m_byte_length(other.m_byte_length)
+        {
+            m_buffer = new char[other.m_byte_length + 1];
+            m_buffer[other.m_byte_length] = 0;
+            if (this_is_constexpr())
+            {
+                for (size_t i = 0; i < other.m_byte_length; i++)
+                    m_buffer[i] = other.m_buffer[i];
+            }
+            else
+                memcpy(m_buffer, other.m_buffer, other.m_byte_length);
+        }
+
+        constexpr String(String&& other)
+        {
+            m_buffer = other.m_buffer;
+            other.m_buffer = nullptr;
+            other.m_byte_length = 0;
+        }
+
+        constexpr String(const AsciiString& other) :
+            m_byte_length(other.size())
+        {
+            m_buffer = new char[other.size() + 1];
+            m_buffer[other.size()] = 0;
+            m_byte_length = other.size();
+            if (this_is_constexpr())
+            {
+                for (size_t i = 0; i < other.size(); i++)
+                    m_buffer[i] = other.m_buffer[i];
+            }
+            else
+                memcpy(m_buffer, other.m_buffer, other.size());
+        }
+
+        constexpr String(AsciiString&& other) :
+            m_byte_length(other.size())
+        {
+            m_buffer = other.m_buffer;
+            m_byte_length = other.m_length;
+            other.m_length = 0;
+        }
+
+        constexpr String(const char* cstring)
+        {
+            size_t length;
+            if (this_is_constexpr())
+            {
+                length = 0;
+                while (cstring[length] != 0)
+                    length++;
+            }
+            else
+                length = strlen(cstring);
+
+            VERIFY(length != 0);
+
+            m_buffer = new char[length + 1];
+            m_buffer[length] = 0;
+            m_byte_length = length;
+            if (this_is_constexpr())
+            {
+                for (size_t i = 0; i < length; i++)
+                    m_buffer[i] = cstring[i];
+            }
+            else
+                memcpy(m_buffer, cstring, length);
+        }
+
+        constexpr String(const char* cstring, size_t length)
+        {
+            size_t size = length;
+            VERIFY(size != 0);
+
+            m_buffer = new char[size + 1];
+            m_buffer[size] = 0;
+            m_byte_length = size;
+            for (size_t i = 0; i < size; i++)
                 m_buffer[i] = cstring[i];
         }
-        else
-            memcpy(m_buffer, cstring, length);
-    }
 
-    constexpr String(const char* cstring, size_t length)
-    {
-        size_t size = length;
-        VERIFY(size != 0);
+        constexpr String& operator=(const String& other)
+        {
+            if (&other == this)
+                return *this;
 
-        m_buffer = new char[size + 1];
-        m_buffer[size] = 0;
-        m_byte_length = size;
-        for (size_t i = 0; i < size; i++)
-            m_buffer[i] = cstring[i];
-    }
-
-    constexpr String& operator=(const String& other)
-    {
-        if (&other == this)
+            delete[] m_buffer;
+            m_buffer = new char[other.m_byte_length];
+            m_byte_length = other.m_byte_length;
+            if (this_is_constexpr())
+            {
+                for (size_t i = 0; i < other.m_byte_length; i++)
+                    m_buffer[i] = other.m_buffer[i];
+            }
+            else
+            {
+                memcpy(m_buffer, other.m_buffer, other.m_byte_length);
+            }
             return *this;
-
-        delete[] m_buffer;
-        m_buffer = new char[other.m_byte_length];
-        m_byte_length = other.m_byte_length;
-        if (this_is_constexpr())
-        {
-            for (size_t i = 0; i < other.m_byte_length; i++)
-                m_buffer[i] = other.m_buffer[i];
         }
-        else
-        {
-            memcpy(m_buffer, other.m_buffer, other.m_byte_length);
-        }
-        return *this;
-    }
 
-    constexpr String& operator=(String&& other)
-    {
-        if (&other == this)
+        constexpr String& operator=(String&& other)
+        {
+            if (&other == this)
+                return *this;
+
+            delete[] m_buffer;
+            m_buffer = other.m_buffer;
+            other.m_buffer = nullptr;
+            m_byte_length = other.m_byte_length;
+            other.m_byte_length = 0;
             return *this;
+        }
 
-        delete[] m_buffer;
-        m_buffer = other.m_buffer;
-        other.m_buffer = nullptr;
-        m_byte_length = other.m_byte_length;
-        other.m_byte_length = 0;
-        return *this;
-    }
-
-    [[nodiscard]] constexpr operator char*() const
-    {
-        return m_buffer;
-    }
-
-    [[nodiscard]] constexpr bool operator==(const String& other) const
-    {
-        if (m_byte_length != other.m_byte_length)
-            return false;
-        for (size_t i = 0; i < m_byte_length; i++)
+        [[nodiscard]] constexpr operator char*() const
         {
-            if (m_buffer[i] != other.m_buffer[i])
+            return m_buffer;
+        }
+
+        [[nodiscard]] constexpr bool operator==(const String& other) const
+        {
+            if (m_byte_length != other.m_byte_length)
                 return false;
+            for (size_t i = 0; i < m_byte_length; i++)
+            {
+                if (m_buffer[i] != other.m_buffer[i])
+                    return false;
+            }
+            return true;
         }
-        return true;
-    }
 
-    [[nodiscard]] constexpr bool operator!=(const String& other) const
-    {
-        return !(*this == other);
-    }
-
-    [[nodiscard]] constexpr int operator<=>(const String& other) const
-    {
-        auto begin = cbegin();
-        auto other_begin = other.cbegin();
-        for (; *begin == *other_begin; begin++, other_begin++)
+        [[nodiscard]] constexpr bool operator!=(const String& other) const
         {
-            if (*begin == 0)
+            return !(*this == other);
+        }
+
+        [[nodiscard]] constexpr int operator<=>(const String& other) const
+        {
+            auto begin = cbegin();
+            auto other_begin = other.cbegin();
+            auto end = cend();
+            auto other_cend = other.cend();
+            for (; (begin != end || other_begin != other_cend) && *begin == *other_begin; begin++, other_begin++)
+            {
+            }
+            if (!(begin != end) || !(other_begin != other_cend))
                 return 0;
+            return *begin < *other_begin ? -1 : 1;
         }
 
-        return *begin < *other_begin ? -1 : 1;
-    }
-
-    [[nodiscard]] constexpr const StringBidIt cbegin() const
-    {
-        return StringBidIt(m_buffer);
-    }
-
-    [[nodiscard]] constexpr StringBidIt begin() const
-    {
-        return StringBidIt(m_buffer);
-    }
-
-    [[nodiscard]] constexpr const StringBidIt cend() const
-    {
-        return StringBidIt(m_buffer + m_byte_length);
-    }
-
-    [[nodiscard]] constexpr StringBidIt end() const
-    {
-        return StringBidIt(m_buffer + m_byte_length);
-    }
-
-    //Size in bytes
-    [[nodiscard]] constexpr size_t size() const
-    {
-        return m_byte_length;
-    }
-
-    [[nodiscard]] constexpr bool starts_with(const String& other)
-    {
-        if (!size() || !other.size() || other.size() > size())
-            return false;
-
-        for (auto other_char : other)
+        [[nodiscard]] constexpr const StringBidIt cbegin() const
         {
-            for (auto my_char : *this)
-            {
-                if (my_char != other_char)
-                    return false;
-            }
+            return StringBidIt(m_buffer);
         }
-        return true;
-    }
 
-    [[nodiscard]] constexpr bool ends_with(const String& other) const
-    {
-        if (!size() || !other.size() || other.size() > size())
-            return false;
-
-        for (auto other_char = other.cend(); other_char != other.cbegin(); other_char--)
+        [[nodiscard]] constexpr StringBidIt begin() const
         {
-            for (auto my_char = cend(); my_char != begin(); my_char--)
-            {
-                if (my_char != other_char)
-                    return false;
-                other_char--;
-            }
+            return StringBidIt(m_buffer);
         }
-        return true;
-    }
 
-    [[nodiscard]] constexpr Optional<StringBidIt> contains(const String& other) const
-    {
-        if (!size() || !other.size() || size() < other.size())
-            return {};
-
-        for (auto my_char = begin(); my_char != end(); my_char++)
+        [[nodiscard]] constexpr const StringBidIt cend() const
         {
-            bool found = true;
+            return StringBidIt(m_buffer + m_byte_length);
+        }
+
+        [[nodiscard]] constexpr StringBidIt end() const
+        {
+            return StringBidIt(m_buffer + m_byte_length);
+        }
+
+        //Size in bytes
+        [[nodiscard]] constexpr size_t size() const
+        {
+            return m_byte_length;
+        }
+
+        [[nodiscard]] constexpr bool starts_with(const String& other)
+        {
+            if (!size() || !other.size() || other.size() > size())
+                return false;
+
             for (auto other_char : other)
             {
-                if (*my_char != other_char)
+                for (auto my_char : *this)
                 {
-                    found = false;
-                    break;
+                    if (my_char != other_char)
+                        return false;
                 }
-                my_char++;
             }
-            if (found)
-                return { my_char };
+            return true;
         }
-        return {};
-    }
 
-    [[nodiscard]] constexpr Span<char> span()
+        [[nodiscard]] constexpr bool ends_with(const String& other) const
+        {
+            if (!size() || !other.size() || other.size() > size())
+                return false;
+
+            for (auto other_char = other.cend(); other_char != other.cbegin(); other_char--)
+            {
+                for (auto my_char = cend(); my_char != begin(); my_char--)
+                {
+                    if (my_char != other_char)
+                        return false;
+                    other_char--;
+                }
+            }
+            return true;
+        }
+
+        [[nodiscard]] constexpr Optional<StringBidIt> contains(const String& other) const
+        {
+            if (!size() || !other.size() || size() < other.size())
+                return {};
+
+            for (auto my_char = begin(); my_char != end(); my_char++)
+            {
+                bool found = true;
+                for (auto other_char : other)
+                {
+                    if (*my_char != other_char)
+                    {
+                        found = false;
+                        break;
+                    }
+                    my_char++;
+                }
+                if (found)
+                    return { my_char };
+            }
+            return {};
+        }
+
+        [[nodiscard]] constexpr Span<char> span()
+        {
+            return { m_buffer, m_byte_length };
+        }
+
+    private:
+        char* m_buffer { nullptr };
+        size_t m_byte_length { 0 };
+    };
+
+    [[nodiscard]] constexpr String operator""_s(const char* cstring, size_t length)
     {
-        return { m_buffer, m_byte_length };
+        return String(cstring, length);
     }
 
-private:
-    char* m_buffer { nullptr };
-    size_t m_byte_length { 0 };
-};
-
-[[nodiscard]] constexpr String operator""_s(const char* cstring, size_t length)
-{
-    return String(cstring, length);
-}
-
-[[nodiscard]] constexpr size_t codepoint_length_of(const String& s)
-{
-    auto begin = s.begin();
-    auto end = s.end();
-    size_t count = 0;
-    while (begin++ != end)
-        count++;
-    return count;
-}
-
-struct StringHasher
-{
-    static constexpr size_t hash(const AsciiString& str)
+    [[nodiscard]] constexpr size_t codepoint_length_of(const String& s)
     {
-        char* data = (char*)str;
-        size_t size = str.size();
-        size_t result = data[size - 1];
-        while (size--)
-            result += result ^ data[size] ^ (~(result * result + 3241));
-        return result;
+        auto begin = s.begin();
+        auto end = s.end();
+        size_t count = 0;
+        while (begin++ != end)
+            count++;
+        return count;
     }
 
-    static constexpr size_t hash(const String& str)
+    struct StringHasher
     {
-        char* data = (char*)str;
-        size_t size = str.size();
-        size_t result = data[size - 1];
-        while (size--)
-            result += result ^ data[size] ^ (~(result * result + 3241));
-        return result;
-    }
-};
+        static constexpr size_t hash(const AsciiString& str)
+        {
+            char* data = (char*)str;
+            size_t size = str.size();
+            size_t result = data[size - 1];
+            while (size--)
+                result += result ^ data[size] ^ (~(result * result + 3241));
+            return result;
+        }
+
+        static constexpr size_t hash(const String& str)
+        {
+            char* data = (char*)str;
+            size_t size = str.size();
+            size_t result = data[size - 1];
+            while (size--)
+                result += result ^ data[size] ^ (~(result * result + 3241));
+            return result;
+        }
+    };
 }
 using neo::String;
 using neo::Utf8Char;
