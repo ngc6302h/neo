@@ -37,7 +37,7 @@ int main()
     
     Variant<char, long> v(0x242424L);
     String utf8string { "This is a UTF-8 string \U0001F304!! こ んにちは ہیلو Привет 你好" };
-    printf("String is %zu codepoints long\n", codepoint_length_of(utf8string));
+    printf("String is %zu codepoints long\n", utf8string.length());
     for (Utf8Char c : utf8string) {
         printf("%c_", c);
     }
@@ -50,7 +50,7 @@ int main()
     printf("%s\n", (char*)"hello cat!"_s);
     Variant<int, bool, String> who(String("hello world"));
     printf("%s\n", (char*)who.get<String>());
-    printf("%zu\n", codepoint_length_of("こんにちは"_s));
+    printf("%zu\n", "こんにちは"_s.length());
     printf("%s\n", (char*)Variant<long, String, AsciiString, Vector<bool>>::construct<String>("hello!").get<String>());
 
     Hashmap<String, String, StringHasher> lang_list;
