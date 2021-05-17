@@ -315,14 +315,24 @@ namespace neo
         }
 
         //Size in bytes
-        [[nodiscard]] constexpr size_t size() const
+        [[nodiscard]] constexpr size_t byte_size() const
         {
             return m_byte_length;
+        }
+    
+        [[nodiscard]] constexpr size_t length() const
+        {
+            auto begin = cbegin();
+            auto end = cend();
+            size_t count = 0;
+            while (begin++ != end)
+                count++;
+            return count;
         }
 
         [[nodiscard]] constexpr bool starts_with(const String& other)
         {
-            if (!size() || !other.size() || other.size() > size())
+            if (!byte_size() || !other.byte_size() || other.byte_size() > byte_size())
                 return false;
 
             for (auto other_char : other)
@@ -338,7 +348,7 @@ namespace neo
 
         [[nodiscard]] constexpr bool ends_with(const String& other) const
         {
-            if (!size() || !other.size() || other.size() > size())
+            if (!byte_size() || !other.byte_size() || other.byte_size() > byte_size())
                 return false;
 
             for (auto other_char = other.cend(); other_char != other.cbegin(); other_char--)
@@ -355,7 +365,7 @@ namespace neo
 
         [[nodiscard]] constexpr Optional<StringBidIt> contains(const String& other) const
         {
-            if (!size() || !other.size() || size() < other.size())
+            if (!byte_size() || !other.byte_size() || byte_size() < other.byte_size())
                 return {};
 
             for (auto my_char = begin(); my_char != end(); my_char++)
@@ -391,16 +401,6 @@ namespace neo
         return String(cstring, length);
     }
 
-    [[nodiscard]] constexpr size_t codepoint_length_of(const String& s)
-    {
-        auto begin = s.begin();
-        auto end = s.end();
-        size_t count = 0;
-        while (begin++ != end)
-            count++;
-        return count;
-    }
-
     struct StringHasher
     {
         static constexpr size_t hash(const AsciiString& str)
@@ -416,7 +416,7 @@ namespace neo
         static constexpr size_t hash(const String& str)
         {
             char* data = (char*)str;
-            size_t size = str.size();
+            size_t size = str.byte_size();
             size_t result = data[size - 1];
             while (size--)
                 result += result ^ data[size] ^ (~(result * result + 3241));
