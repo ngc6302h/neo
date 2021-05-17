@@ -20,16 +20,17 @@
 #include "Preprocessor.h"
 #include "Queue.h"
 #include "Stack.h"
-#include "String.h"
 #include "TypeTraits.h"
 #include "Variant.h"
 #include "Vector.h"
 #include "SmartPtr.h"
+#include "StringView.h"
+#include "AsciiStringView.h"
+#include "String.h"
 #include <stdio.h>
 
 int main()
 {
-
     AsciiString string { "This is a test" };
     for (auto c : string)
         printf("%c_", c);
@@ -53,7 +54,7 @@ int main()
     printf("%zu\n", "こんにちは"_s.length());
     printf("%s\n", (char*)Variant<long, String, AsciiString, Vector<bool>>::construct<String>("hello!").get<String>());
 
-    Hashmap<String, String, StringHasher> lang_list;
+    Hashmap<String, String, StringHasher<String>> lang_list;
     lang_list.insert("spanish", "hola");
     lang_list.insert("english", "hello");
     lang_list.insert("german", "gutten tag?");
@@ -72,6 +73,12 @@ int main()
     RefPtr<int> ref_ptr = RefPtr<int>::make(1);
     auto copy = ref_ptr;
     auto weak = copy.make_weak();
-    printf("is valid? %s. Refcount=%zu. Value=%d", weak.is_valid() ? "yes" : "no", weak.ref_count(), *weak);
+    printf("is valid? %s. Refcount=%zu. Value=%d\n", weak.is_valid() ? "yes" : "no", weak.ref_count(), *weak);
+    constexpr AsciiStringView str_view {"Hello world"};
+    printf("%s\n", str_view.span().data());
+    constexpr auto subsv = str_view.substring_view(6).substring_view(0, 3);
+    constexpr bool has_substr = subsv.contains("wo") != subsv.cend();
+    printf("\"%s\" has 'wo'? %d\n", subsv.non_null_terminated_buffer(), has_substr);
+    
     return 0;
 }
