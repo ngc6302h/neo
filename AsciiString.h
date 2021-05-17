@@ -21,8 +21,8 @@
 #include "Iterator.h"
 #include "Optional.h"
 #include "Span.h"
+#include "StringIterator.h"
 #include "Types.h"
-#include <cstring>
 
 namespace neo
 {
@@ -33,19 +33,17 @@ namespace neo
         friend String;
 
     public:
-        using BidIt = BidirectionalIterator<char*>;
-
         explicit constexpr AsciiString() = default;
 
-        AsciiString(const char* cstring)
+        constexpr AsciiString(const char* cstring)
         {
-            size_t size = strlen(cstring);
+            size_t size = __builtin_strlen(cstring);
             VERIFY(size != 0);
 
             m_buffer = new char[size + 1];
             m_buffer[size] = 0;
             m_length = size;
-            memcpy(m_buffer, cstring, size);
+            __builtin_memcpy(m_buffer, cstring, size);
         }
 
         constexpr AsciiString(const char* cstring, size_t length)
@@ -69,15 +67,8 @@ namespace neo
             m_buffer = new char[other.m_length + 1];
             m_buffer[other.m_length] = 0;
             m_length = other.m_length;
-            if (this_is_constexpr())
-            {
-                for (size_t i = 0; i < other.m_length; i++)
-                    m_buffer[i] = other.m_buffer[i];
-            }
-            else
-            {
-                memcpy(m_buffer, other.m_buffer, other.m_length);
-            }
+
+            __builtin_memcpy(m_buffer, other.m_buffer, other.m_length);
             return *this;
         }
 
@@ -103,12 +94,7 @@ namespace neo
         {
             if (m_length != other.m_length)
                 return false;
-            for (size_t i = 0; i < m_length; i++)
-            {
-                if (m_buffer[i] != other.m_buffer[i])
-                    return false;
-            }
-            return true;
+            return __builtin_memcmp(m_buffer, other.m_buffer, m_length) == 0;
         }
 
         [[nodiscard]] constexpr bool operator!=(const AsciiString& other) const
@@ -118,14 +104,7 @@ namespace neo
 
         [[nodiscard]] constexpr int operator<=>(const AsciiString& other) const
         {
-            size_t i;
-            for (i = 0; m_buffer[i] == other.m_buffer[i]; i++)
-            {
-                if (m_buffer[i] == 0)
-                    return 0;
-            }
-
-            return m_buffer[i] < other.m_buffer[i] ? -1 : 1;
+            return __builtin_memcmp(m_buffer, other.m_buffer, min(m_length, other.m_length));
         }
 
         constexpr AsciiString(const AsciiString& other) :
@@ -133,15 +112,7 @@ namespace neo
         {
             m_buffer = new char[other.m_length + 1];
             m_buffer[other.m_length] = 0;
-            if (this_is_constexpr())
-            {
-                for (size_t i = 0; i < other.m_length; i++)
-                    m_buffer[i] = other.m_buffer[i];
-            }
-            else
-            {
-                memcpy(m_buffer, other.m_buffer, other.m_length);
-            }
+            __builtin_memcpy(m_buffer, other.m_buffer, other.m_length);
         }
 
         constexpr AsciiString(AsciiString&& other)
@@ -151,43 +122,43 @@ namespace neo
             other.m_length = 0;
         }
 
-        [[nodiscard]] constexpr const BidIt cbegin() const
+        [[nodiscard]] constexpr const AsciiStringBidIt cbegin() const
         {
-            return BidIt(m_buffer);
+            return AsciiStringBidIt(m_buffer);
         }
 
-        [[nodiscard]] BidIt begin() const
+        [[nodiscard]] AsciiStringBidIt begin() const
         {
-            return BidIt(m_buffer);
+            return AsciiStringBidIt(m_buffer);
         }
 
-        [[nodiscard]] BidIt end() const
+        [[nodiscard]] AsciiStringBidIt end() const
         {
-            return BidIt(m_buffer + m_length);
+            return AsciiStringBidIt(m_buffer + m_length);
         }
 
-        [[nodiscard]] constexpr const BidIt cend() const
+        [[nodiscard]] constexpr const AsciiStringBidIt cend() const
         {
-            return BidIt(m_buffer + m_length);
+            return AsciiStringBidIt(m_buffer + m_length);
         }
 
-        [[nodiscard]] constexpr size_t size() const
+        [[nodiscard]] constexpr size_t length() const
         {
             return m_length;
         }
 
         [[nodiscard]] constexpr char operator[](size_t index) const
         {
-            VERIFY(index < size());
+            VERIFY(index < length());
             return m_buffer[index];
         }
 
         [[nodiscard]] constexpr bool starts_with(const AsciiString& other)
         {
-            if (!size() || !other.size() || other.size() > size())
+            if (!length() || !other.length() || other.length() > length())
                 return false;
 
-            for (size_t i = 0; i < other.size(); i++)
+            for (size_t i = 0; i < other.length(); i++)
             {
                 if ((*this)[i] != other[i])
                     return false;
@@ -197,12 +168,12 @@ namespace neo
 
         [[nodiscard]] constexpr bool ends_with(const AsciiString& other)
         {
-            if (!size() || !other.size() || other.size() > size())
+            if (!length() || !other.length() || other.length() > length())
                 return false;
 
-            for (size_t i = 0; i < other.size(); i++)
+            for (size_t i = 0; i < other.length(); i++)
             {
-                if ((*this)[size() - other.size() + i] != other[i])
+                if ((*this)[length() - other.length() + i] != other[i])
                     return false;
             }
             return true;
@@ -210,13 +181,13 @@ namespace neo
 
         [[nodiscard]] constexpr Optional<size_t> contains(const AsciiString& other)
         {
-            if (!size() || !other.size() || size() < other.size())
+            if (!length() || !other.length() || length() < other.length())
                 return {};
 
-            for (size_t i = 0; i < size() - other.size(); i++)
+            for (size_t i = 0; i < length() - other.length(); i++)
             {
                 bool found = true;
-                for (size_t j = 0; j < other.size(); j++)
+                for (size_t j = 0; j < other.length(); j++)
                 {
                     if ((*this)[i + j] != other[j])
                     {
@@ -244,6 +215,25 @@ namespace neo
     {
         return AsciiString(cstring, length);
     }
+
+    template<typename TStr>
+    struct StringHasher;
+
+    template<>
+    struct StringHasher<AsciiString>
+    {
+        static constexpr size_t hash(const AsciiString& str)
+        {
+            VERIFY(str.length() != 0);
+
+            char* data = (char*)str;
+            size_t size = str.length();
+            size_t result = data[size - 1];
+            while (size--)
+                result += result ^ data[size] ^ (~(result * result + 3241));
+            return result;
+        }
+    };
 }
 using neo::AsciiString;
 using neo::operator""_as;
