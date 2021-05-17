@@ -139,6 +139,11 @@ namespace neo
         {
             return *this->m_element;
         }
+    
+        constexpr decltype(auto) operator->()
+        {
+            return &this->m_element;
+        }
 
         //To be implemented by the class using iterators
         constexpr InputIterator& operator++()
@@ -241,6 +246,11 @@ namespace neo
         {
             return *this->m_element;
         }
+    
+        constexpr decltype(auto) operator->()
+        {
+            return &this->m_element;
+        }
 
         //To be implemented by the class using iterators
         constexpr ForwardIterator& operator++()
@@ -294,6 +304,11 @@ namespace neo
         constexpr decltype(auto) operator*()
         {
             return *this->m_element;
+        }
+
+        constexpr decltype(auto) operator->()
+        {
+            return &this->m_element;
         }
 
         //To be implemented by the class using iterators
