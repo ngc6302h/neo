@@ -16,6 +16,6 @@ if(DEFINE_DEBUG)
 endif()
 
 #just so that clion code analysis works we make a dummy target
-add_executable(neo Test.cpp AsciiString.h Assert.h Hashmap.h IterableUtil.h Iterator.h New.h Optional.h
-        Queue.h SmartPtr.h Span.h Stack.h String.h Types.h TypeTraits.h Variant.h Vector.h)
+add_executable(neo Test.cpp AsciiString.h AsciiStringView.h Assert.h Hashmap.h IterableUtil.h Iterator.h New.h Optional.h
+        Queue.h SmartPtr.h Span.h Stack.h String.h StringIterator.h StringView.h Types.h TypeTraits.h Variant.h Vector.h)
 set_target_properties(neo PROPERTIES LINKER_LANGUAGE CXX)
