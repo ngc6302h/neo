@@ -38,7 +38,6 @@ namespace neo
         constexpr AsciiString(const char* cstring)
         {
             size_t size = __builtin_strlen(cstring);
-            VERIFY(size != 0);
 
             m_buffer = new char[size + 1];
             m_buffer[size] = 0;
@@ -49,7 +48,6 @@ namespace neo
         constexpr AsciiString(const char* cstring, size_t length)
         {
             size_t size = length;
-            VERIFY(size != 0);
 
             m_buffer = new char[size + 1];
             m_buffer[size] = 0;
