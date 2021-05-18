@@ -23,6 +23,7 @@
 #include "Span.h"
 #include "StringIterator.h"
 #include "Types.h"
+#include "AsciiStringView.h"
 
 namespace neo
 {
@@ -150,6 +151,40 @@ namespace neo
             VERIFY(index < length());
             return m_buffer[index];
         }
+    
+        [[nodiscard]] constexpr AsciiStringView to_view() const
+        {
+            return { m_buffer, m_length };
+        }
+    
+        constexpr operator AsciiStringView() const
+        {
+            return { m_buffer, m_length };
+        }
+    
+        [[nodiscard]] constexpr AsciiString substring(AsciiStringBidIt start) const
+        {
+            VERIFY(start != cend());
+            return { start->data, static_cast<size_t>(m_buffer + m_length - start->data) };
+        }
+    
+        [[nodiscard]] constexpr AsciiString substring(size_t start) const
+        {
+            VERIFY(start < m_length);
+            return { m_buffer + start, m_length - start };
+        }
+    
+        [[nodiscard]] constexpr AsciiString substring(AsciiStringBidIt start, size_t length) const
+        {
+            VERIFY(length < m_length - (size_t)(start->data - m_buffer));
+            return { start->data, length };
+        }
+    
+        [[nodiscard]] constexpr AsciiString substring(size_t start, size_t length) const
+        {
+            VERIFY(length < m_length - start);
+            return { m_buffer + start, length };
+        }
 
         [[nodiscard]] constexpr bool starts_with(const AsciiString& other)
         {
@@ -202,6 +237,11 @@ namespace neo
         [[nodiscard]] constexpr Span<char> span()
         {
             return { m_buffer, m_length };
+        }
+    
+        [[nodiscard]] constexpr char* null_terminated_characters() const
+        {
+            return m_buffer;
         }
 
     private:
