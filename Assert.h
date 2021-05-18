@@ -15,11 +15,14 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "assert.h"
+extern "C"
+{
+[[noreturn]] extern void
+__assert_fail(const char *__assertion, const char *__file, unsigned int __line, const char *__function) noexcept(true);
+}
 
 #ifdef DEBUG
-[[noreturn]] void __assertion_failed(const char* msg, const char* file, unsigned line, const char* func);
-    #define VERIFY(expr) assert(expr) //(static_cast<bool>(expr) ? void(0) : __assertion_failed(#    expr, __FILE__, __LINE__, __PRETTY_FUNCTION__))
+    #define VERIFY(expr) (static_cast<bool>(expr) ? void(0) : __assert_fail(#    expr, __FILE__, __LINE__, __PRETTY_FUNCTION__))
     #define VERIFY_NOT_REACHED() VERIFY(false)
 #else
     #define VERIFY(expr)

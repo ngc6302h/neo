@@ -20,7 +20,7 @@
 #include "Assert.h"
 #include "Iterator.h"
 #include "Types.h"
-#include <new>
+#include "New.h"
 
 namespace neo
 {
