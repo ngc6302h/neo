@@ -19,7 +19,6 @@
 #include "Assert.h"
 #include "Span.h"
 #include "Types.h"
-#include <cstring>
 
 namespace neo
 {

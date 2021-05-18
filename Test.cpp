@@ -62,8 +62,8 @@ int main()
     printf("%s\n", (char*)lang_list.get("french").value_or("not found"_s));
     lang_list.getref("spanish").value().ref.span()[0] = 'm';
     printf("%s\n", (char*)lang_list.get("spanish").value());
-    assert("hello"_s != "world"_s);
-    assert("hell01"_s <=> "hell11"_s == -1);
+    VERIFY("hello"_s != "world"_s);
+    VERIFY("hell01"_s <=> "hell11"_s == -1);
     Stack<int> s;
     
     UniquePtr<String> p(new String("Hello"));

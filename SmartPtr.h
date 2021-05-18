@@ -29,7 +29,7 @@ namespace neo
         constexpr explicit UniquePtr(T* obj) :
             m_data(obj)
         {
-            assert(obj != nullptr);
+            VERIFY(obj != nullptr);
         }
 
         constexpr UniquePtr(UniquePtr&& other) :
@@ -101,14 +101,14 @@ namespace neo
         constexpr explicit RefPtr(T* obj) :
             m_data(obj)
         {
-            assert(obj != nullptr);
+            VERIFY(obj != nullptr);
             m_control = new ControlBlock { 1, 0 };
         }
 
         constexpr RefPtr(const RefPtr& other) :
             m_data(other.m_data), m_control(other.m_control)
         {
-            assert(other.m_data != nullptr);
+            VERIFY(other.m_data != nullptr);
             if constexpr (SharedBetweenThreads)
                 __atomic_add_fetch(&m_control->reference_count, 1, __ATOMIC_ACQ_REL);
             else
@@ -210,7 +210,7 @@ namespace neo
         constexpr WeakPtr(const RefPtr<T>& other) :
             m_data(other.m_data), m_control(other.m_control)
         {
-            assert(other.is_valid());
+            VERIFY(other.is_valid());
             if constexpr (SharedBetweenThreads)
                 __atomic_add_fetch(&m_control->weak_reference_count, 1, __ATOMIC_ACQ_REL);
             else
@@ -225,7 +225,7 @@ namespace neo
 
         constexpr WeakPtr& operator=(const WeakPtr& other)
         {
-            assert(other.is_valid());
+            VERIFY(other.is_valid());
 
             m_data = other.m_data;
             m_control = other.m_control;
@@ -237,7 +237,7 @@ namespace neo
 
         constexpr WeakPtr& operator=(WeakPtr&& other)
         {
-            assert(other.is_valid());
+            VERIFY(other.is_valid());
 
             m_data = other.m_data;
             m_control = other.m_control;
