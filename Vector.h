@@ -51,15 +51,14 @@ namespace neo
         constexpr Vector(const Vector& other) :
             m_size(other.m_size), m_capacity(other.m_capacity)
         {
-            //TODO: Implement copy by selecting either trivial copy or typed copy at compile time
             m_data = new T[other.m_capacity];
-            if (this_is_constexpr())
+            if constexpr(IsTriviallyCopyable<T>)
+                __builtin_memcpy(m_data, other.m_data, other.m_size * sizeof(T));
+            else
             {
-                for (size_t i = 0; i < other.m_size; i++)
+                for (size_t i = 0; i < m_size; i++)
                     m_data[i] = other.m_data[i];
             }
-            else
-                memcpy(m_data, other.m_data, other.m_size * sizeof(T));
         }
 
         constexpr Vector(Vector&& other) :
@@ -76,14 +75,13 @@ namespace neo
         {
             VERIFY(other.size() > 0);
             m_data = new T[m_size];
-            //TODO: Implement untyped copy here too
-            if (this_is_constexpr())
+            if constexpr(IsTriviallyCopyable<T>)
+                __builtin_memcpy(m_data, other.m_data, other.m_size * sizeof(T));
+            else
             {
-                for (size_t i = 0; i < other.m_size; i++)
+                for (size_t i = 0; i < m_size; i++)
                     m_data[i] = other.m_data[i];
             }
-            else
-                memcpy(m_data, other.m_data, other.m_size * sizeof(T));
         }
 
         constexpr Vector& operator=(const Vector& other)
@@ -95,13 +93,13 @@ namespace neo
             m_size = other.size();
             m_capacity = other.capacity();
             m_data = new T[m_size];
-            if (this_is_constexpr())
+            if constexpr(IsTriviallyCopyable<T>)
+                __builtin_memcpy(m_data, other.m_data, other.m_size * sizeof(T));
+            else
             {
-                for (size_t i = 0; i < other.m_size; i++)
+                for (size_t i = 0; i < m_size; i++)
                     m_data[i] = other.m_data[i];
             }
-            else
-                memcpy(m_data, other.m_data, other.m_size * sizeof(T));
         }
 
         constexpr Vector& operator=(Vector&& other)
@@ -153,11 +151,14 @@ namespace neo
         {
             VERIFY(new_size > 0);
             T* new_buffer = new T[new_size];
-            //TODO: Implement untyped copy for trivially-copyable objects
-            //memcpy(new_buffer, m_data, min(m_size, new_size) * sizeof(T));
-            for (size_t i = 0; i < min(m_size, new_size); i++)
+            if constexpr(IsTriviallyCopyable<T>)
+                __builtin_memcpy(new_buffer, m_data, m_size*sizeof(T));
+            else
             {
-                new_buffer[i] = move(m_data[i]);
+                for (size_t i = 0; i < min(m_size, new_size); i++)
+                {
+                    new_buffer[i] = move(m_data[i]);
+                }
             }
             delete[] m_data;
             m_data = new_buffer;
