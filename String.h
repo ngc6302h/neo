@@ -189,6 +189,11 @@ namespace neo
             return count;
         }
 
+        [[nodiscard]] constexpr bool is_empty() const
+        {
+            return m_byte_length == 0 || m_buffer == nullptr;
+        }
+
         [[nodiscard]] constexpr String substring(StringBidIt start) const
         {
             VERIFY(start != cend());
@@ -334,6 +339,5 @@ namespace neo
     };
 }
 using neo::String;
-using neo::Utf8Char;
 using neo::operator""_s;
 using neo::StringHasher;
