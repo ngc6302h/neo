@@ -62,7 +62,7 @@ namespace neo
         {
             if (m_length != other.m_length)
                 return false;
-            return __builtin_memcmp(m_buffer, other.m_buffer, m_length) == 0;
+            return __builtin_memcmp(m_view, other.m_view, min(m_length, other.m_length)) == 0;
         }
 
         [[nodiscard]] constexpr bool operator!=(const AsciiStringView& other) const
@@ -72,7 +72,7 @@ namespace neo
 
         [[nodiscard]] constexpr int operator<=>(const AsciiStringView& other) const
         {
-            return __builtin_memcmp(m_buffer, other.m_buffer, min(m_length, other.m_length));
+            return clamp(-1, 1, __builtin_memcmp(m_view, other.m_view, min(m_length, other.m_length)));
         }
 
         [[nodiscard]] constexpr bool is_empty() const
@@ -156,21 +156,8 @@ namespace neo
             if (is_empty() || other.is_empty() || length() < other.length())
                 return cend();
 
-            for (size_t i = 0; i < length() - other.length(); i++)
-            {
-                bool found = true;
-                for (size_t j = 0; j < other.length(); j++)
-                {
-                    if ((*this)[i + j] != other[j])
-                    {
-                        found = false;
-                        break;
-                    }
-                }
-                if (found)
-                    return AsciiStringViewBidIt(m_buffer + i);
-            }
-            return cend();
+            char* hit = __builtin_strstr(m_view, other.m_view);
+            return hit != nullptr ? AsciiStringViewBidIt(hit) : AsciiStringViewBidIt(m_view + m_length);
         }
 
         [[nodiscard]] constexpr bool starts_with(const AsciiStringView& other) const
@@ -178,12 +165,7 @@ namespace neo
             if (!length() || !other.length() || other.length() > length())
                 return false;
 
-            for (size_t i = 0; i < other.length(); i++)
-            {
-                if ((*this)[i] != other[i])
-                    return false;
-            }
-            return true;
+            return __builtin_memcmp(m_view, other.m_view, other.m_length) == 0;
         }
 
         [[nodiscard]] constexpr bool ends_with(const AsciiStringView& other) const
@@ -191,16 +173,11 @@ namespace neo
             if (!length() || !other.length() || other.length() > length())
                 return false;
 
-            for (size_t i = 0; i < other.length(); i++)
-            {
-                if ((*this)[length() - other.length() + i] != other[i])
-                    return false;
-            }
-            return true;
+            return __builtin_memcmp(m_length - other.m_length + m_view, other.m_view, other.m_length) == 0;
         }
 
     private:
-        const char* m_buffer { nullptr };
+        const char* m_view { nullptr };
         size_t m_length { 0 };
     };
 

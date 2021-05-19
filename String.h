@@ -139,7 +139,7 @@ namespace neo
         {
             if (m_byte_length != other.m_byte_length)
                 return false;
-            return __builtin_memcmp(m_buffer, other.m_buffer, m_byte_length) == 0;
+            return __builtin_memcmp(m_buffer, other.m_buffer, min(m_byte_length, other.m_byte_length) + 1) == 0;
         }
 
         [[nodiscard]] constexpr bool operator!=(const String& other) const
@@ -149,16 +149,7 @@ namespace neo
 
         [[nodiscard]] constexpr int operator<=>(const String& other) const
         {
-            auto begin = cbegin();
-            auto other_begin = other.cbegin();
-            auto end = cend();
-            auto other_cend = other.cend();
-            for (; (begin != end || other_begin != other_cend) && *begin == *other_begin; begin++, other_begin++)
-            {
-            }
-            if (!(begin != end) || !(other_begin != other_cend))
-                return 0;
-            return *begin < *other_begin ? -1 : 1;
+            return clamp(-1, 1, __builtin_memcmp(m_buffer, other.m_buffer, min(m_byte_length, other.m_byte_length) + 1));
         }
 
         [[nodiscard]] constexpr const StringBidIt cbegin() const
@@ -254,21 +245,15 @@ namespace neo
             if (!byte_size() || !other.byte_size() || other.byte_size() > byte_size())
                 return false;
 
-            for (auto other_char : other)
-            {
-                for (auto my_char : *this)
-                {
-                    if (my_char != other_char)
-                        return false;
-                }
-            }
-            return true;
+            return __builtin_memcmp(m_buffer, other.m_buffer, other.m_byte_length) == 0;
         }
 
         [[nodiscard]] constexpr bool ends_with(const String& other) const
         {
             if (!byte_size() || !other.byte_size() || other.byte_size() > byte_size())
                 return false;
+
+            return __builtin_memcmp(m_byte_length - other.m_byte_length + m_buffer, other.m_buffer, other.m_byte_length) == 0;
 
             for (auto other_char = other.cend(); other_char != other.cbegin(); other_char--)
             {
@@ -287,6 +272,8 @@ namespace neo
             if (!byte_size() || !other.byte_size() || byte_size() < other.byte_size())
                 return {};
 
+            char* hit = __builtin_strstr(m_buffer, other.m_buffer);
+            return hit != nullptr ? StringBidIt(hit) : Optional<StringBidIt>();
             auto end = cend();
             for (auto my_char = cbegin(); my_char != end; my_char++)
             {

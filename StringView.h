@@ -64,7 +64,7 @@ namespace neo
         {
             if (m_byte_length != other.m_byte_length)
                 return false;
-            return __builtin_memcmp(m_data, other.m_data, m_byte_length) == 0;
+            return __builtin_memcmp(m_view, other.m_view, min(m_byte_length, other.m_byte_length)) == 0;
         }
 
         [[nodiscard]] constexpr bool operator!=(const StringView& other) const
@@ -74,17 +74,7 @@ namespace neo
 
         [[nodiscard]] constexpr int operator<=>(const StringView& other) const
         {
-            auto begin = cbegin();
-            auto other_begin = other.cbegin();
-            auto end = cend();
-            auto other_cend = other.cend();
-            for (; (begin != end || other_begin != other_cend) && *begin == *other_begin; begin++, other_begin++)
-            {
-            }
-            if (!(begin != end) || !(other_begin != other_cend))
-                return 0;
-            return *begin < *other_begin ? -1 : 1;
-            //TODO: could use memcmp here?
+            return clamp(-1, 1, __builtin_memcmp(m_view, other.m_view, min(m_byte_length, other.m_byte_length)));
         }
 
         [[nodiscard]] constexpr bool is_empty() const
@@ -195,23 +185,8 @@ namespace neo
             if (is_empty() || other.is_empty() || byte_size() < other.byte_size())
                 return cend();
 
-            auto end = cend();
-            for (auto my_char = cbegin(); my_char != end; my_char++)
-            {
-                bool found = true;
-                for (auto other_char : other)
-                {
-                    if (*my_char != other_char)
-                    {
-                        found = false;
-                        break;
-                    }
-                    my_char++;
-                }
-                if (found)
-                    return my_char;
-            }
-            return end;
+            char* hit = __builtin_strstr(m_view, other.m_view);
+            return hit != nullptr ? StringViewBidIt(hit) : StringViewBidIt(m_view + m_byte_length);
         }
 
         [[nodiscard]] constexpr bool starts_with(const StringView& other) const
@@ -219,15 +194,7 @@ namespace neo
             if (!byte_size() || !other.byte_size() || other.byte_size() > byte_size())
                 return false;
 
-            for (auto other_char : other)
-            {
-                for (auto my_char : *this)
-                {
-                    if (my_char != other_char)
-                        return false;
-                }
-            }
-            return true;
+            return __builtin_memcmp(m_view, other.m_view, other.m_byte_length) == 0;
         }
 
         [[nodiscard]] constexpr bool ends_with(const StringView& other) const
@@ -235,20 +202,11 @@ namespace neo
             if (!byte_size() || !other.byte_size() || other.byte_size() > byte_size())
                 return false;
 
-            for (auto other_char = other.cend(); other_char != other.cbegin(); other_char--)
-            {
-                for (auto my_char = cend(); my_char != begin(); my_char--)
-                {
-                    if (my_char != other_char)
-                        return false;
-                    other_char--;
-                }
-            }
-            return true;
+            return __builtin_memcmp(m_byte_length - other.m_byte_length + m_view, other.m_view, other.m_byte_length) == 0;
         }
 
     private:
-        const char* m_data { nullptr };
+        const char* m_view { nullptr };
         size_t m_byte_length { 0 };
     };
 

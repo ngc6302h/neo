@@ -41,3 +41,10 @@ constexpr T min(T x, T y, Rest... values)
 {
     return min(min(x, y), values...);
 }
+
+template<typename T>
+constexpr T clamp(T minval, T maxval, T value)
+{
+    return value > maxval ? maxval : value < minval ? minval
+                                                    : value;
+}

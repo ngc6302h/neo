@@ -17,13 +17,13 @@
 
 #pragma once
 
+#include "AsciiStringView.h"
 #include "Assert.h"
 #include "Iterator.h"
 #include "Optional.h"
 #include "Span.h"
 #include "StringIterator.h"
 #include "Types.h"
-#include "AsciiStringView.h"
 
 namespace neo
 {
@@ -93,7 +93,7 @@ namespace neo
         {
             if (m_length != other.m_length)
                 return false;
-            return __builtin_memcmp(m_buffer, other.m_buffer, m_length) == 0;
+            return __builtin_memcmp(m_buffer, other.m_buffer, min(m_length, other.m_length) + 1) == 0;
         }
 
         [[nodiscard]] constexpr bool operator!=(const AsciiString& other) const
@@ -103,7 +103,7 @@ namespace neo
 
         [[nodiscard]] constexpr int operator<=>(const AsciiString& other) const
         {
-            return __builtin_memcmp(m_buffer, other.m_buffer, min(m_length, other.m_length));
+            return clamp(-1, 1, __builtin_memcmp(m_buffer, other.m_buffer, min(m_length, other.m_length) + 1));
         }
 
         constexpr AsciiString(const AsciiString& other) :
