@@ -52,7 +52,7 @@ namespace neo
             m_size(other.m_size), m_capacity(other.m_capacity)
         {
             m_data = new T[other.m_capacity];
-            if constexpr(IsTriviallyCopyable<T>)
+            if constexpr (IsTriviallyCopyable<T>)
                 __builtin_memcpy(m_data, other.m_data, other.m_size * sizeof(T));
             else
             {
@@ -75,7 +75,7 @@ namespace neo
         {
             VERIFY(other.size() > 0);
             m_data = new T[m_size];
-            if constexpr(IsTriviallyCopyable<T>)
+            if constexpr (IsTriviallyCopyable<T>)
                 __builtin_memcpy(m_data, other.m_data, other.m_size * sizeof(T));
             else
             {
@@ -93,7 +93,7 @@ namespace neo
             m_size = other.size();
             m_capacity = other.capacity();
             m_data = new T[m_size];
-            if constexpr(IsTriviallyCopyable<T>)
+            if constexpr (IsTriviallyCopyable<T>)
                 __builtin_memcpy(m_data, other.m_data, other.m_size * sizeof(T));
             else
             {
@@ -151,8 +151,8 @@ namespace neo
         {
             VERIFY(new_size > 0);
             T* new_buffer = new T[new_size];
-            if constexpr(IsTriviallyCopyable<T>)
-                __builtin_memcpy(new_buffer, m_data, m_size*sizeof(T));
+            if constexpr (IsTriviallyCopyable<T>)
+                __builtin_memcpy(new_buffer, m_data, m_size * sizeof(T));
             else
             {
                 for (size_t i = 0; i < min(m_size, new_size); i++)
