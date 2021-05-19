@@ -78,8 +78,8 @@ namespace neo
 
             delete[] m_buffer;
             m_buffer = other.m_buffer;
-            other.m_buffer = nullptr;
             m_length = other.m_length;
+            other.m_buffer = nullptr;
             other.m_length = 0;
             return *this;
         }
@@ -117,6 +117,7 @@ namespace neo
         constexpr AsciiString(AsciiString&& other)
         {
             m_buffer = other.m_buffer;
+            m_length = other.m_length;
             other.m_buffer = nullptr;
             other.m_length = 0;
         }

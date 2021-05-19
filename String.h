@@ -62,6 +62,7 @@ namespace neo
             m_buffer = other.m_buffer;
             m_byte_length = other.m_length;
             other.m_length = 0;
+            other.m_buffer = nullptr;
         }
 
         constexpr String(const char* cstring)
