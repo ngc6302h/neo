@@ -19,6 +19,9 @@ Not yet. It's on a very early stage so everything is subject to change.
 ## Is it usable?
 Mostly, if you don't care about the usual API breaks.
 
+## How do I use neo?
+Just clone the repository and include the **neo** directory in your project. Then you can just #include <Vector.h>.
+
 ## What determines what is added to neo?
 Features are added on demand.
 
