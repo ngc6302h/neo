@@ -31,19 +31,19 @@ namespace neo
         constexpr StringView(const StringView& other) = default;
 
         constexpr StringView(const char* cstring) :
-            m_data(cstring), m_byte_length(__builtin_strlen(cstring))
+            m_view(cstring), m_byte_length(__builtin_strlen(cstring))
         {
         }
 
         constexpr StringView(const char* cstring, size_t byte_length) :
-            m_data(cstring), m_byte_length(min(byte_length, __builtin_strlen(cstring)))
+            m_view(cstring), m_byte_length(min(byte_length, __builtin_strlen(cstring)))
         {
         }
 
         constexpr StringView(StringView&& other) :
-            m_data(other.m_data), m_byte_length(other.m_byte_length)
+            m_view(other.m_view), m_byte_length(other.m_byte_length)
         {
-            other.m_data = nullptr;
+            other.m_view = nullptr;
             other.m_byte_length = 0;
         }
 
@@ -53,9 +53,9 @@ namespace neo
             if (*this == other)
                 return *this;
 
-            m_data = other.m_data;
+            m_view = other.m_view;
             m_byte_length = other.m_byte_length;
-            other.m_data = nullptr;
+            other.m_view = nullptr;
             other.m_byte_length = 0;
             return *this;
         }
@@ -79,7 +79,7 @@ namespace neo
 
         [[nodiscard]] constexpr bool is_empty() const
         {
-            return m_byte_length == 0 || m_data == nullptr;
+            return m_byte_length == 0 || m_view == nullptr;
         }
 
         [[nodiscard]] constexpr size_t byte_size() const
@@ -99,28 +99,28 @@ namespace neo
 
         [[nodiscard]] constexpr const StringViewBidIt begin() const
         {
-            return StringViewBidIt(m_data);
+            return StringViewBidIt(m_view);
         }
 
         [[nodiscard]] constexpr const StringViewBidIt cbegin() const
         {
-            return StringViewBidIt(m_data);
+            return StringViewBidIt(m_view);
         }
 
         [[nodiscard]] constexpr const StringViewBidIt end() const
         {
-            return StringViewBidIt(m_data + m_byte_length);
+            return StringViewBidIt(m_view + m_byte_length);
         }
 
         [[nodiscard]] constexpr const StringViewBidIt cend() const
         {
-            return StringViewBidIt(m_data + m_byte_length);
+            return StringViewBidIt(m_view + m_byte_length);
         }
 
         [[nodiscard]] constexpr StringView substring_view(StringViewBidIt start) const
         {
             VERIFY(start != cend());
-            return { start->data, static_cast<size_t>(m_data + m_byte_length - start->data) };
+            return { start->data, static_cast<size_t>(m_view + m_byte_length - start->data) };
         }
 
         [[nodiscard]] constexpr StringView substring_view(size_t index_codepoint_start) const
@@ -133,7 +133,7 @@ namespace neo
                 ;
             VERIFY(start != end);
 
-            return { start->data, static_cast<size_t>(m_data + m_byte_length - start->data) };
+            return { start->data, static_cast<size_t>(m_view + m_byte_length - start->data) };
         }
 
         [[nodiscard]] constexpr StringView substring_view(StringViewBidIt start, size_t codepoint_length) const
@@ -171,12 +171,12 @@ namespace neo
 
         [[nodiscard]] constexpr Span<const char> span() const
         {
-            return { m_data, m_byte_length };
+            return { m_view, m_byte_length };
         }
 
         [[nodiscard]] constexpr const char* non_null_terminated_buffer() const
         {
-            return m_data;
+            return m_view;
         }
 
         //Optional can't be constexpr yet so we return an iterator past the end if it isn't found

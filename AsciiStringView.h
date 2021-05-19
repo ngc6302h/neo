@@ -18,6 +18,7 @@
 #pragma once
 
 #include "Assert.h"
+#include "Span.h"
 #include "StringIterator.h"
 
 namespace neo
@@ -29,19 +30,19 @@ namespace neo
         constexpr AsciiStringView(const AsciiStringView& other) = default;
 
         constexpr AsciiStringView(const char* cstring) :
-            m_buffer(cstring), m_length(__builtin_strlen(cstring))
+            m_view(cstring), m_length(__builtin_strlen(cstring))
         {
         }
 
         constexpr AsciiStringView(const char* cstring, size_t byte_length) :
-            m_buffer(cstring), m_length(min(byte_length, __builtin_strlen(cstring)))
+            m_view(cstring), m_length(min(byte_length, __builtin_strlen(cstring)))
         {
         }
 
         constexpr AsciiStringView(AsciiStringView&& other) :
-            m_buffer(other.m_buffer), m_length(other.m_length)
+            m_view(other.m_view), m_length(other.m_length)
         {
-            other.m_buffer = nullptr;
+            other.m_view = nullptr;
             other.m_length = 0;
         }
 
@@ -51,9 +52,9 @@ namespace neo
             if (*this == other)
                 return *this;
 
-            m_buffer = other.m_buffer;
+            m_view = other.m_view;
             m_length = other.m_length;
-            other.m_buffer = nullptr;
+            other.m_view = nullptr;
             other.m_length = 0;
             return *this;
         }
@@ -77,7 +78,7 @@ namespace neo
 
         [[nodiscard]] constexpr bool is_empty() const
         {
-            return m_length == 0 || m_buffer == nullptr;
+            return m_length == 0 || m_view == nullptr;
         }
 
         [[nodiscard]] constexpr size_t length() const
@@ -92,62 +93,62 @@ namespace neo
 
         [[nodiscard]] constexpr const AsciiStringViewBidIt begin() const
         {
-            return AsciiStringViewBidIt(m_buffer);
+            return AsciiStringViewBidIt(m_view);
         }
 
         [[nodiscard]] constexpr const AsciiStringViewBidIt cbegin() const
         {
-            return AsciiStringViewBidIt(m_buffer);
+            return AsciiStringViewBidIt(m_view);
         }
 
         [[nodiscard]] constexpr const AsciiStringViewBidIt end() const
         {
-            return AsciiStringViewBidIt(m_buffer + m_length);
+            return AsciiStringViewBidIt(m_view + m_length);
         }
 
         [[nodiscard]] constexpr const AsciiStringViewBidIt cend() const
         {
-            return AsciiStringViewBidIt(m_buffer + m_length);
+            return AsciiStringViewBidIt(m_view + m_length);
         }
 
         [[nodiscard]] constexpr AsciiStringView substring_view(AsciiStringViewBidIt start) const
         {
             VERIFY(start != cend());
-            return { start->data, static_cast<size_t>(m_buffer + m_length - start->data) };
+            return { start->data, static_cast<size_t>(m_view + m_length - start->data) };
         }
 
         [[nodiscard]] constexpr AsciiStringView substring_view(size_t start) const
         {
             VERIFY(start < m_length);
-            return { m_buffer + start, m_length - start };
+            return { m_view + start, m_length - start };
         }
 
         [[nodiscard]] constexpr AsciiStringView substring_view(AsciiStringViewBidIt start, size_t length) const
         {
-            VERIFY(length < m_length - (size_t)(start->data - m_buffer));
+            VERIFY(length < m_length - (size_t)(start->data - m_view));
             return { start->data, length };
         }
 
         [[nodiscard]] constexpr AsciiStringView substring_view(size_t start, size_t length) const
         {
             VERIFY(length < m_length - start);
-            return { m_buffer + start, length };
+            return { m_view + start, length };
         }
 
         [[nodiscard]] constexpr Span<const char> span() const
         {
-            return { m_buffer, m_length };
+            return { m_view, m_length };
         }
 
         [[nodiscard]] constexpr const char* non_null_terminated_buffer() const
         {
-            return m_buffer;
+            return m_view;
         }
 
         [[nodiscard]] constexpr char operator[](size_t index) const
         {
             VERIFY(index < m_length);
-            return m_buffer[index];
+            return m_view[index];
         }
 
         //Optional can't be constexpr yet so we return an iterator past the end if it isn't found
