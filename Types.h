@@ -16,7 +16,6 @@
  */
 
 #pragma once
-#include "TypeTraits.h"
 #include "Util.h"
 
 using i8 = __INT8_TYPE__;

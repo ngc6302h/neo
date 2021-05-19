@@ -139,7 +139,7 @@ namespace neo
         {
             return *this->m_element;
         }
-    
+
         constexpr decltype(auto) operator->()
         {
             return &this->m_element;
@@ -246,7 +246,7 @@ namespace neo
         {
             return *this->m_element;
         }
-    
+
         constexpr decltype(auto) operator->()
         {
             return &this->m_element;
