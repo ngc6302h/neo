@@ -1,0 +1,6 @@
+add_executable(asciistring_construct asciistring_construct.cpp)
+add_test(AsciiString-Construct asciistring_construct)
+add_executable(asciistring_substring asciistring_substring.cpp)
+add_test(AsciiString-Substring asciistring_substring)
+add_executable(asciistring_query_methods asciistring_query_methods.cpp)
+add_test(AsciiString-Query-Methods asciistring_query_methods)
