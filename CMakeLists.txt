@@ -1,9 +1,11 @@
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.18)
 project(neo CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+include_directories(.)
 
 set(DCMAKE_CXX_FLAGS_RELEASE "-O3 -flto")
 set(DCMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -flto -DNDEBUG")
@@ -15,7 +17,6 @@ if(DEFINE_DEBUG)
     add_compile_definitions(DEBUG)
 endif()
 
-#just so that clion code analysis works we make a dummy target
-add_executable(neo Test.cpp AsciiString.h AsciiStringView.h Assert.h Hashmap.h IterableUtil.h Iterator.h New.h Optional.h
-        Queue.h SmartPtr.h Span.h Stack.h String.h StringIterator.h StringView.h Types.h TypeTraits.h Variant.h Vector.h)
-set_target_properties(neo PROPERTIES LINKER_LANGUAGE CXX)
+enable_testing()
+
+add_subdirectory(tests)
