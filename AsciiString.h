@@ -147,28 +147,33 @@ namespace neo
             return m_length;
         }
 
+        [[nodiscard]] constexpr bool is_empty() const
+        {
+            return m_length == 0 || m_buffer == nullptr;
+        }
+
         [[nodiscard]] constexpr char operator[](size_t index) const
         {
             VERIFY(index < length());
             return m_buffer[index];
         }
-    
+
         [[nodiscard]] constexpr AsciiStringView to_view() const
         {
             return { m_buffer, m_length };
         }
-    
+
         constexpr operator AsciiStringView() const
         {
             return { m_buffer, m_length };
         }
-    
+
         [[nodiscard]] constexpr AsciiString substring(AsciiStringBidIt start) const
         {
             VERIFY(start != cend());
             return { start->data, static_cast<size_t>(m_buffer + m_length - start->data) };
         }
-    
+
         [[nodiscard]] constexpr AsciiString substring(size_t start) const
         {
             VERIFY(start < m_length);
@@ -239,7 +244,7 @@ namespace neo
         {
             return { m_buffer, m_length };
         }
-    
+
         [[nodiscard]] constexpr char* null_terminated_characters() const
         {
             return m_buffer;
