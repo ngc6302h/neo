@@ -44,7 +44,6 @@ int main()
     }
     printf("\n%s\n", (char*)utf8string);
     printf("string contains %s=%s\n", "UTF-8", utf8string.contains("UTF-8").has_value() ? "yes" : "no");
-
     printf("%d\n", PackContains<String, bool, String, int>);
     printf("%d\n", IndexOfType<String, bool, String, int>);
     printf("%d\n", IndexOfType<TypeOfIndex<1, bool, String, int>, bool, String, int>);

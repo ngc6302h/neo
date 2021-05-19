@@ -16,7 +16,8 @@
  */
 
 #pragma once
-
+#include "Iterator.h"
+#include "Types.h"
 namespace neo
 {
     using Utf8Char = u32;
@@ -134,3 +135,8 @@ namespace neo
     using StringViewBidIt = BidirectionalIterator<const char*, StringIteratorContainer>;
 
 }
+using neo::AsciiStringBidIt;
+using neo::AsciiStringViewBidIt;
+using neo::StringBidIt;
+using neo::StringViewBidIt;
+using neo::Utf8Char;

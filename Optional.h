@@ -19,8 +19,8 @@
 
 #include "Assert.h"
 #include "Iterator.h"
-#include "Types.h"
 #include "New.h"
+#include "Types.h"
 
 namespace neo
 {
