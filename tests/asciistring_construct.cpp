@@ -21,12 +21,13 @@
 int main()
 {
     AsciiString a { "String A" };
-    TEST_EQUAL( __builtin_strcmp((char*)a, "String A"), 0);
+    TEST_EQUAL(__builtin_strcmp("Stri", (char*)AsciiString("String A", 4)), 0);
+    TEST_EQUAL(__builtin_strcmp((char*)a, "String A"), 0);
     AsciiString b = "String B"_as;
-    TEST_EQUAL( __builtin_strcmp((char*)b, "String B"), 0);
-    TEST_EQUAL( __builtin_strcmp((char*)AsciiString("String C"), "String C"), 0);
-    TEST_EQUAL( __builtin_strcmp((char*)AsciiString(""), ""), 0);
-    [[maybe_unused]] AsciiString c = move (b);
+    TEST_EQUAL(__builtin_strcmp((char*)b, "String B"), 0);
+    TEST_EQUAL(__builtin_strcmp((char*)AsciiString("String C"), "String C"), 0);
+    TEST_EQUAL(__builtin_strcmp((char*)AsciiString(""), ""), 0);
+    [[maybe_unused]] AsciiString c = move(b);
     TEST(!c.is_empty());
     TEST(b.is_empty());
     TEST_EQUAL(c.length(), AsciiString("String B").length());

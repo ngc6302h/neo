@@ -20,10 +20,10 @@
 
 int main()
 {
-    AsciiString a { "String A"};
+    AsciiString a { "String A" };
     AsciiString b = a.substring(0);
     TEST_EQUAL(a, b);
-    TEST_EQUAL(AsciiString {"tring A"}, a.substring(1));
+    TEST_EQUAL(AsciiString { "tring A" }, a.substring(1));
     TEST_EQUAL(b.substring(b.length()), ""_as);
     TEST_EQUAL(b.substring(b.length(), 0), ""_as);
     TEST_EQUAL(b.substring(b.cbegin()), b);
