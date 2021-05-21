@@ -43,6 +43,7 @@ namespace neo
         constexpr String(String&& other)
         {
             m_buffer = other.m_buffer;
+            m_byte_length = other.m_byte_length;
             other.m_buffer = nullptr;
             other.m_byte_length = 0;
         }
@@ -69,8 +70,6 @@ namespace neo
         {
             size_t length = __builtin_strlen(cstring);
 
-            VERIFY(length != 0);
-
             m_buffer = new char[length + 1];
             m_buffer[length] = 0;
             m_byte_length = length;
@@ -80,7 +79,6 @@ namespace neo
         constexpr String(const char* cstring, size_t length)
         {
             size_t size = length;
-            VERIFY(size != 0);
 
             m_buffer = new char[size + 1];
             m_buffer[size] = 0;
@@ -196,52 +194,44 @@ namespace neo
 
         [[nodiscard]] constexpr String substring(StringBidIt start) const
         {
-            VERIFY(start != cend());
             return { start->data, static_cast<size_t>(m_buffer + m_byte_length - start->data) };
         }
 
         [[nodiscard]] constexpr String substring(size_t index_codepoint_start) const
         {
-            VERIFY(index_codepoint_start < m_byte_length);
+            VERIFY(index_codepoint_start <= m_byte_length);
 
             auto start = cbegin();
             auto end = cend();
             while (index_codepoint_start-- && start++ != end)
                 ;
-            VERIFY(start != end);
 
             return { start->data, static_cast<size_t>(m_buffer + m_byte_length - start->data) };
         }
 
         [[nodiscard]] constexpr String substring(StringBidIt start, size_t codepoint_length) const
         {
-            VERIFY(codepoint_length < m_byte_length);
-            VERIFY(codepoint_length != 0);
+            VERIFY(codepoint_length <= m_byte_length);
             auto last = start;
             auto end = cend();
             while (codepoint_length-- && last++ != end)
                 ;
-            VERIFY(last != end);
 
             return { start->data, static_cast<size_t>(last->data - start->data) };
         }
 
         [[nodiscard]] constexpr String substring(size_t codepoint_start, size_t codepoint_length) const
         {
-            VERIFY(codepoint_length < m_byte_length);
-            VERIFY(codepoint_length != 0);
+            VERIFY(codepoint_length <= m_byte_length);
             auto start = cbegin();
             auto end = cend();
 
-            //if (codepoint_start != 0)
             while (codepoint_start-- && start++ != end)
                 ;
-            VERIFY(start != end);
 
             auto last = start;
             while (codepoint_length-- && last++ != end)
                 ;
-            VERIFY(last != end);
 
             return { start->data, static_cast<size_t>(last->data - start->data) };
         }
@@ -260,17 +250,6 @@ namespace neo
                 return false;
 
             return __builtin_memcmp(m_byte_length - other.m_byte_length + m_buffer, other.m_buffer, other.m_byte_length) == 0;
-
-            for (auto other_char = other.cend(); other_char != other.cbegin(); other_char--)
-            {
-                for (auto my_char = cend(); my_char != begin(); my_char--)
-                {
-                    if (my_char != other_char)
-                        return false;
-                    other_char--;
-                }
-            }
-            return true;
         }
 
         [[nodiscard]] constexpr Optional<StringBidIt> contains(const String& other) const
@@ -280,23 +259,6 @@ namespace neo
 
             char* hit = __builtin_strstr(m_buffer, other.m_buffer);
             return hit != nullptr ? StringBidIt(hit) : Optional<StringBidIt>();
-            auto end = cend();
-            for (auto my_char = cbegin(); my_char != end; my_char++)
-            {
-                bool found = true;
-                for (auto other_char : other)
-                {
-                    if (*my_char != other_char)
-                    {
-                        found = false;
-                        break;
-                    }
-                    my_char++;
-                }
-                if (found)
-                    return { my_char };
-            }
-            return {};
         }
 
         [[nodiscard]] constexpr Span<char> span()
