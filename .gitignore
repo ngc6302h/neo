@@ -1,3 +1,5 @@
 cmake-build-*/
+Debug/
+Release/
 .idea/
 c/
