@@ -47,7 +47,7 @@ int main()
     TEST_EQUAL("abb"_s <=> "abc"_s, -1);
     TEST_EQUAL("abd"_s <=> "abc"_s, 1);
     TEST_EQUAL("ab"_s <=> "abc"_s, -1);
-    TEST_EQUAL("ac"_s <=> "abc"_s, 1);
+    TEST_EQUAL("ac"_s <=> "abc"_s, -1);
     TEST_EQUAL(""_s <=> "abc"_s, -1);
     return 0;
 }
