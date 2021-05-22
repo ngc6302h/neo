@@ -103,6 +103,11 @@ namespace neo
 
         [[nodiscard]] constexpr int operator<=>(const AsciiString& other) const
         {
+            if (m_length < other.m_length)
+                return -1;
+            else if (m_length > other.m_length)
+                return 1;
+            
             return clamp(-1, 1, __builtin_memcmp(m_buffer, other.m_buffer, min(m_length, other.m_length) + 1));
         }
 
