@@ -73,6 +73,11 @@ namespace neo
 
         [[nodiscard]] constexpr int operator<=>(const AsciiStringView& other) const
         {
+            if (m_length < other.m_length)
+                return -1;
+            else if (m_length > other.m_length)
+                return 1;
+            
             return clamp(-1, 1, __builtin_memcmp(m_view, other.m_view, min(m_length, other.m_length)));
         }
 
@@ -113,25 +118,25 @@ namespace neo
 
         [[nodiscard]] constexpr AsciiStringView substring_view(AsciiStringViewBidIt start) const
         {
-            VERIFY(start != cend());
+            //VERIFY(start != cend());
             return { start->data, static_cast<size_t>(m_view + m_length - start->data) };
         }
 
         [[nodiscard]] constexpr AsciiStringView substring_view(size_t start) const
         {
-            VERIFY(start < m_length);
+            VERIFY(start <= m_length);
             return { m_view + start, m_length - start };
         }
 
         [[nodiscard]] constexpr AsciiStringView substring_view(AsciiStringViewBidIt start, size_t length) const
         {
-            VERIFY(length < m_length - (size_t)(start->data - m_view));
+            VERIFY(length <= m_length - (size_t)(start->data - m_view));
             return { start->data, length };
         }
 
         [[nodiscard]] constexpr AsciiStringView substring_view(size_t start, size_t length) const
         {
-            VERIFY(length < m_length - start);
+            VERIFY(length <= m_length - start);
             return { m_view + start, length };
         }
 
