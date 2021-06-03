@@ -77,7 +77,7 @@ namespace neo
                 return -1;
             else if (m_length > other.m_length)
                 return 1;
-            
+
             return clamp(-1, 1, __builtin_memcmp(m_view, other.m_view, min(m_length, other.m_length)));
         }
 
