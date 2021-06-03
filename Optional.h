@@ -33,13 +33,13 @@ namespace neo
         constexpr Optional(const T& other) :
             m_has_value(true)
         {
-            new (&m_value) T(other);
+            new (&m_storage) T(other);
         }
 
         constexpr Optional(T&& other) :
             m_has_value(true)
         {
-            new (&m_value) T(move(other));
+            new (&m_storage) T(move(other));
         }
 
         constexpr Optional(Optional&& other) :
@@ -47,7 +47,7 @@ namespace neo
         {
             if (other.has_value())
             {
-                new (&m_value) Optional(other.release_value());
+                new (&m_storage) Optional(other.release_value());
                 other.m_has_value = false;
             }
         }
@@ -60,7 +60,7 @@ namespace neo
                 m_has_value = other.m_has_value;
                 if (other.has_value())
                 {
-                    new (&m_value) T(other.release_value());
+                    new (&m_storage) T(other.release_value());
                 }
             }
             return *this;
@@ -74,7 +74,7 @@ namespace neo
                 m_has_value = other.m_has_value;
                 if (other.has_value())
                 {
-                    new (&m_value) T(other.release_value());
+                    new (&m_storage) T(other.release_value());
                     other.m_has_value = false;
                 }
             }
@@ -100,13 +100,13 @@ namespace neo
         [[nodiscard]] constexpr T& value()
         {
             VERIFY(has_value());
-            return *reinterpret_cast<T*>(&m_value);
+            return *reinterpret_cast<T*>(&m_storage);
         }
 
         [[nodiscard]] constexpr T release_value()
         {
             VERIFY(has_value());
-            return *reinterpret_cast<T*>(&m_value);
+            return *reinterpret_cast<T*>(&m_storage);
         }
 
         [[nodiscard]] T value_or(const T& fallback)
@@ -126,7 +126,7 @@ namespace neo
         }
 
     private:
-        u8 m_value[sizeof(T)] { 0 };
+        u8 m_storage[sizeof(T)] {0 };
         bool m_has_value { false };
     };
 
