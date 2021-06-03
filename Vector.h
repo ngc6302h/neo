@@ -18,6 +18,8 @@
 #pragma once
 #include "Assert.h"
 #include "Span.h"
+#include "TypeTraits.h"
+#include "Iterator.h"
 #include "Types.h"
 
 namespace neo
@@ -49,7 +51,7 @@ namespace neo
         }
 
         constexpr Vector(const Vector& other) :
-            m_size(other.m_size), m_capacity(other.m_capacity)
+            m_capacity(other.m_capacity), m_size(other.m_size)
         {
             m_data = new T[other.m_capacity];
             if constexpr (IsTriviallyCopyable<T>)
