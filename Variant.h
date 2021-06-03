@@ -34,6 +34,19 @@ namespace neo
     public:
         static constexpr size_t TYPE_COUNT = sizeof...(Types);
 
+        template<typename T, typename... TRemaining>
+        void DestroyAtIndex(size_t i)
+        {
+            if (i == 0)
+                ((T*)&this->m_storage)->~T();
+            else
+                DestroyAtIndex<TRemaining...>(i - 1);
+        }
+
+        ~Variant()
+        {
+        }
+
         template<typename T, typename = EnableIf<PackContains<T, Types...>>>
         explicit constexpr Variant(const T& other)
         {

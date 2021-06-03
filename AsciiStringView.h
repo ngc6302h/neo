@@ -28,6 +28,7 @@ namespace neo
     public:
         constexpr AsciiStringView() = default;
         constexpr AsciiStringView(const AsciiStringView& other) = default;
+        constexpr ~AsciiStringView() = default;
 
         constexpr AsciiStringView(const char* cstring) :
             m_view(cstring), m_length(__builtin_strlen(cstring))
