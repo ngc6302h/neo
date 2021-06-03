@@ -294,6 +294,7 @@ namespace neo
         constexpr BidirectionalIterator& operator=(BidirectionalIterator&& other)
         {
             this->m_element = other.m_element;
+            return *this;
         }
 
         constexpr bool operator!=(const BidirectionalIterator& other)
