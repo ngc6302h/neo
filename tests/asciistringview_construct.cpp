@@ -27,7 +27,7 @@ int main()
     TEST_EQUAL(__builtin_strcmp("This is another constexpr string", c.non_null_terminated_buffer()), 0);
     constexpr auto d = "This is yet another way to construct another constexpr string"_asv;
     TEST_EQUAL(__builtin_strcmp("This is yet another way to construct another constexpr string", d.non_null_terminated_buffer()), 0);
-    constexpr auto e =  d;
+    constexpr auto e = d;
     TEST_EQUAL(__builtin_strcmp(d.non_null_terminated_buffer(), e.non_null_terminated_buffer()), 0);
     constexpr auto f = move(d);
     TEST_EQUAL(__builtin_strcmp("This is yet another way to construct another constexpr string", f.non_null_terminated_buffer()), 0);

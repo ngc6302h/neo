@@ -17,9 +17,9 @@
 
 #pragma once
 #include "Assert.h"
+#include "Iterator.h"
 #include "Span.h"
 #include "TypeTraits.h"
-#include "Iterator.h"
 #include "Types.h"
 
 namespace neo
