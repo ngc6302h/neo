@@ -31,6 +31,11 @@ namespace neo
     {
     public:
         constexpr String() = default;
+        constexpr ~String()
+        {
+            delete m_buffer;
+        }
+
         constexpr String(const String& other) :
             m_byte_length(other.m_byte_length)
         {

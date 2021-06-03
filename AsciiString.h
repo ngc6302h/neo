@@ -34,6 +34,11 @@ namespace neo
         friend String;
 
     public:
+        constexpr ~AsciiString()
+        {
+            delete m_buffer;
+        }
+
         explicit constexpr AsciiString() = default;
 
         constexpr AsciiString(const char* cstring)

@@ -29,6 +29,7 @@ namespace neo
     public:
         constexpr StringView() = default;
         constexpr StringView(const StringView& other) = default;
+        constexpr ~StringView() = default;
 
         constexpr StringView(const char* cstring) :
             m_view(cstring), m_byte_length(__builtin_strlen(cstring))

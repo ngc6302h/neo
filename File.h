@@ -47,7 +47,7 @@ namespace neo
             if (m_is_open)
                 fclose(m_handle);
         }
-        
+
         File(File&& other) :
             m_handle(other.m_handle), m_is_open(other.m_is_open)
         {

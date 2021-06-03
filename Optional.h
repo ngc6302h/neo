@@ -30,6 +30,12 @@ namespace neo
     public:
         constexpr Optional() = default;
 
+        constexpr ~Optional()
+        {
+            if (m_has_value)
+                ((T*)(&m_storage))->~T();
+        }
+
         constexpr Optional(const T& other) :
             m_has_value(true)
         {
@@ -126,7 +132,7 @@ namespace neo
         }
 
     private:
-        u8 m_storage[sizeof(T)] {0 };
+        u8 m_storage[sizeof(T)] { 0 };
         bool m_has_value { false };
     };
 

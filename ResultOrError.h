@@ -27,6 +27,15 @@ namespace neo
     {
     public:
         ResultOrError() = delete;
+
+        ~ResultOrError()
+        {
+            if (m_has_error)
+                ((TError*)&m_storage)->~TError();
+            else
+                ((TResult*)&m_storage)->~TResult();
+        }
+
         ResultOrError& operator=(ResultOrError&& other) = delete;
 
         constexpr ResultOrError& operator=(const ResultOrError& other)
