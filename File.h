@@ -120,6 +120,21 @@ namespace neo
             return buffer;
         }
 
+        [[nodiscard]] static ResultOrError<Vector<u8>, Error> read_all(const StringView& path)
+        {
+            auto file_or_error = open(path, "r");
+            if (file_or_error.has_error())
+                return (Error)errno;
+            auto size_or_error = file_or_error.result().size();
+            if (size_or_error.has_error())
+                return (Error)errno;
+            Vector<u8> buffer(size_or_error.result(), true);
+            auto bytes_read_or_error = file_or_error.result().read(buffer.span(), buffer.size());
+            if (bytes_read_or_error.has_error())
+                return (Error)errno;
+            return move(buffer);
+        }
+
         [[nodiscard]] ResultOrError<u8, Error> read_byte()
         {
             if (!m_is_open)
