@@ -116,6 +116,7 @@ namespace neo
             auto maybe_error = file.close();
             if (maybe_error.has_value())
                 return maybe_error.value();
+            buffer.resize(result_or_error.result());
             return buffer;
         }
 
