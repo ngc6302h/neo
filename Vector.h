@@ -152,6 +152,12 @@ namespace neo
         constexpr void resize(size_t new_size)
         {
             VERIFY(new_size > 0);
+            if (new_size <= m_size)
+            {
+                m_size = new_size;
+                return;
+            }
+
             T* new_buffer = new T[new_size];
             if constexpr (IsTriviallyCopyable<T>)
                 __builtin_memcpy(new_buffer, m_data, m_size * sizeof(T));
