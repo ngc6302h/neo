@@ -207,6 +207,25 @@ namespace neo
             return ferror(m_handle);
         }
 
+        [[nodiscard]] static ResultOrError<long, Error> size(const StringView& path)
+        {
+            auto* handle = fopen(path.non_null_terminated_buffer(), "r");
+            auto result = fseek(handle, 0, SEEK_END);
+            if (result == -1)
+            {
+                fclose(handle);
+                return (Error)errno;
+            }
+            auto size = ftell(handle);
+            if (size == -1)
+            {
+                fclose(handle);
+                return (Error)errno;
+            }
+            fclose(handle);
+            return size;
+        }
+
         [[nodiscard]] ResultOrError<long, Error> size() const
         {
             auto current_pos = ftell(m_handle);
