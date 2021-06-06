@@ -24,6 +24,7 @@
 #include "StringIterator.h"
 #include "StringView.h"
 #include "Types.h"
+#include "Vector.h"
 
 namespace neo
 {
@@ -244,6 +245,48 @@ namespace neo
                 ;
 
             return { start->data, static_cast<size_t>(last->data - start->data) };
+        }
+
+        [[nodiscard]] Vector<String> split(Utf8Char by) const
+        {
+            Vector<String> strings;
+            auto _begin = begin();
+            auto current = _begin;
+            auto _end = end();
+            do
+            {
+                ++current;
+                if (*current == by)
+                {
+                    strings.construct(_begin->data, current->data - _begin->data);
+                    _begin = ++current;
+                }
+            } while (current != _end);
+            if (_begin != _end)
+                strings.construct(_begin->data, current->data - _begin->data);
+            return strings;
+        }
+
+        [[nodiscard]] Vector<String> split(const StringView& by) const
+        {
+            Vector<String> strings;
+            auto _begin = begin();
+            auto current = _begin;
+            auto _end = end();
+            do
+            {
+                ++current;
+                if (StringView(current->data, min(by.byte_size(), (size_t)(_end->data - current->data))).starts_with(by))
+                {
+                    strings.construct(_begin->data, current->data - _begin->data);
+                    for (auto to_skip = by.length(); to_skip > 0; to_skip--)
+                        ++current;
+                    _begin = current;
+                }
+            } while (current != _end);
+            if (_begin != _end)
+                strings.construct(_begin->data, current->data - _begin->data);
+            return strings;
         }
 
         [[nodiscard]] constexpr bool starts_with(const String& other) const
