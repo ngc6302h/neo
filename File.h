@@ -132,7 +132,7 @@ namespace neo
             auto bytes_read_or_error = file_or_error.result().read(buffer.span(), buffer.size());
             if (bytes_read_or_error.has_error())
                 return (Error)errno;
-            return move(buffer);
+            return buffer;
         }
 
         [[nodiscard]] ResultOrError<u8, Error> read_byte()
