@@ -269,6 +269,7 @@ namespace neo
 
         [[nodiscard]] Vector<String> split(const StringView& by) const
         {
+            VERIFY(!by.is_empty());
             Vector<String> strings;
             auto _begin = begin();
             auto current = _begin;
