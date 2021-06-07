@@ -227,6 +227,7 @@ namespace neo
 
         [[nodiscard]] Vector<AsciiString> split(const AsciiStringView& by) const
         {
+            VERIFY(!by.is_empty());
             Vector<AsciiString> strings;
             auto _begin = begin();
             auto current = _begin;

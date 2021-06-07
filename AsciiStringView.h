@@ -164,6 +164,7 @@ namespace neo
 
         [[nodiscard]] Vector<AsciiStringView> split(const AsciiStringView& by) const
         {
+            VERIFY(!by.is_empty());
             Vector<AsciiStringView> strings;
             auto _begin = begin();
             auto current = _begin;
