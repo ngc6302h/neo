@@ -20,139 +20,139 @@
 namespace neo
 {
     template<typename T>
-    concept InequalityComparable =
-    requires(T t) {
+    concept InequalityComparable = requires(T t)
+    {
         t != t;
     };
-    
+
     template<typename T>
-    concept EqualityComparable =
-    requires(T t) {
+    concept EqualityComparable = requires(T t)
+    {
         t == t;
     };
-    
+
     template<typename T>
-    concept ThreeWayComparable =
-    requires(T t) {
+    concept ThreeWayComparable = requires(T t)
+    {
         t <=> t;
     };
-    
+
     template<typename T>
-    concept GreaterThanComparable =
-    requires(T t) {
+    concept GreaterThanComparable = requires(T t)
+    {
         t > t;
     };
-    
+
     template<typename T>
-    concept GreaterOrEqualThanComparable =
-    requires(T t) {
+    concept GreaterOrEqualThanComparable = requires(T t)
+    {
         t >= t;
     };
-    
+
     template<typename T>
-    concept LessThanComparable =
-    requires(T t) {
+    concept LessThanComparable = requires(T t)
+    {
         t < t;
     };
-    
+
     template<typename T>
-    concept LessOrEqualThanComparable =
-    requires(T t) {
+    concept LessOrEqualThanComparable = requires(T t)
+    {
         t <= t;
     };
-    
+
     template<typename T>
-    concept PrefixIncrementable =
-    requires(T t) {
+    concept PrefixIncrementable = requires(T t)
+    {
         ++t;
     };
-    
+
     template<typename T>
-    concept PrefixDecrementable =
-    requires(T t) {
+    concept PrefixDecrementable = requires(T t)
+    {
         --t;
     };
-    
+
     template<typename T>
-    concept PostfixIncrementable =
-    requires(T t) {
+    concept PostfixIncrementable = requires(T t)
+    {
         t++;
     };
-    
+
     template<typename T>
-    concept PostfixDecrementable =
-    requires(T t) {
+    concept PostfixDecrementable = requires(T t)
+    {
         t--;
     };
-    
+
     template<typename T>
     concept Incrementable = PrefixIncrementable<T> && PostfixIncrementable<T>;
-    
+
     template<typename T>
     concept Decrementable = PrefixDecrementable<T> && PostfixDecrementable<T>;
-    
+
     template<typename T>
-    concept Addable =
-    requires(T t) {
+    concept Addable = requires(T t)
+    {
         t + t;
     };
-    
+
     template<typename T>
-    concept Subtractable =
-    requires(T t) {
+    concept Subtractable = requires(T t)
+    {
         t - t;
     };
     template<typename T>
-    concept Multiplicable =
-    requires(T t) {
-        t * t;
+    concept Multiplicable = requires(T t)
+    {
+        t* t;
     };
-    
+
     template<typename T>
-    concept Divisible =
-    requires(T t) {
+    concept Divisible = requires(T t)
+    {
         t / t;
     };
     template<typename T>
-    concept Dereferenceable =
-    requires(T t) {
+    concept Dereferenceable = requires(T t)
+    {
         *t;
     };
-    
+
     template<typename T>
-    concept Indexable =
-    requires(T t) {
+    concept Indexable = requires(T t)
+    {
         t[0];
     };
-    
+
     template<typename T>
-    concept Iterable =
-    requires(T t) {
-       t.begin();
-       t.end();
+    concept Iterable = requires(T t)
+    {
+        t.begin();
+        t.end();
     };
-    
+
     template<typename T>
-    concept CopyConstructable =
-    requires(const T& t) {
+    concept CopyConstructable = requires(const T& t)
+    {
         T(t);
     };
-    
+
     template<typename T>
-    concept CopyAssignable =
-    requires(T t, const T& u) {
+    concept CopyAssignable = requires(T t, const T& u)
+    {
         t = u;
     };
-    
+
     template<typename T>
-    concept MoveConstructable =
-    requires(T t, T& u) {
-         T(static_cast<T&&>(u));
+    concept MoveConstructable = requires(T t, T& u)
+    {
+        T(static_cast<T&&>(u));
     };
-    
+
     template<typename T>
-    concept MoveAssignable =
-    requires(T t, T& u) {
+    concept MoveAssignable = requires(T t, T& u)
+    {
         t = static_cast<T&&>(u);
     };
 }
