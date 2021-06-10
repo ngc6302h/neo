@@ -18,12 +18,15 @@
 #pragma once
 
 #include "TypeTraits.h"
+#include "Concepts.h"
 
 namespace neo
 {
-    template<typename T, typename TConstIter>
-    constexpr Iter find(TConstIter begin, TConstIter end, const T& element)
+    template<Iterable TContainer, typename T>
+    constexpr auto find(TContainer where, const T& element)
     {
+        auto begin = where.begin();
+        auto end = where.end();
         do
         {
             if (*begin == element)
@@ -31,26 +34,29 @@ namespace neo
         } while (begin++ != end);
     }
 
-    template<typename TConstIter, typename T>
-    constexpr bool contains(TConstIter begin, TConstIter end, const T& element)
+    template<Iterable TContainer, typename T>
+    constexpr bool contains(TContainer where, const T& what)
     {
-        do
+        for (const auto& x : where)
         {
-            if (*begin == element)
+            if (what == x)
+            {
                 return true;
-        } while (begin++ != end);
+            }
+        }
+        return false;
     }
 
-    template<typename TIter, typename TSortingFunc>
-    constexpr bool sort(TIter begin, TIter end, TSortingFunc predicate) //TODO: Conceptify this
+    template<Iterable TContainer, typename TSortingFunc>
+    constexpr bool sort(TContainer what, TSortingFunc predicate) requires Callable<TSortingFunc, decltype(declval<TContainer>()[0]), decltype(declval<TContainer>()[0])>
     {
-        for (TIter x = begin; x != end; x++)
+        for (auto& x : what)
         {
-            for (TIter y = begin; y != end; y++)
+            for (auto& y : what)
             {
-                if (predicate(*x, *y))
+                if (predicate(x, y))
                 {
-                    swap(*x, *y);
+                    swap(x, y);
                 }
             }
         }
