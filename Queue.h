@@ -99,6 +99,11 @@ namespace neo
             return data != other.data;
         }
 
+        constexpr const T& operator*() const
+        {
+            return *data;
+        }
+
         constexpr T& operator*()
         {
             return *data;
@@ -146,13 +151,25 @@ namespace neo
             m_size++;
         }
 
-        [[nodiscard]] constexpr T& peek_back() const
+        [[nodiscard]] constexpr const T& peek_back() const
         {
             VERIFY(m_size > 0);
             return *m_last->data;
         }
 
-        [[nodiscard]] constexpr T& peek_front() const
+        [[nodiscard]] constexpr T& peek_back()
+        {
+            VERIFY(m_size > 0);
+            return *m_last->data;
+        }
+
+        [[nodiscard]] constexpr const T& peek_front() const
+        {
+            VERIFY(m_size > 0);
+            return *m_first->data;
+        }
+
+        [[nodiscard]] constexpr T& peek_front()
         {
             VERIFY(m_size > 0);
             return *m_first->data;
@@ -182,12 +199,22 @@ namespace neo
             return move(value);
         }
 
-        [[nodiscard]] constexpr QueueNodeView<T> first() const
+        [[nodiscard]] constexpr const QueueNodeView<T> first() const
+        {
+            return *reinterpret_cast<QueueNodeView<T>*>(m_first);
+        }
+
+        [[nodiscard]] constexpr QueueNodeView<T> first()
         {
             return *reinterpret_cast<QueueNodeView<T>*>(m_first);
         }
 
         [[nodiscard]] constexpr QueueNodeView<T> last()
+        {
+            return *reinterpret_cast<QueueNodeView<T>*>(m_last);
+        }
+
+        [[nodiscard]] constexpr const QueueNodeView<T> last() const
         {
             return *reinterpret_cast<QueueNodeView<T>*>(m_last);
         }
