@@ -31,6 +31,7 @@ namespace neo
 
     public:
         using BidIt = BidirectionalIterator<T*>;
+        using ConstBidIt = BidirectionalIterator<const T*>;
         constexpr Vector() :
             m_capacity(DEFAULT_SIZE)
         {
@@ -186,13 +187,53 @@ namespace neo
             }
         }
 
-        [[nodiscard]] constexpr T& operator[](size_t index) const
+        [[nodiscard]] constexpr T& at(size_t index)
+        {
+            VERIFY(index < m_size);
+            return m_data[index];
+        }
+        [[nodiscard]] constexpr const T& at(size_t index) const
         {
             VERIFY(index < m_size);
             return m_data[index];
         }
 
-        [[nodiscard]] constexpr T* data() const
+        [[nodiscard]] constexpr const T& first() const
+        {
+            return at(0);
+        }
+
+        [[nodiscard]] constexpr const T& last() const
+        {
+            return at(m_size - 1);
+        }
+
+        [[nodiscard]] constexpr T& first()
+        {
+            return at(0);
+        }
+
+        [[nodiscard]] constexpr T& last()
+        {
+            return at(m_size - 1);
+        }
+
+        [[nodiscard]] constexpr T& operator[](size_t index)
+        {
+            return at(index);
+        }
+
+        [[nodiscard]] constexpr const T& operator[](size_t index) const
+        {
+            return at(index);
+        }
+
+        [[nodiscard]] constexpr T* data()
+        {
+            return m_data;
+        }
+
+        [[nodiscard]] constexpr const T* data() const
         {
             return m_data;
         }
@@ -203,7 +244,12 @@ namespace neo
             resize(m_size);
         }
 
-        [[nodiscard]] constexpr Span<T> span() const
+        [[nodiscard]] constexpr Span<T> span()
+        {
+            return { m_data, m_size };
+        }
+
+        [[nodiscard]] constexpr Span<const T> span() const
         {
             return { m_data, m_size };
         }
@@ -213,9 +259,9 @@ namespace neo
             return { m_data, m_size };
         }
 
-        [[nodiscard]] constexpr const BidIt cbegin() const
+        [[nodiscard]] constexpr ConstBidIt begin() const
         {
-            return BidIt(m_data);
+            return ConstBidIt(m_data);
         }
 
         [[nodiscard]] constexpr BidIt begin()
@@ -223,7 +269,7 @@ namespace neo
             return BidIt(m_data);
         }
 
-        [[nodiscard]] constexpr const BidIt cend() const
+        [[nodiscard]] constexpr ConstBidIt end() const
         {
             return BidIt(m_data + m_size);
         }
