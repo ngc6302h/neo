@@ -320,6 +320,30 @@ namespace neo
             return hit != nullptr ? StringBidIt(hit) : Optional<StringBidIt>();
         }
 
+        [[nodiscard]] constexpr String trim_whitespace(TrimMode from_where) const
+        {
+            size_t length = m_byte_length;
+            if ((from_where & TrimMode::End) == TrimMode::End)
+            {
+                auto _end = end();
+                --_end;
+                while (isspace(*_end))
+                    --_end;
+                length -= _end->data - m_buffer;
+            }
+
+            const char* start = m_buffer;
+            if ((from_where & TrimMode::Start) == TrimMode::Start)
+            {
+                auto _start = begin();
+                while (isspace(*_start))
+                    ++_start;
+                length -= _start->data - m_buffer;
+                start = _start->data;
+            }
+            return String(start, length);
+        }
+
         [[nodiscard]] constexpr Span<char> span()
         {
             return { m_buffer, m_byte_length };

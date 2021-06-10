@@ -19,7 +19,9 @@
 #include "Assert.h"
 #include "Iterator.h"
 #include "Span.h"
+#include "StringCommon.h"
 #include "StringIterator.h"
+#include "Text.h"
 #include "Types.h"
 #include "Vector.h"
 
@@ -188,7 +190,9 @@ namespace neo
                 if (*current == by)
                 {
                     strings.construct(_begin->data, current->data - _begin->data);
-                    _begin = ++current;
+                    while (*current == by)
+                        ++current;
+                    _begin = current;
                 }
             } while (current != _end);
             if (_begin != _end)
@@ -209,14 +213,39 @@ namespace neo
                 if (StringView(current->data, min(by.byte_size(), (size_t)(_end->data - current->data))).starts_with(by))
                 {
                     strings.construct(_begin->data, current->data - _begin->data);
-                    for (auto to_skip = by.length(); to_skip > 0; to_skip--)
-                        ++current;
+                    do
+                    {
+                        for (auto to_skip = by.length(); to_skip > 0; to_skip--)
+                            ++current;
+                    } while (StringView(current->data, min(by.byte_size(), (size_t)(_end->data - current->data))).starts_with(by));
                     _begin = current;
                 }
             } while (current != _end);
             if (_begin != _end)
                 strings.construct(_begin->data, current->data - _begin->data);
             return strings;
+        }
+
+        [[nodiscard]] constexpr StringView trim_whitespace(TrimMode from_where) const
+        {
+            StringView copy = *this;
+            if ((from_where & TrimMode::End) == TrimMode::End)
+            {
+                auto _end = copy.end();
+                --_end;
+                while (isspace(*_end))
+                    --_end;
+                copy.m_byte_length = _end->data - m_view;
+            }
+
+            if ((from_where & TrimMode::Start) == TrimMode::Start)
+            {
+                auto start = copy.begin();
+                while (isspace(*start))
+                    ++start;
+                copy.m_view = start->data;
+            }
+            return copy;
         }
 
         [[nodiscard]] constexpr Span<const char> span() const
