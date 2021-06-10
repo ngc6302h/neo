@@ -17,6 +17,8 @@
 
 #pragma once
 #include "String.h"
+#include "StringCommon.h"
+#include "Text.h"
 
 namespace neo
 {
@@ -29,6 +31,11 @@ namespace neo
             m_string(new char[DEFAULT_CAPACITY]), m_current_offset(0), m_capacity(DEFAULT_CAPACITY)
         {
         }
+        
+        explicit StringBuilder(const StringView& string) : m_string(new char[DEFAULT_CAPACITY]), m_current_offset(string.byte_size()), m_capacity(string.byte_size())
+        {
+            __builtin_memcpy(m_string, string.non_null_terminated_buffer(), string.byte_size());
+        }
 
         ~StringBuilder()
         {
@@ -40,15 +47,34 @@ namespace neo
             return String(m_string, m_current_offset);
         }
 
-        void append(const String& string)
+        StringBuilder& append(const String& string)
         {
             if (m_current_offset + string.byte_size() < m_capacity)
                 resize(max(m_capacity, string.byte_size()) * 2);
             __builtin_memcpy(m_string + m_current_offset, string.null_terminated_characters(), string.byte_size());
             m_current_offset += string.byte_size();
+            return *this;
         }
-
-        void remove(const StringView& what)
+    
+        StringBuilder& append(const char* cstring)
+        {
+            size_t length = __builtin_strlen(cstring);
+            if (m_current_offset + length < m_capacity)
+                resize(max(m_capacity, length) * 2);
+            __builtin_memcpy(m_string+m_current_offset, cstring, length);
+            m_current_offset+= length;
+            return *this;
+        }
+        
+        StringBuilder& append(char ch)
+        {
+            if (m_current_offset + 1 < m_capacity)
+                resize(m_capacity*2);
+            m_string[m_current_offset++] = ch;
+            return *this;
+        }
+    
+        StringBuilder& remove(const StringView& what)
         {
             VERIFY(!what.is_empty());
             VERIFY(m_current_offset >= what.byte_size());
@@ -60,15 +86,16 @@ namespace neo
                     m_current_offset -= what.byte_size();
                 }
             }
+            return *this;
         }
-
-        void replace(const StringView& what, const StringView& with)
+    
+        StringBuilder& replace(const StringView& what, const StringView& with)
         {
             VERIFY(!what.is_empty());
             if (with.is_empty())
             {
                 remove(what);
-                return;
+                return *this;
             }
 
             VERIFY(m_current_offset >= what.byte_size());
@@ -86,7 +113,7 @@ namespace neo
                     else
                         i++;
                 }
-                return;
+                return *this;
             }
 
             Vector<size_t> hits;
@@ -102,7 +129,7 @@ namespace neo
             }
 
             if (hits.size() == 0)
-                return;
+                return *this;
 
             size_t new_size = max(m_current_offset - hits.size() * what.byte_size() + hits.size() * with.byte_size(), m_capacity);
             char* new_buffer = new char[new_size];
@@ -126,6 +153,26 @@ namespace neo
             m_string = new_buffer;
             m_current_offset = new_size;
             m_capacity = new_size;
+            return *this;
+        }
+    
+        StringBuilder& trim_whitespace(TrimMode from_where)
+        {
+            if ((from_where & TrimMode::End) == TrimMode::End)
+            {
+                auto end = --StringViewBidIt(m_string+m_current_offset);
+                while (isspace(*end)) --end;
+                m_current_offset = end->data - m_string;
+            }
+            
+            if ((from_where & TrimMode::Start) == TrimMode::Start)
+            {
+                auto start = StringViewBidIt(m_string);
+                while (isspace(*start)) ++start;
+                m_current_offset = m_string + m_current_offset - start->data+1;
+                __builtin_memcpy(m_string, start->data, m_current_offset);
+            }
+            return *this;
         }
 
         void clear()
