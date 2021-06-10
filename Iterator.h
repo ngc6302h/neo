@@ -135,9 +135,24 @@ namespace neo
             return this->m_element != other.m_element;
         }
 
+        constexpr decltype(auto) operator*()
+        {
+            return *this->m_element;
+        }
+
         constexpr decltype(auto) operator*() const
         {
             return *this->m_element;
+        }
+
+        constexpr decltype(auto) operator->()
+        {
+            return &this->m_element;
+        }
+
+        constexpr decltype(auto) operator->() const
+        {
+            return &this->m_element;
         }
 
         constexpr decltype(auto) operator->()
@@ -188,9 +203,24 @@ namespace neo
             this->m_element = other.m_element;
         }
 
+        constexpr decltype(auto) operator*()
+        {
+            return *this->m_element;
+        }
+
         constexpr decltype(auto) operator*() const
         {
             return *this->m_element;
+        }
+
+        constexpr decltype(auto) operator->()
+        {
+            return &this->m_element;
+        }
+
+        constexpr decltype(auto) operator->() const
+        {
+            return &this->m_element;
         }
 
         //To be implemented by the class using iterators
@@ -242,12 +272,22 @@ namespace neo
             return this->m_element != other.m_element;
         }
 
+        constexpr decltype(auto) operator*()
+        {
+            return *this->m_element;
+        }
+
         constexpr decltype(auto) operator*() const
         {
             return *this->m_element;
         }
 
         constexpr decltype(auto) operator->()
+        {
+            return &this->m_element;
+        }
+
+        constexpr decltype(auto) operator->() const
         {
             return &this->m_element;
         }
@@ -305,6 +345,16 @@ namespace neo
         constexpr decltype(auto) operator*()
         {
             return *this->m_element;
+        }
+
+        constexpr decltype(auto) operator*() const
+        {
+            return *this->m_element;
+        }
+
+        constexpr decltype(auto) operator->()
+        {
+            return &this->m_element;
         }
 
         constexpr decltype(auto) operator->() const
