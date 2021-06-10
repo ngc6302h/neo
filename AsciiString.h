@@ -22,7 +22,9 @@
 #include "Iterator.h"
 #include "Optional.h"
 #include "Span.h"
+#include "StringCommon.h"
 #include "StringIterator.h"
+#include "Text.h"
 #include "Types.h"
 #include "Vector.h"
 
@@ -217,7 +219,9 @@ namespace neo
                 if (*current == by)
                 {
                     strings.construct(_begin->data, current->data - _begin->data);
-                    _begin = ++current;
+                    while (*current == by)
+                        ++current;
+                    _begin = current;
                 }
             } while (current != _end);
             if (_begin != _end)
@@ -238,8 +242,11 @@ namespace neo
                 if (AsciiStringView(current->data, min(by.length(), (size_t)(_end->data - current->data))).starts_with(by))
                 {
                     strings.construct(_begin->data, current->data - _begin->data);
-                    for (auto to_skip = by.length(); to_skip > 0; to_skip--)
-                        ++current;
+                    do
+                    {
+                        for (auto to_skip = by.length(); to_skip > 0; to_skip--)
+                            ++current;
+                    } while (AsciiStringView(current->data, min(by.length(), (size_t)(_end->data - current->data))).starts_with(by));
                     _begin = current;
                 }
             } while (current != _end);
@@ -294,6 +301,24 @@ namespace neo
                     return { i };
             }
             return {};
+        }
+
+        [[nodiscard]] constexpr AsciiString trim_whitespace(TrimMode from_where) const
+        {
+            size_t length = m_length;
+            if ((from_where & TrimMode::End) == TrimMode::End)
+            {
+                while (length > 0 && isspace(m_buffer[length]))
+                    length--;
+            }
+
+            const char* start = m_buffer;
+            if ((from_where & TrimMode::Start) == TrimMode::Start)
+            {
+                while ((size_t)(start - m_buffer) < m_length && isspace(*start))
+                    ++start;
+            }
+            return AsciiString(start, length);
         }
 
         [[nodiscard]] constexpr Span<char> span()

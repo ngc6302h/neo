@@ -19,7 +19,9 @@
 
 #include "Assert.h"
 #include "Span.h"
+#include "StringCommon.h"
 #include "StringIterator.h"
+#include "Text.h"
 #include "Vector.h"
 
 namespace neo
@@ -154,7 +156,9 @@ namespace neo
                 if (*current == by)
                 {
                     strings.construct(_begin->data, current->data - _begin->data);
-                    _begin = ++current;
+                    while (*current == by)
+                        ++current;
+                    _begin = current;
                 }
             } while (current != _end);
             if (_begin != _end)
@@ -175,14 +179,35 @@ namespace neo
                 if (AsciiStringView(current->data, min(by.length(), (size_t)(_end->data - current->data))).starts_with(by))
                 {
                     strings.construct(_begin->data, current->data - _begin->data);
-                    for (auto to_skip = by.length(); to_skip > 0; to_skip--)
-                        ++current;
+                    do
+                    {
+                        for (auto to_skip = by.length(); to_skip > 0; to_skip--)
+                            ++current;
+                    } while (AsciiStringView(current->data, min(by.length(), (size_t)(_end->data - current->data))).starts_with(by));
                     _begin = current;
                 }
             } while (current != _end);
             if (_begin != _end)
                 strings.construct(_begin->data, current->data - _begin->data);
             return strings;
+        }
+
+        [[nodiscard]] constexpr AsciiStringView trim_whitespace(TrimMode from_where) const
+        {
+            size_t length = m_length;
+            if ((from_where & TrimMode::End) == TrimMode::End)
+            {
+                while (length > 0 && isspace(m_view[length]))
+                    length--;
+            }
+
+            const char* start = m_view;
+            if ((from_where & TrimMode::Start) == TrimMode::Start)
+            {
+                while ((size_t)(start - m_view) < m_length && isspace(*start))
+                    ++start;
+            }
+            return AsciiStringView(start, length);
         }
 
         [[nodiscard]] constexpr Span<const char> span() const
