@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "Concepts.h"
 #include "Types.h"
 
 namespace neo::detail
@@ -271,6 +272,16 @@ namespace neo
     template<typename T>
     constexpr bool IsFundamental = IsIntegral<T> || IsFloatingPoint<T> || IsNullptr<T>;
 #endif
+
+    namespace detail
+    {
+        template<typename T>
+        constexpr bool IsInequalityComparable() { return false; }
+        template<InequalityComparable T>
+        constexpr bool IsInequalityComparable() { return true; }
+    }
+    template<typename T>
+    constexpr bool IsInequalityComparable = detail::IsInequalityComparable<T>();
 }
 using ssize_t = neo::MakeSigned<size_t>;
 
