@@ -155,4 +155,10 @@ namespace neo
     {
         t = static_cast<T&&>(u);
     };
+    
+    template<typename TCallable, typename ...Args>
+    concept Callable = requires(TCallable f, Args... args)
+    {
+        t(args...);
+    };
 }
