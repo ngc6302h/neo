@@ -17,13 +17,19 @@
 
 #pragma once
 #include "Assert.h"
+#include "Iterator.h"
+#include "TypeTraits.h"
 #include "Types.h"
+
 namespace neo
 {
     template<typename T>
     class Span
     {
     public:
+        using BidIt = BidirectionalIterator<T*>;
+        using ConstBidIt = BidirectionalIterator<const T*>;
+
         constexpr Span() = default;
 
         constexpr Span(T* data, size_t size) :
@@ -67,10 +73,56 @@ namespace neo
             return { m_data, m_size };
         }
 
-        [[nodiscard]] constexpr T& operator[](size_t index) const
+        [[nodiscard]] constexpr T& operator[](size_t index)
         {
             VERIFY(index < m_size);
             return m_data[index];
+        }
+
+        [[nodiscard]] constexpr const T& operator[](size_t index) const
+        {
+            VERIFY(index < m_size);
+            return m_data[index];
+        }
+
+        [[nodiscard]] constexpr BidIt begin()
+        {
+            return BidIt(m_data);
+        }
+
+        [[nodiscard]] constexpr ConstBidIt begin() const
+        {
+            return BidIt(m_data);
+        }
+
+        [[nodiscard]] constexpr BidIt end()
+        {
+            return BidIt(m_data + m_size);
+        }
+
+        [[nodiscard]] constexpr ConstBidIt end() const
+        {
+            return BidIt(m_data + m_size);
+        }
+
+        template<typename = EnableIf<IsInequalityComparable<T>>>
+        [[nodiscard]] constexpr bool operator==(const Span other) const
+        {
+            if (m_size != other.m_size)
+                return false;
+
+            for (size_t i = 0; i < m_size; i++)
+            {
+                if (m_data[i] != other.m_data[i])
+                    return false;
+            }
+            return true;
+        }
+
+        template<typename = EnableIf<IsInequalityComparable<T>>>
+        [[nodiscard]] constexpr bool operator!=(const Span other) const
+        {
+            return !(*this == other);
         }
 
     private:
