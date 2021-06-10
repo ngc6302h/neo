@@ -92,7 +92,17 @@ namespace neo
             m_buckets[Hasher::hash(key) % m_bucket_count].append({ key, value });
         }
 
-        [[nodiscard]] constexpr Optional<ReferenceWrapper<TValue>> getref(const TKey& key) const
+        [[nodiscard]] constexpr const Optional<ReferenceWrapper<TValue>> get_ref(const TKey& key) const
+        {
+            size_t index = Hasher::hash(key) % m_bucket_count;
+            auto it = m_buckets[index].begin();
+            auto end = m_buckets[index].end();
+            while ((*it).key != key && it != end)
+                it++;
+            return it != end ? Optional<ReferenceWrapper<TValue>>(ref((*it).value)) : Optional<ReferenceWrapper<TValue>>();
+        }
+
+        [[nodiscard]] constexpr Optional<ReferenceWrapper<TValue>> get_ref(const TKey& key)
         {
             size_t index = Hasher::hash(key) % m_bucket_count;
             auto it = m_buckets[index].begin();
@@ -114,7 +124,7 @@ namespace neo
 
         [[nodiscard]] constexpr bool contains(const TKey& key) const
         {
-            return get(key).has_value();
+            return get_ref(key).has_value();
         }
 
     private:
