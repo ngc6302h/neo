@@ -98,12 +98,24 @@ namespace neo
             return value();
         }
 
-        [[nodiscard]] constexpr bool has_value()
+        constexpr explicit operator const T&() const
+        {
+            VERIFY(has_value());
+            return value();
+        }
+
+        [[nodiscard]] constexpr bool has_value() const
         {
             return m_has_value;
         }
 
         [[nodiscard]] constexpr T& value()
+        {
+            VERIFY(has_value());
+            return *reinterpret_cast<T*>(&m_storage);
+        }
+
+        [[nodiscard]] constexpr const T& value() const
         {
             VERIFY(has_value());
             return *reinterpret_cast<T*>(&m_storage);
