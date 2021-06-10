@@ -259,7 +259,9 @@ namespace neo
                 if (*current == by)
                 {
                     strings.construct(_begin->data, current->data - _begin->data);
-                    _begin = ++current;
+                    while (*current == by)
+                        ++current;
+                    _begin = current;
                 }
             } while (current != _end);
             if (_begin != _end)
@@ -280,8 +282,11 @@ namespace neo
                 if (StringView(current->data, min(by.byte_size(), (size_t)(_end->data - current->data))).starts_with(by))
                 {
                     strings.construct(_begin->data, current->data - _begin->data);
-                    for (auto to_skip = by.length(); to_skip > 0; to_skip--)
-                        ++current;
+                    do
+                    {
+                        for (auto to_skip = by.length(); to_skip > 0; to_skip--)
+                            ++current;
+                    } while (StringView(current->data, min(by.byte_size(), (size_t)(_end->data - current->data))).starts_with(by));
                     _begin = current;
                 }
             } while (current != _end);
