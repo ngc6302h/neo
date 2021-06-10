@@ -55,7 +55,12 @@ namespace neo
             delete m_data;
         }
 
-        [[nodiscard]] constexpr T* get() const
+        [[nodiscard]] constexpr const T* leak_ptr() const
+        {
+            return m_data;
+        }
+
+        [[nodiscard]] constexpr T* leak_ptr()
         {
             return m_data;
         }
@@ -72,7 +77,17 @@ namespace neo
             return *m_data;
         }
 
-        [[nodiscard]] constexpr T* operator->() const
+        [[nodiscard]] constexpr const T& operator*() const
+        {
+            return *m_data;
+        }
+
+        [[nodiscard]] constexpr T* operator->()
+        {
+            return m_data;
+        }
+
+        [[nodiscard]] constexpr const T* operator->() const
         {
             return m_data;
         }
@@ -171,9 +186,19 @@ namespace neo
             }
         }
 
-        [[nodiscard]] constexpr T* get() const
+        [[nodiscard]] constexpr const T* leak() const
         {
             return m_data;
+        }
+
+        [[nodiscard]] constexpr T* leak()
+        {
+            return m_data;
+        }
+
+        [[nodiscard]] constexpr const T& operator*() const
+        {
+            return *m_data;
         }
 
         [[nodiscard]] constexpr T& operator*()
@@ -181,7 +206,12 @@ namespace neo
             return *m_data;
         }
 
-        [[nodiscard]] constexpr T* operator->() const
+        [[nodiscard]] constexpr const T* operator->() const
+        {
+            return m_data;
+        }
+
+        [[nodiscard]] constexpr T* operator->()
         {
             return m_data;
         }
@@ -257,7 +287,13 @@ namespace neo
             }
         }
 
-        [[nodiscard]] constexpr T* get() const
+        [[nodiscard]] constexpr T* leak()
+        {
+            VERIFY(is_valid());
+            return m_data;
+        }
+
+        [[nodiscard]] constexpr const T* leak() const
         {
             VERIFY(is_valid());
             return m_data;
@@ -269,7 +305,19 @@ namespace neo
             return *m_data;
         }
 
-        [[nodiscard]] constexpr T* operator->() const
+        [[nodiscard]] constexpr const T& operator*() const
+        {
+            VERIFY(is_valid());
+            return *m_data;
+        }
+
+        [[nodiscard]] constexpr T* operator->()
+        {
+            VERIFY(is_valid());
+            return m_data;
+        }
+
+        [[nodiscard]] constexpr const T* operator->() const
         {
             VERIFY(is_valid());
             return m_data;
