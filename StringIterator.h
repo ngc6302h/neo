@@ -108,16 +108,18 @@ namespace neo
 
         constexpr StringIteratorContainer& operator--()
         {
-            while ((((*data) >> 6) & 3) == 2)
+            do
                 data--;
+            while ((((*data) >> 6) & 3) == 2);
             return *this;
         }
 
         constexpr StringIteratorContainer operator--(int)
         {
             auto prev = *this;
-            while ((((*data) >> 6) & 3) == 2)
+            do
                 data--;
+            while ((((*data) >> 6) & 3) == 2);
             return prev;
         }
 
