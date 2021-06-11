@@ -149,13 +149,8 @@ namespace neo
         {
             return &this->m_element;
         }
-
+    
         constexpr decltype(auto) operator->() const
-        {
-            return &this->m_element;
-        }
-
-        constexpr decltype(auto) operator->()
         {
             return &this->m_element;
         }
