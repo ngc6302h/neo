@@ -271,7 +271,7 @@ namespace neo
 
         [[nodiscard]] constexpr ConstBidIt end() const
         {
-            return BidIt(m_data + m_size);
+            return ConstBidIt(m_data + m_size);
         }
 
         [[nodiscard]] constexpr BidIt end()
