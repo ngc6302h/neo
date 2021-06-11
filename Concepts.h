@@ -162,3 +162,24 @@ namespace neo
         t(args...);
     };
 }
+using neo::InequalityComparable;
+using neo::EqualityComparable;
+using neo::ThreeWayComparable;
+using neo::GreaterThanComparable;
+using neo::GreaterOrEqualThanComparable;
+using neo::LessThanComparable;
+using neo::LessOrEqualThanComparable;
+using neo::Incrementable;
+using neo::Decrementable;
+using neo::Addable;
+using neo::Subtractable;
+using neo::Multiplicable;
+using neo::Divisible;
+using neo::Dereferenceable;
+using neo::Indexable;
+using neo::Iterable;
+using neo::CopyConstructable;
+using neo::CopyAssignable;
+using neo::MoveConstructable;
+using neo::MoveAssignable;
+using neo::Callable;
