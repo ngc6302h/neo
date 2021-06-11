@@ -276,6 +276,41 @@ namespace neo
     namespace detail
     {
         template<typename T>
+        struct decay_array
+        {
+            using type = T*;
+        };
+        
+        template<typename T>
+        struct decay_array<T[]>
+        {
+            using type = T*;
+        };
+    
+        template<typename T>
+        struct decay_array<const T[]>
+        {
+            using type = const T*;
+        };
+        
+        template<typename T, size_t N>
+        struct decay_array<T[N]>
+        {
+            using type = T*;
+        };
+    
+        template<typename T, size_t N>
+        struct decay_array<const T[N]>
+        {
+            using type = const T*;
+        };
+    }
+    template<typename T>
+    using DecayArray = typename detail::decay_array<T>::type;
+    
+    namespace detail
+    {
+        template<typename T>
         constexpr bool IsInequalityComparable() { return false; }
         template<InequalityComparable T>
         constexpr bool IsInequalityComparable() { return true; }
