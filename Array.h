@@ -27,8 +27,8 @@ namespace neo
     template<typename T, size_t Size>
     struct Array
     {
-        using BidIt = BidirectionalIterator<T*>;
-        using ConstBidIt = BidirectionalIterator<const T*>;
+        using BidIt = BidirectionalIterator<T*, DefaultIteratorContainer<T*>>;
+        using ConstBidIt = BidirectionalIterator<const T*, DefaultIteratorContainer<const T*>>;
 
         constexpr ~Array() = default;
         
@@ -93,12 +93,12 @@ namespace neo
 
         constexpr BidIt begin()
         {
-            return BidIt(&m_storage);
+            return BidIt((DecayArray<T[Size]>)&m_storage);
         }
 
         constexpr ConstBidIt begin() const
         {
-            return BidIt(&m_storage);
+            return ConstBidIt((DecayArray<T[Size]>)&m_storage);
         }
 
         constexpr BidIt end()
@@ -108,7 +108,7 @@ namespace neo
 
         constexpr ConstBidIt end() const
         {
-            return BidIt(&m_storage);
+            return ConstBidIt(&m_storage[Size]);
         }
 
         template<typename = EnableIf<IsInequalityComparable<T>>>
