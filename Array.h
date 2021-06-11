@@ -30,25 +30,8 @@ namespace neo
         using BidIt = BidirectionalIterator<T*>;
         using ConstBidIt = BidirectionalIterator<const T*>;
 
-        constexpr Array() = default;
         constexpr ~Array() = default;
-
-        constexpr Array(const Array& other)
-        {
-            for (size_t i = 0; i < Size; i++)
-            {
-                m_storage[i] = other.m_storage[i];
-            }
-        }
-
-        constexpr Array(Array&& other)
-        {
-            for (size_t i = 0; i < Size; i++)
-            {
-                m_storage[i] = move(other.m_storage[i]);
-            }
-        }
-
+        
         constexpr Array& operator=(const Array& other)
         {
             if (this == &other)
@@ -143,3 +126,4 @@ namespace neo
         T m_storage[Size] { 0 };
     };
 }
+using neo::Array;
