@@ -22,20 +22,20 @@
 
 namespace neo
 {
-    template<Iterable TContainer, typename T>
-    constexpr auto find(TContainer where, const T& element)
+    template<Iterable TContainer, EqualityComparable T>
+    constexpr auto find(const TContainer& where, const T& what)
     {
         auto begin = where.begin();
         auto end = where.end();
         do
         {
-            if (*begin == element)
+            if (*begin == what)
                 return begin;
         } while (begin++ != end);
     }
 
-    template<Iterable TContainer, typename T>
-    constexpr bool contains(TContainer where, const T& what)
+    template<Iterable TContainer, EqualityComparable T>
+    constexpr bool contains(const TContainer& where, const T& what)
     {
         for (const auto& x : where)
         {
@@ -48,7 +48,7 @@ namespace neo
     }
 
     template<Iterable TContainer, typename TSortingFunc>
-    constexpr bool sort(TContainer what, TSortingFunc predicate) requires Callable<TSortingFunc, decltype(declval<TContainer>()[0]), decltype(declval<TContainer>()[0])>
+    constexpr void sort(const TContainer& what, TSortingFunc predicate) requires Callable<TSortingFunc, decltype(declval<TContainer>()[0]), decltype(declval<TContainer>()[0])>
     {
         for (auto& x : what)
         {
