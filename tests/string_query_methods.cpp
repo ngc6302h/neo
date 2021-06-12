@@ -23,7 +23,7 @@ int main()
     String a = "This is a string suited for unicode characters."_s;
     TEST_EQUAL(a.length(), 47);
     TEST_EQUAL(a.byte_size(), 47);
-    TEST_EQUAL(a.cend()->data - a.cbegin()->data, 47);
+    TEST_EQUAL(a.end()->data - a.begin()->data, 47);
     TEST_EQUAL(a.end()->data - a.begin()->data, 47);
     TEST_EQUAL(String(a.span().data()), a);
     TEST_EQUAL(__builtin_strcmp((char*)a, a.null_terminated_characters()), 0);

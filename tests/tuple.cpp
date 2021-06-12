@@ -16,19 +16,27 @@
  */
 
 #include "Test.h"
-#include <String.h>
+#include <Tuple.h>
+
+template<typename T, typename... TRest>
+Tuple<T, TRest...> make(T t, TRest... rest)
+{
+    return Tuple<T, TRest...>(forward<T>(t), forward<TRest>(rest)...);
+}
 
 int main()
 {
-    String a { "String A" };
-    String b = a.substring(0);
-    TEST_EQUAL(a, b);
-    TEST_EQUAL(String { "tring A" }, a.substring(1));
-    TEST_EQUAL(b.substring(b.length()), ""_s);
-    TEST_EQUAL(b.substring(b.length(), 0), ""_s);
-    TEST_EQUAL(b.substring(b.begin()), b);
-    TEST_EQUAL(b.substring(b.begin(), b.length()), b);
-    auto end = b.end();
-    TEST_EQUAL(b.substring(--end), "A"_s);
+    int _a = 2;
+    auto tup = make(_a, true, (size_t)5);
+    TEST_EQUAL(tup.get<int>(), 2);
+    TEST_EQUAL(tup.get<bool>(), true);
+    TEST_EQUAL(tup.get<size_t>(), 5);
+    TEST_EQUAL(tup.get<0>(), 2);
+    TEST_EQUAL(tup.get<1>(), true);
+    TEST_EQUAL(tup.get<2>(), 5);
+    const auto& [a, b, c] = tup;
+    TEST_EQUAL(a, 2);
+    TEST_EQUAL(b, true);
+    TEST_EQUAL(c, 5);
     return 0;
 }
