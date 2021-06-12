@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include "TypeTraits.h"
 #include "Concepts.h"
+#include "TypeTraits.h"
 
 namespace neo
 {

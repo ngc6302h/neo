@@ -49,7 +49,7 @@ namespace std
     {
         return static_cast<T&&>(value);
     }
-    
+
     template<class T, T v>
     struct integral_constant
     {
@@ -57,20 +57,26 @@ namespace std
         using value_type = T;
         using type = integral_constant;
         constexpr operator value_type() const noexcept
-        { return value; }
-    
+        {
+            return value;
+        }
+
         constexpr value_type operator()() const noexcept
-        { return value; }
+        {
+            return value;
+        }
     };
-    
+
     template<typename T>
-    struct tuple_size : std::integral_constant<size_t, T::size()> {};
+    struct tuple_size : std::integral_constant<size_t, T::size()>
+    {
+    };
 }
 using std::move;
 
 namespace neo
 {
-    
+
     template<bool TBool, typename TrueType, typename FalseType>
     struct conditional_t
     {
@@ -83,85 +89,85 @@ namespace neo
     };
     template<bool TBool, typename TrueType, typename FalseType>
     using Conditional = typename conditional_t<TBool, TrueType, FalseType>::type;
-    
+
     struct TrueType;
     struct FalseType;
-    
+
     template<typename T>
     struct RemovePointer
     {
         using type = T;
     };
-    
+
     template<typename T>
-    struct RemovePointer<T *>
+    struct RemovePointer<T*>
     {
         using type = T;
     };
-    
+
     template<typename T>
     using remove_pointer_t = typename RemovePointer<T>::type;
-    
+
     template<typename T>
     using RemoveReference = typename detail::__RemoveReference<T>::type;
-    
+
     template<typename T>
     struct make_signed
     {
         using type = Conditional<sizeof(T) == 1, int8_t,
-                Conditional<sizeof(T) == 2, int16_t,
-                        Conditional<sizeof(T) == 4, int32_t, int64_t>>>;
+            Conditional<sizeof(T) == 2, int16_t,
+                Conditional<sizeof(T) == 4, int32_t, int64_t>>>;
     };
-    
+
     template<typename T>
     using MakeSigned = typename make_signed<T>::type;
-    
+
     template<class T>
     constexpr bool IsLvalueReference = false;
     template<class T>
-    constexpr bool IsLvalueReference<T &> = true;
-    
+    constexpr bool IsLvalueReference<T&> = true;
+
     template<class T>
     constexpr bool IsRvalueReference = false;
     template<class T>
-    constexpr bool IsRvalueReference<T &&> = true;
-    
+    constexpr bool IsRvalueReference<T&&> = true;
+
     template<typename T>
     constexpr bool IsPointer = false;
     template<typename T>
-    constexpr bool IsPointer<T *> = true;
-    
+    constexpr bool IsPointer<T*> = true;
+
     template<typename T>
     constexpr bool IsArray = false;
     template<typename T>
     constexpr bool IsArray<T[]> = true;
     template<typename T, size_t N>
     constexpr bool IsArray<T[N]> = true;
-    
+
     template<typename T>
-    constexpr T &&forward(RemoveReference<T> &arg)
+    constexpr T&& forward(RemoveReference<T>& arg)
     {
-        return static_cast<T &&>(arg);
+        return static_cast<T&&>(arg);
     }
-    
+
     template<typename T>
-    constexpr T &&forward(RemoveReference<T> &&arg)
+    constexpr T&& forward(RemoveReference<T>&& arg)
     {
         static_assert(!IsLvalueReference<T>, "Can't forward a rvalue as an lvalue!");
-        return static_cast<T &&>(arg);
+        return static_cast<T&&>(arg);
     }
-    
+
     template<int N>
     struct IntegralConstant
     {
         static constexpr auto value = N;
-        
+
         constexpr operator int()
         {
             return N;
         }
     };
-    
+
     template<bool TBool, typename T>
     struct enable_if
     {
@@ -173,10 +179,10 @@ namespace neo
     };
     template<bool TBool, typename T = void>
     using EnableIf = typename enable_if<TBool, T>::type;
-    
+
     template<typename T>
-    constexpr T &&declval();
-    
+    constexpr T&& declval();
+
     template<typename T, typename U>
     struct is_same
     {
@@ -189,10 +195,10 @@ namespace neo
     };
     template<typename T, typename U>
     constexpr bool IsSame = is_same<T, U>::value;
-    
+
     template<typename T, typename... Pack>
     constexpr bool PackContains = (is_same<T, Pack>::value || ...);
-    
+
     template<typename T, typename... Pack>
     struct index_of_type
     {
@@ -210,7 +216,7 @@ namespace neo
     };
     template<typename T, typename... Pack>
     static constexpr auto IndexOfType = index_of_type<T, Pack...>::value;
-    
+
     template<typename T, typename... Ts>
     struct first_type_t
     {
@@ -223,7 +229,7 @@ namespace neo
     };
     template<typename... Ts>
     using FirstType = typename first_type_t<Ts...>::type;
-    
+
     template<int Index, typename T, typename... Types>
     struct type_of_index
     {
@@ -236,20 +242,20 @@ namespace neo
     };
     template<int Index, typename... Types>
     using TypeOfIndex = typename type_of_index<Index, Types...>::type;
-    
+
     template<typename T, typename U, typename... Ts>
     constexpr size_t TypeContainsN = IsSame<T, U> + TypeContainsN<T, Ts...>;
     template<typename T, typename U>
     constexpr size_t TypeContainsN<T, U> = IsSame<T, U> ? 1 : 0;
     template<typename T, typename U, typename... Ts>
     constexpr bool TypeContains = TypeContainsN<T, U, Ts...> > 0;
-    
+
 }
 
 //required for tuple structured binding support
 namespace std
 {
-    template<size_t I, typename TTuple >
+    template<size_t I, typename TTuple>
     struct tuple_element
     {
         using type = typename TTuple::template TypeOfElementAtIndex<I>;
@@ -265,15 +271,15 @@ namespace neo
         template<typename T>
         constexpr size_t UniqueType<T> = 0;
     }
-    
+
     template<typename T, typename... Ts>
     constexpr bool UniqueType = detail::UniqueType<T, Ts...> == 1;
-    
+
     template<typename T, typename... Ts>
     constexpr size_t PackSize = 1 + PackSize<Ts...>;
     template<typename T>
     constexpr size_t PackSize<T> = 1;
-    
+
     template<typename T>
     constexpr void swap(T& a, T& b)
     {
@@ -333,25 +339,25 @@ namespace neo
         {
             using type = T*;
         };
-        
+
         template<typename T>
         struct decay_array<T[]>
         {
             using type = T*;
         };
-    
+
         template<typename T>
         struct decay_array<const T[]>
         {
             using type = const T*;
         };
-        
+
         template<typename T, size_t N>
         struct decay_array<T[N]>
         {
             using type = T*;
         };
-    
+
         template<typename T, size_t N>
         struct decay_array<const T[N]>
         {
@@ -360,7 +366,7 @@ namespace neo
     }
     template<typename T>
     using DecayArray = typename detail::decay_array<T>::type;
-    
+
     namespace detail
     {
         template<typename T>

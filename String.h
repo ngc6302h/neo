@@ -166,7 +166,6 @@ namespace neo
         {
             return StringBidIt(m_buffer);
         }
-        
 
         [[nodiscard]] constexpr StringBidIt end() const
         {

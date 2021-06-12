@@ -155,31 +155,31 @@ namespace neo
     {
         t = static_cast<T&&>(u);
     };
-    
-    template<typename TCallable, typename ...Args>
+
+    template<typename TCallable, typename... Args>
     concept Callable = requires(TCallable f, Args... args)
     {
         t(args...);
     };
 }
-using neo::InequalityComparable;
-using neo::EqualityComparable;
-using neo::ThreeWayComparable;
-using neo::GreaterThanComparable;
-using neo::GreaterOrEqualThanComparable;
-using neo::LessThanComparable;
-using neo::LessOrEqualThanComparable;
-using neo::Incrementable;
-using neo::Decrementable;
 using neo::Addable;
-using neo::Subtractable;
-using neo::Multiplicable;
-using neo::Divisible;
-using neo::Dereferenceable;
-using neo::Indexable;
-using neo::Iterable;
-using neo::CopyConstructable;
-using neo::CopyAssignable;
-using neo::MoveConstructable;
-using neo::MoveAssignable;
 using neo::Callable;
+using neo::CopyAssignable;
+using neo::CopyConstructable;
+using neo::Decrementable;
+using neo::Dereferenceable;
+using neo::Divisible;
+using neo::EqualityComparable;
+using neo::GreaterOrEqualThanComparable;
+using neo::GreaterThanComparable;
+using neo::Incrementable;
+using neo::Indexable;
+using neo::InequalityComparable;
+using neo::Iterable;
+using neo::LessOrEqualThanComparable;
+using neo::LessThanComparable;
+using neo::MoveAssignable;
+using neo::MoveConstructable;
+using neo::Multiplicable;
+using neo::Subtractable;
+using neo::ThreeWayComparable;
