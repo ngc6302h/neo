@@ -98,10 +98,10 @@ namespace neo
 
         [[nodiscard]] constexpr size_t length() const
         {
-            auto begin = cbegin();
-            auto end = cend();
+            auto start = begin();
+            auto _end = end();
             size_t count = 0;
-            while (begin++ != end)
+            while (start++ != _end)
                 count++;
             return count;
         }
@@ -111,24 +111,14 @@ namespace neo
             return StringViewBidIt(m_view);
         }
 
-        [[nodiscard]] constexpr const StringViewBidIt cbegin() const
-        {
-            return StringViewBidIt(m_view);
-        }
-
         [[nodiscard]] constexpr const StringViewBidIt end() const
-        {
-            return StringViewBidIt(m_view + m_byte_length);
-        }
-
-        [[nodiscard]] constexpr const StringViewBidIt cend() const
         {
             return StringViewBidIt(m_view + m_byte_length);
         }
 
         [[nodiscard]] constexpr StringView substring_view(StringViewBidIt start) const
         {
-            VERIFY(start != cend());
+            VERIFY(start != end());
             return { start->data, static_cast<size_t>(m_view + m_byte_length - start->data) };
         }
 
@@ -136,11 +126,11 @@ namespace neo
         {
             VERIFY(index_codepoint_start < m_byte_length);
 
-            auto start = cbegin();
-            auto end = cend();
-            while (index_codepoint_start-- && start++ != end)
+            auto start = begin();
+            auto _end = end();
+            while (index_codepoint_start-- && start++ != _end)
                 ;
-            VERIFY(start != end);
+            VERIFY(start != _end);
 
             return { start->data, static_cast<size_t>(m_view + m_byte_length - start->data) };
         }
@@ -150,10 +140,10 @@ namespace neo
             VERIFY(codepoint_length < m_byte_length);
             VERIFY(codepoint_length != 0);
             auto last = start;
-            auto end = cend();
-            while (codepoint_length-- && last++ != end)
+            auto _end = end();
+            while (codepoint_length-- && last++ != _end)
                 ;
-            VERIFY(last != end);
+            VERIFY(last != _end);
 
             return { start->data, static_cast<size_t>(last->data - start->data) };
         }
@@ -162,18 +152,18 @@ namespace neo
         {
             VERIFY(codepoint_length < m_byte_length);
             VERIFY(codepoint_length != 0);
-            auto start = cbegin();
-            auto end = cend();
+            auto start = begin();
+            auto _end = end();
 
             //if (codepoint_start != 0)
-            while (codepoint_start-- && start++ != end)
+            while (codepoint_start-- && start++ != _end)
                 ;
-            VERIFY(start != end);
+            VERIFY(start != _end);
 
             auto last = start;
-            while (codepoint_length-- && last++ != end)
+            while (codepoint_length-- && last++ != _end)
                 ;
-            VERIFY(last != end);
+            VERIFY(last != _end);
 
             return { start->data, static_cast<size_t>(last->data - start->data) };
         }
@@ -262,7 +252,7 @@ namespace neo
         [[nodiscard]] constexpr StringViewBidIt contains(const StringView& other) const
         {
             if (is_empty() || other.is_empty() || byte_size() < other.byte_size())
-                return cend();
+                return end();
 
             char* hit = __builtin_strstr(m_view, other.m_view);
             return hit != nullptr ? StringViewBidIt(hit) : StringViewBidIt(m_view + m_byte_length);

@@ -162,20 +162,11 @@ namespace neo
             return clamp(-1, 1, __builtin_memcmp(m_buffer, other.m_buffer, min(m_byte_length, other.m_byte_length) + 1));
         }
 
-        [[nodiscard]] constexpr const StringBidIt cbegin() const
-        {
-            return StringBidIt(m_buffer);
-        }
-
         [[nodiscard]] constexpr StringBidIt begin() const
         {
             return StringBidIt(m_buffer);
         }
-
-        [[nodiscard]] constexpr const StringBidIt cend() const
-        {
-            return StringBidIt(m_buffer + m_byte_length);
-        }
+        
 
         [[nodiscard]] constexpr StringBidIt end() const
         {
@@ -190,10 +181,10 @@ namespace neo
 
         [[nodiscard]] constexpr size_t length() const
         {
-            auto begin = cbegin();
-            auto end = cend();
+            auto start = begin();
+            auto _end = end();
             size_t count = 0;
-            while (begin++ != end)
+            while (start++ != _end)
                 count++;
             return count;
         }
@@ -212,9 +203,9 @@ namespace neo
         {
             VERIFY(index_codepoint_start <= m_byte_length);
 
-            auto start = cbegin();
-            auto end = cend();
-            while (index_codepoint_start-- && start++ != end)
+            auto start = begin();
+            auto _end = end();
+            while (index_codepoint_start-- && start++ != _end)
                 ;
 
             return { start->data, static_cast<size_t>(m_buffer + m_byte_length - start->data) };
@@ -224,8 +215,8 @@ namespace neo
         {
             VERIFY(codepoint_length <= m_byte_length);
             auto last = start;
-            auto end = cend();
-            while (codepoint_length-- && last++ != end)
+            auto _end = end();
+            while (codepoint_length-- && last++ != _end)
                 ;
 
             return { start->data, static_cast<size_t>(last->data - start->data) };
@@ -234,14 +225,14 @@ namespace neo
         [[nodiscard]] constexpr String substring(size_t codepoint_start, size_t codepoint_length) const
         {
             VERIFY(codepoint_length <= m_byte_length);
-            auto start = cbegin();
-            auto end = cend();
+            auto start = begin();
+            auto _end = end();
 
-            while (codepoint_start-- && start++ != end)
+            while (codepoint_start-- && start++ != _end)
                 ;
 
             auto last = start;
-            while (codepoint_length-- && last++ != end)
+            while (codepoint_length-- && last++ != _end)
                 ;
 
             return { start->data, static_cast<size_t>(last->data - start->data) };
