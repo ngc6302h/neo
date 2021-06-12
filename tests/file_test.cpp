@@ -56,6 +56,6 @@ int main()
 
     auto file_or_error2 = File::open("idonotexist", "r");
     TEST(file_or_error2.has_error());
-    TEST_EQUAL(file_or_error2.error(), Error::NoSuchEntity);
+    TEST_EQUAL(file_or_error2.error(), neo::Error::NoSuchEntity);
     return 0;
 }

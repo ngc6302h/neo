@@ -21,14 +21,18 @@
 int main()
 {
     StringBuilder sb;
-    sb.append("__This is__ a strin__g__");
+    sb.append("   __This is__ a strin__g__     ");
     sb.replace("_", ".");
-    TEST(__builtin_strcmp(sb.to_string().null_terminated_characters(), "..This is.. a strin..g..") == 0);
-    sb.replace("..This is.. a strin..g..", "..This is.. a strin..g..");
-    TEST(__builtin_strcmp(sb.to_string().null_terminated_characters(), "..This is.. a strin..g..") == 0);
+    TEST(__builtin_strcmp(sb.to_string().null_terminated_characters(), "   ..This is.. a strin..g..     ") == 0);
+    sb.replace("   ..This is.. a strin..g..     ", "   ..This is.. a strin..g..     ");
+    TEST(__builtin_strcmp(sb.to_string().null_terminated_characters(), "   ..This is.. a strin..g..     ") == 0);
     sb.remove("..");
+    TEST(__builtin_strcmp(sb.to_string().null_terminated_characters(), "   This is a string     ") == 0);
+    sb.trim_whitespace((neo::TrimMode) (neo::TrimMode::Start | neo::TrimMode::End));
     TEST(__builtin_strcmp(sb.to_string().null_terminated_characters(), "This is a string") == 0);
-    sb.remove("This is a string");
+    sb.append("!!!");
+    TEST(__builtin_strcmp(sb.to_string().null_terminated_characters(), "This is a string!!!") == 0);
+    sb.remove("This is a string!!!");
     TEST(__builtin_strcmp(sb.to_string().null_terminated_characters(), "") == 0);
     return 0;
 }
