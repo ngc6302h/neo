@@ -31,7 +31,7 @@ namespace neo
         using ConstBidIt = BidirectionalIterator<const T*, DefaultIteratorContainer<const T*>>;
 
         constexpr ~Array() = default;
-        
+
         constexpr Array& operator=(const Array& other)
         {
             if (this == &other)
