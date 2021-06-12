@@ -133,7 +133,7 @@ namespace neo
             return data == other.data;
         }
     };
-    using StringBidIt = BidirectionalIterator<char*, StringIteratorContainer>;
+    using StringBidIt = BidirectionalIterator<const char*, StringIteratorContainer>;
     using StringViewBidIt = BidirectionalIterator<const char*, StringIteratorContainer>;
 
 }
