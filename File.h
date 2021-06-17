@@ -187,6 +187,7 @@ namespace neo
             if (fclose(m_handle) == EOF)
                 return (Error)errno;
             m_is_open = false;
+            return {};
         }
 
         [[nodiscard]] ResultOrError<long, Error> getpos() const
