@@ -92,30 +92,20 @@ namespace neo
 
         [[nodiscard]] constexpr size_t length() const
         {
-            auto begin = cbegin();
-            auto end = cend();
+            auto _begin = begin();
+            auto _end = end();
             size_t count = 0;
-            while (begin++ != end)
+            while (_begin++ != _end)
                 count++;
             return count;
         }
 
-        [[nodiscard]] constexpr const AsciiStringViewBidIt begin() const
+        [[nodiscard]] constexpr AsciiStringViewBidIt begin() const
         {
             return AsciiStringViewBidIt(m_view);
         }
 
-        [[nodiscard]] constexpr const AsciiStringViewBidIt cbegin() const
-        {
-            return AsciiStringViewBidIt(m_view);
-        }
-
-        [[nodiscard]] constexpr const AsciiStringViewBidIt end() const
-        {
-            return AsciiStringViewBidIt(m_view + m_length);
-        }
-
-        [[nodiscard]] constexpr const AsciiStringViewBidIt cend() const
+        [[nodiscard]] constexpr AsciiStringViewBidIt end() const
         {
             return AsciiStringViewBidIt(m_view + m_length);
         }
@@ -230,7 +220,7 @@ namespace neo
         [[nodiscard]] constexpr AsciiStringViewBidIt contains(const AsciiStringView& other) const
         {
             if (is_empty() || other.is_empty() || length() < other.length())
-                return cend();
+                return end();
 
             char* hit = __builtin_strstr(m_view, other.m_view);
             return hit != nullptr ? AsciiStringViewBidIt(hit) : AsciiStringViewBidIt(m_view + m_length);
