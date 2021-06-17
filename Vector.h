@@ -17,15 +17,18 @@
 
 #pragma once
 #include "Assert.h"
+#include "IterableUtilExtensionsFwdDecl.h"
 #include "Iterator.h"
 #include "Span.h"
+#include "TypeTags.h"
 #include "TypeTraits.h"
 #include "Types.h"
+#include <malloc.h>
 
 namespace neo
 {
     template<typename T /*, typename Allocator = neo::DefaultAllocator */>
-    class Vector
+    class Vector : public IContainer<Vector, T>, public IterableExtensions<Vector<T>, RemoveReferenceWrapper<T>>
     {
         static constexpr size_t DEFAULT_SIZE { 16 };
 
@@ -35,7 +38,10 @@ namespace neo
         constexpr Vector() :
             m_capacity(DEFAULT_SIZE)
         {
-            m_data = new T[DEFAULT_SIZE];
+            if constexpr (IsTriviallyConstructible<T>)
+                m_data = new T[DEFAULT_SIZE];
+            else
+                m_data = (T*)malloc(sizeof(T) * DEFAULT_SIZE);
         }
 
         ~Vector()
@@ -46,7 +52,10 @@ namespace neo
         explicit constexpr Vector(size_t initial_capacity, bool resize_to_capacity = false)
         {
             VERIFY(initial_capacity > 0);
-            m_data = new T[initial_capacity];
+            if constexpr (IsTriviallyConstructible<T>)
+                m_data = new T[initial_capacity];
+            else
+                m_data = (T*)malloc(sizeof(T) * initial_capacity);
             m_capacity = initial_capacity;
             m_size = resize_to_capacity ? initial_capacity : 0;
         }
@@ -54,7 +63,10 @@ namespace neo
         constexpr Vector(const Vector& other) :
             m_capacity(other.m_capacity), m_size(other.m_size)
         {
-            m_data = new T[other.m_capacity];
+            if constexpr (IsTriviallyConstructible<T>)
+                m_data = new T[other.m_capacity];
+            else
+                m_data = (T*)malloc(sizeof(T) * other.m_capacity);
             if constexpr (IsTriviallyCopyable<T>)
                 __builtin_memcpy(m_data, other.m_data, other.m_size * sizeof(T));
             else
@@ -77,7 +89,10 @@ namespace neo
             m_capacity(other.size()), m_size(other.size())
         {
             VERIFY(other.size() > 0);
-            m_data = new T[m_size];
+            if constexpr (IsTriviallyConstructible<T>)
+                m_data = new T[m_size];
+            else
+                m_data = (T*)malloc(sizeof(T) * m_size);
             if constexpr (IsTriviallyCopyable<T>)
                 __builtin_memcpy(m_data, other.m_data, other.m_size * sizeof(T));
             else
@@ -95,7 +110,10 @@ namespace neo
             delete[] m_data;
             m_size = other.size();
             m_capacity = other.capacity();
-            m_data = new T[m_size];
+            if constexpr (IsTriviallyConstructible<T>)
+                m_data = new T[m_size];
+            else
+                m_data = (T*)malloc(sizeof(T) * m_size);
             if constexpr (IsTriviallyCopyable<T>)
                 __builtin_memcpy(m_data, other.m_data, other.m_size * sizeof(T));
             else
@@ -136,7 +154,10 @@ namespace neo
         constexpr T& construct(Args... args)
         {
             ensure_capacity(m_size + 1);
-            m_data[m_size] = T(forward<Args>(args)...);
+            if constexpr (IsTrivial<T>)
+                m_data[m_size] = T { forward<Args>(args)... };
+            else
+                m_data[m_size] = T(forward<Args>(args)...);
             return m_data[m_size++];
         }
 
@@ -159,7 +180,11 @@ namespace neo
                 return;
             }
 
-            T* new_buffer = new T[new_size];
+            T* new_buffer;
+            if constexpr (IsTriviallyConstructible<T>)
+                new_buffer = new T[new_size];
+            else
+                new_buffer = (T*)malloc(sizeof(T) * new_size);
             if constexpr (IsTriviallyCopyable<T>)
                 __builtin_memcpy(new_buffer, m_data, m_size * sizeof(T));
             else
@@ -250,11 +275,6 @@ namespace neo
         }
 
         [[nodiscard]] constexpr Span<const T> span() const
-        {
-            return { m_data, m_size };
-        }
-
-        [[nodiscard]] constexpr Span<const T> readonly_span() const
         {
             return { m_data, m_size };
         }
