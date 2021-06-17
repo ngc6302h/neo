@@ -17,29 +17,41 @@
 
 #pragma once
 #include "Assert.h"
+#include "Concepts.h"
+#include "TypeTags.h"
 #include "TypeTraits.h"
 #include "Types.h"
 
 namespace neo
 {
     template<typename T, typename... Ts>
-    class Tuple : public Tuple<Ts...>
+    class Tuple : public Tuple<Ts...> /*, public IContainer<T>, public IFixedSizeContainer<1 + sizeof...(Ts)>*/
+    //if it inherited it, the same members would be declared more than once. Declare it here directly instead
     {
     public:
+        using first_type = T;
+        using type = T;
+        using base_type = Tuple<Ts...>;
+        template<typename... Types>
+        using template_type = neo::Tuple<Types...>;
+        template<typename... Us>
+        using container_type = Tuple<Us...>;
         template<size_t Index>
         using TypeOfElementAtIndex = TypeOfIndex<Index, T, Ts...>;
 
-        constexpr explicit Tuple(T&& t, Ts&&... ts) :
-            Tuple<Ts...>(forward<Ts>(ts)...)
+        constexpr Tuple(T&& t, Ts&&... ts) :
+            Tuple<Ts...>(forward<Ts>(ts)...), m_item(forward<T>(t))
         {
-            item = T(forward<T>(t));
         }
+
+        constexpr Tuple& operator=(const Tuple& other) = default;
+        constexpr Tuple& operator=(Tuple&& other) = default;
 
         template<typename U>
         [[nodiscard]] constexpr U& get() requires TypeContains<U, T, Ts...> && UniqueType<U, T, Ts...>
         {
             if constexpr (IsSame<T, U>)
-                return item;
+                return m_item;
             else
                 return Tuple<Ts...>::template get<U>();
         }
@@ -48,7 +60,7 @@ namespace neo
         [[nodiscard]] constexpr const U& get() const requires TypeContains<U, T, Ts...> && UniqueType<U, T, Ts...>
         {
             if constexpr (IsSame<T, U>)
-                return item;
+                return m_item;
             else
                 return Tuple<Ts...>::template get<U>();
         }
@@ -57,7 +69,7 @@ namespace neo
         [[nodiscard]] constexpr TypeOfElementAtIndex<Index> get()
         {
             if constexpr (Index == 0)
-                return item;
+                return m_item;
             else
                 return Tuple<Ts...>::template get<Index - 1>();
         }
@@ -66,7 +78,7 @@ namespace neo
         [[nodiscard]] constexpr const TypeOfElementAtIndex<Index> get() const
         {
             if constexpr (Index == 0)
-                return item;
+                return m_item;
             else
                 return Tuple<Ts...>::template get<Index - 1>();
         }
@@ -76,46 +88,61 @@ namespace neo
             return 1 + sizeof...(Ts);
         }
 
+        template<typename U, typename = EnableIf<IsSame<Tuple, U> && InequalityComparable<T>, Tuple>>
+        [[nodiscard]] constexpr bool operator==(const U& other) const
+        {
+            if (get<0>() != other.template get<0>())
+                return false;
+            else
+                return *static_cast<const base_type*>(*this) == static_cast<const base_type&>(other);
+        }
+
     private:
-        T item;
+        T m_item;
     };
 
     template<typename T>
-    class Tuple<T>
+    class Tuple<T> : public IFixedSizeContainer<1>
     {
     public:
+        using first_type = T;
+        using type = T;
+        template<typename... Types>
+        using template_type = neo::Tuple<Types...>;
+        template<typename... U>
+        using container_type = Tuple<U...>;
         template<size_t Index>
         using TypeOfElementAtIndex = T;
 
         constexpr explicit Tuple(T&& t) :
-            item(forward<T>(t))
+            m_item(forward<T>(t))
         {
         }
 
         template<typename>
         [[nodiscard]] constexpr T& get()
         {
-            return item;
+            return m_item;
         }
 
         template<typename>
         [[nodiscard]] constexpr const T& get() const
         {
-            return item;
+            return m_item;
         }
 
         template<size_t Index>
         [[nodiscard]] constexpr T& get()
         {
             static_assert(Index == 0, "Index out of range");
-            return item;
+            return m_item;
         }
 
         template<size_t Index>
         [[nodiscard]] constexpr const T& get() const
         {
             static_assert(Index == 0, "Index out of range");
-            return item;
+            return m_item;
         }
 
         [[nodiscard]] static constexpr size_t size()
@@ -123,12 +150,20 @@ namespace neo
             return 1;
         }
 
+        template<typename U, typename = EnableIf<IsSame<Tuple, U> && InequalityComparable<T>, Tuple>>
+        [[nodiscard]] constexpr bool operator==(const U& other) const
+        {
+            if (get<0>() != other.template get<0>())
+                return false;
+            return true;
+        }
+
     private:
-        T item;
+        T m_item;
     };
 
     template<typename T, typename... TRest>
-    Tuple<T, TRest...> make_tuple(T t, TRest... rest)
+    constexpr Tuple<T, TRest...> make_tuple(T t, TRest... rest)
     {
         return Tuple<T, TRest...>(forward<T>(t), forward<TRest>(rest)...);
     }
