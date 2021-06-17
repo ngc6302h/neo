@@ -17,6 +17,7 @@
 
 #pragma once
 #include "Assert.h"
+#include "Concepts.h"
 #include "Iterator.h"
 #include "TypeTraits.h"
 #include "Types.h"
@@ -105,8 +106,8 @@ namespace neo
             return BidIt(m_data + m_size);
         }
 
-        template<typename = EnableIf<IsInequalityComparable<T>>>
-        [[nodiscard]] constexpr bool operator==(const Span other) const
+        template<typename>
+        [[nodiscard]] constexpr bool operator==(const Span other) const requires InequalityComparable<T>
         {
             if (m_size != other.m_size)
                 return false;
@@ -119,14 +120,13 @@ namespace neo
             return true;
         }
 
-        template<typename = EnableIf<IsInequalityComparable<T>>>
-        [[nodiscard]] constexpr bool operator!=(const Span other) const
+        template<typename>
+        [[nodiscard]] constexpr bool operator!=(const Span other) const requires InequalityComparable<T>
         {
             return !(*this == other);
         }
 
-    private:
-        T* m_data;
+    private : T* m_data;
         size_t m_size;
     };
 }
