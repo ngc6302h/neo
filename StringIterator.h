@@ -21,7 +21,7 @@
 namespace neo
 {
     using Utf8Char = u32;
-    using AsciiStringBidIt = BidirectionalIterator<char*>;
+    using AsciiStringBidIt = BidirectionalIterator<const char*>;
     using AsciiStringViewBidIt = BidirectionalIterator<const char*>;
 
     struct StringIteratorContainer
