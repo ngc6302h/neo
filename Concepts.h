@@ -16,7 +16,7 @@
 */
 
 #pragma once
-
+#include "TypeTraits.h"
 namespace neo
 {
     template<typename T>
@@ -156,30 +156,70 @@ namespace neo
         t = static_cast<T&&>(u);
     };
 
+    template<typename T, typename U>
+    concept SameAs = IsSame<T, U>;
+
     template<typename TCallable, typename... Args>
     concept Callable = requires(TCallable f, Args... args)
     {
-        t(args...);
+        f(args...);
+    };
+
+    template<typename TCallable, typename TReturn, typename... Args>
+    concept CallableWithReturnType = requires(TCallable f, Args... args)
+    {
+        {
+            f(args...)
+            } -> SameAs<TReturn>;
+    };
+
+    template<typename T>
+    concept Container = requires(T t)
+    {
+        typename T::type;
+    };
+
+    template<typename T>
+    concept IterableContainer = Iterable<T> && Container<T>;
+
+    template<typename T>
+    concept FixedContainer = requires(T t)
+    {
+        typename T::type;
+        T::size();
+        t.template get<0>();
+    };
+
+    template<template<typename... Ts> class T, typename TExample = int>
+    concept TupleLike = FixedContainer<T<TExample>> && requires(TExample u)
+    {
+        make_tuple<T>(u);
+        typename T<TExample>::template template_type<TExample>;
     };
 }
 using neo::Addable;
 using neo::Callable;
+using neo::CallableWithReturnType;
+using neo::Container;
 using neo::CopyAssignable;
 using neo::CopyConstructable;
 using neo::Decrementable;
 using neo::Dereferenceable;
 using neo::Divisible;
 using neo::EqualityComparable;
+using neo::FixedContainer;
 using neo::GreaterOrEqualThanComparable;
 using neo::GreaterThanComparable;
 using neo::Incrementable;
 using neo::Indexable;
 using neo::InequalityComparable;
 using neo::Iterable;
+using neo::IterableContainer;
 using neo::LessOrEqualThanComparable;
 using neo::LessThanComparable;
 using neo::MoveAssignable;
 using neo::MoveConstructable;
 using neo::Multiplicable;
+using neo::SameAs;
 using neo::Subtractable;
 using neo::ThreeWayComparable;
