@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include "Concepts.h"
 #include "Types.h"
 
 namespace neo::detail
@@ -196,6 +195,9 @@ namespace neo
     template<typename T, typename U>
     constexpr bool IsSame = is_same<T, U>::value;
 
+    template<typename T, T t, T u>
+    constexpr bool IsSameValue = t == u;
+
     template<typename T, typename... Pack>
     constexpr bool PackContains = (is_same<T, Pack>::value || ...);
 
@@ -249,7 +251,6 @@ namespace neo
     constexpr size_t TypeContainsN<T, U> = IsSame<T, U> ? 1 : 0;
     template<typename T, typename U, typename... Ts>
     constexpr bool TypeContains = TypeContainsN<T, U, Ts...> > 0;
-
 }
 
 //required for tuple structured binding support
@@ -367,19 +368,29 @@ namespace neo
     template<typename T>
     using DecayArray = typename detail::decay_array<T>::type;
 
-    namespace detail
-    {
-        template<typename T>
-        constexpr bool IsInequalityComparable() { return false; }
-        template<InequalityComparable T>
-        constexpr bool IsInequalityComparable() { return true; }
-    }
     template<typename T>
-    constexpr bool IsInequalityComparable = detail::IsInequalityComparable<T>();
+    struct remove_reference_wrapper_t
+    {
+        using type = T;
+    };
+
+    template<typename T>
+    struct remove_reference_wrapper_t<ReferenceWrapper<T>>
+    {
+        using type = T;
+    };
+
+    template<typename T>
+    using RemoveReferenceWrapper = typename remove_reference_wrapper_t<T>::type;
+
+    template<typename F, typename... Args>
+    using ReturnType = decltype(declval<F>()(declval<Args>()...));
+
 }
 using ssize_t = neo::MakeSigned<size_t>;
 
 using neo::Conditional;
+using neo::DecayArray;
 using neo::EnableIf;
 using neo::FirstType;
 using neo::IndexOfType;
@@ -392,6 +403,8 @@ using neo::IsLvalueReference;
 using neo::IsNullptr;
 using neo::IsPointer;
 using neo::IsRvalueReference;
+using neo::IsSame;
+using neo::IsSameValue;
 using neo::IsTrivial;
 using neo::IsTriviallyAssignable;
 using neo::IsTriviallyConstructible;
@@ -401,8 +414,13 @@ using neo::MakeSigned;
 using neo::PackContains;
 using neo::RemovePointer;
 using neo::RemoveReference;
+using neo::RemoveReferenceWrapper;
+using neo::ReturnType;
+using neo::TypeContains;
+using neo::TypeContainsN;
 using neo::TypeOfIndex;
 
 using neo::declval;
 using neo::forward;
+using neo::make_signed;
 using neo::swap;
