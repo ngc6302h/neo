@@ -36,28 +36,62 @@ using uint32_t = u32;
 using int64_t = i64;
 using uint64_t = u64;
 
+using size_t = __SIZE_TYPE__;
 namespace neo
 {
     template<typename T>
     struct ReferenceWrapper
     {
+        constexpr ReferenceWrapper(const T& obj) :
+            ref(const_cast<T*>(&obj))
+        {
+        }
+
         constexpr ReferenceWrapper(T& obj) :
-            ref(obj)
+            ref(&obj)
         {
         }
 
-        constexpr operator T&()
+        constexpr operator T&() const
         {
-            return ref;
+            return *ref;
         }
 
-        T& ref;
+        constexpr ReferenceWrapper& operator=(const ReferenceWrapper&) = default;
+        constexpr ReferenceWrapper(const ReferenceWrapper&) = default;
+
+        T* ref;
+    };
+
+    template<typename T>
+    static constexpr auto DefaultEqualityComparer = [](const T& a, const T& b) -> bool
+    { return a == b; };
+
+    template<typename T, size_t Size>
+    struct initializer_list
+    {
+        constexpr ~initializer_list() = default;
+
+        [[nodiscard]] constexpr const T& operator[](size_t index) const
+        {
+            return const_cast<initializer_list*>(this)->m_storage[index];
+        }
+
+        [[nodiscard]] constexpr T& operator[](size_t index)
+        {
+            return const_cast<initializer_list*>(this)->m_storage[index];
+        }
+
+        constexpr operator T*()
+        {
+        }
+
+        T m_storage[Size];
     };
 
     template<typename T>
     constexpr ReferenceWrapper<T> ref(T& obj) { return ReferenceWrapper(obj); }
 }
-using size_t = __SIZE_TYPE__;
 using nullptr_t = decltype(nullptr);
 
 using neo::ReferenceWrapper;
