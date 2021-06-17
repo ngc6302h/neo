@@ -17,8 +17,10 @@
 
 #pragma once
 #include "Assert.h"
+#include "IterableUtilExtensionsFwdDecl.h"
 #include "Iterator.h"
 #include "Span.h"
+#include "TypeTags.h"
 #include "TypeTraits.h"
 #include "Types.h"
 
@@ -27,10 +29,13 @@ namespace neo
     template<typename T, size_t Size>
     struct Array
     {
+        using type = T;
         using BidIt = BidirectionalIterator<T*, DefaultIteratorContainer<T*>>;
         using ConstBidIt = BidirectionalIterator<const T*, DefaultIteratorContainer<const T*>>;
 
         constexpr ~Array() = default;
+
+        //constexpr Array() = default;
 
         constexpr Array& operator=(const Array& other)
         {
@@ -54,76 +59,109 @@ namespace neo
             }
         }
 
-        constexpr T& at(size_t index)
+        [[nodiscard]] constexpr T& at(size_t index)
         {
             VERIFY(index < Size);
             return m_storage[index];
         }
 
-        constexpr const T& at(size_t index) const
+        [[nodiscard]] constexpr const T& at(size_t index) const
         {
             VERIFY(index < Size);
             return m_storage[index];
         }
 
-        constexpr T& operator[](size_t index) const
+        [[nodiscard]] constexpr T& operator[](size_t index)
         {
             return at(index);
         }
 
-        constexpr const T& operator[](size_t index)
+        [[nodiscard]] constexpr const T& operator[](size_t index) const
         {
             return at(index);
         }
 
-        constexpr Span<T> span()
+        [[nodiscard]] constexpr Span<T> span()
         {
             return { &m_storage, Size };
         }
 
-        constexpr Span<const T> span() const
+        [[nodiscard]] constexpr Span<const T> span() const
         {
             return { &m_storage, Size };
         }
 
-        constexpr size_t size() const
-        {
-            return Size;
-        }
-
-        constexpr BidIt begin()
+        [[nodiscard]] constexpr BidIt begin()
         {
             return BidIt((DecayArray<T[Size]>)&m_storage);
         }
 
-        constexpr ConstBidIt begin() const
+        [[nodiscard]] constexpr ConstBidIt begin() const
         {
             return ConstBidIt((DecayArray<T[Size]>)&m_storage);
         }
 
-        constexpr BidIt end()
+        [[nodiscard]] constexpr BidIt end()
         {
             return BidIt(&m_storage[Size]);
         }
 
-        constexpr ConstBidIt end() const
+        [[nodiscard]] constexpr ConstBidIt end() const
         {
             return ConstBidIt(&m_storage[Size]);
         }
 
-        template<typename = EnableIf<IsInequalityComparable<T>>>
-        constexpr bool operator==(const Array& other) const
+        template<typename U = EnableIf<InequalityComparable<T>, Array<T, Size>>>
+        [[nodiscard]] constexpr bool operator==(const U& other) const
         {
             return span() == other.span();
         }
 
-        template<typename = EnableIf<IsInequalityComparable<T>>>
-        constexpr bool operator!=(const Array& other) const
+        template<typename = EnableIf<InequalityComparable<T>>>
+        [[nodiscard]] constexpr bool operator!=(const Array& other) const
         {
             return span() != other.span();
         }
 
-        T m_storage[Size] { 0 };
+        template<size_t Index>
+        constexpr T& get()
+        {
+            return m_storage[Index];
+        }
+
+        template<size_t Index>
+        constexpr const T& get() const
+        {
+            return m_storage[Index];
+        }
+
+        template<typename TPredicate>
+        requires CallableWithReturnType<TPredicate, bool, const T&>
+        [[nodiscard]] Vector<ReferenceWrapper<T>> filter(TPredicate&& predicate) const
+        {
+            return neo::filter(*this, predicate);
+        }
+
+        template<typename TSelector>
+        requires Callable<TSelector, T> &&(!IsSame<ReturnType<TSelector, T>, void>)
+            [[nodiscard]] Vector<ReferenceWrapper<ReturnType<TSelector, const T&>>> select(TSelector&& selector) const
+        {
+            return neo::select(*this, selector);
+        }
+
+        template<typename TComparerFunc>
+        requires CallableWithReturnType<TComparerFunc, bool, const T&, const T&>
+        [[nodiscard]] constexpr bool contains(const T& what, TComparerFunc comparer = DefaultEqualityComparer<const T&>) const
+        {
+            return neo::contains(*this, what, comparer);
+        }
+
+        [[nodiscard]] constexpr bool contains(const T& what) const
+        {
+            return neo::contains(*this, what, DefaultEqualityComparer<T>);
+        }
+
+        T m_storage[Size];
     };
 }
 using neo::Array;
