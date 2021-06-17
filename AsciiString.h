@@ -135,22 +135,12 @@ namespace neo
             other.m_length = 0;
         }
 
-        [[nodiscard]] constexpr const AsciiStringBidIt cbegin() const
-        {
-            return AsciiStringBidIt(m_buffer);
-        }
-
         [[nodiscard]] AsciiStringBidIt begin() const
         {
             return AsciiStringBidIt(m_buffer);
         }
 
         [[nodiscard]] AsciiStringBidIt end() const
-        {
-            return AsciiStringBidIt(m_buffer + m_length);
-        }
-
-        [[nodiscard]] constexpr const AsciiStringBidIt cend() const
         {
             return AsciiStringBidIt(m_buffer + m_length);
         }
@@ -183,7 +173,7 @@ namespace neo
 
         [[nodiscard]] constexpr AsciiString substring(AsciiStringBidIt start) const
         {
-            VERIFY(start->data <= cend()->data);
+            VERIFY(start->data <= end()->data);
             // little dirty but it allows the edge case where iterator
             // is end() and substring will be empty.
             return { start->data, (size_t)(m_buffer + m_length - start->data) };
