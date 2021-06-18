@@ -28,7 +28,7 @@ Features are added on demand.
 ## I discovered a bug
 Open an issue please.
 
-## Why is almost everything market constexpr?
+## Why is almost everything marked constexpr?
 Because I want everything to be able to execute at compile time! Yes, I know some stuff can't be run at compile time yet, like heap allocations or accesing the byte representation of objects, but I expect it to be possible in the future. Some functions that use things like memcpy or strlen have compile time switches that make it use either manual loops (for compile time) or calling those functions (for runtime). And because it's easier to mark everything constexpr now while I build it instead of going through everything at a later stage.
 
 ## Do you accept contributions?
