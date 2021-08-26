@@ -40,7 +40,9 @@ namespace neo::detail
     };
 }
 
-//required for the compiler
+#ifndef _GLIBCXX_TYPE_TRAITS
+//move must live in std, required for the compiler
+
 namespace std
 {
     template<typename T>
@@ -71,41 +73,57 @@ namespace std
     {
     };
 }
+#endif
 using std::move;
+
 
 namespace neo
 {
+    namespace detail
+    {
+        template<typename T>
+        struct identity_t
+        {
+            using type = T;
+        };
+    }
+    template<typename T>
+    using IdentityType = typename detail::identity_t<T>::type;
 
-    template<bool TBool, typename TrueType, typename FalseType>
-    struct conditional_t
+    namespace detail
     {
-        using type = TrueType;
-    };
-    template<typename TrueType, typename FalseType>
-    struct conditional_t<false, TrueType, FalseType>
-    {
-        using type = FalseType;
-    };
+        template<bool TBool, typename TrueType, typename FalseType>
+        struct conditional_t
+        {
+            using type = TrueType;
+        };
+        template<typename TrueType, typename FalseType>
+        struct conditional_t<false, TrueType, FalseType>
+        {
+            using type = FalseType;
+        };
+    }
+    
     template<bool TBool, typename TrueType, typename FalseType>
-    using Conditional = typename conditional_t<TBool, TrueType, FalseType>::type;
+    using Conditional = typename detail::conditional_t<TBool, TrueType, FalseType>::type;
 
     struct TrueType;
     struct FalseType;
 
     template<typename T>
-    struct RemovePointer
+    struct remove_pointer_t
     {
         using type = T;
     };
 
     template<typename T>
-    struct RemovePointer<T*>
+    struct remove_pointer_t<T*>
     {
         using type = T;
     };
 
     template<typename T>
-    using remove_pointer_t = typename RemovePointer<T>::type;
+    using RemovePointer = typename remove_pointer_t<T>::type;
 
     template<typename T>
     using RemoveReference = typename detail::__RemoveReference<T>::type;
@@ -235,13 +253,21 @@ namespace neo
     template<int Index, typename T, typename... Types>
     struct type_of_index
     {
-        using type = typename type_of_index<Index - 1, Types...>::type;
+        using type = typename type_of_index<Index-1, Types...>::type;
     };
+    
     template<typename T, typename... Types>
     struct type_of_index<0, T, Types...>
     {
         using type = T;
     };
+    
+    template<typename T>
+    struct type_of_index<0, T>
+    {
+        using type = T;
+    };
+    
     template<int Index, typename... Types>
     using TypeOfIndex = typename type_of_index<Index, Types...>::type;
 
