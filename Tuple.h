@@ -44,9 +44,6 @@ namespace neo
         {
         }
 
-        constexpr Tuple& operator=(const Tuple& other) = default;
-        constexpr Tuple& operator=(Tuple&& other) = default;
-
         template<typename U>
         [[nodiscard]] constexpr U& get() requires TypeContains<U, T, Ts...> && UniqueType<U, T, Ts...>
         {
