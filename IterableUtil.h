@@ -20,10 +20,13 @@
 #include "Concepts.h"
 #include "Tuple.h"
 #include "TypeTraits.h"
-#include "Vector.h"
+//#include "Vector.h"
 
 namespace neo
 {
+    template<typename T>
+    class Vector;
+    
     template<IterableContainer TContainer, typename T, typename TComparerFunc>
     requires CallableWithReturnType<TComparerFunc, bool, const typename TContainer::type&, const T&>
     [[nodiscard]] constexpr auto find(const TContainer& where, const T& what, TComparerFunc&& comparer)
@@ -45,12 +48,12 @@ namespace neo
     }
 
     template<IterableContainer TContainer, typename T, typename TComparerFunc>
-    requires CallableWithReturnType<TComparerFunc, bool, const T&, const T&>
+    requires CallableWithReturnType<TComparerFunc, bool, const typename TContainer::type&, const T&>
     [[nodiscard]] constexpr bool contains(const TContainer& where, const T& what, TComparerFunc comparer)
     {
         for (const auto& x : where)
         {
-            if (comparer(what, x))
+            if (comparer(x, what))
             {
                 return true;
             }
@@ -153,11 +156,40 @@ namespace neo
         Vector<ReferenceWrapper<ReturnType<TSelector, const RemoveReferenceWrapper<typename TContainer::type>&>>> items;
         for (auto& i : where)
         {
-            items.append(ReferenceWrapper<ReturnType<TSelector, const RemoveReferenceWrapper<typename TContainer::type>&>>(selector(i)));
+            items.construct(selector(i));
         }
         return items;
     }
-
+    
+    template<typename TContainer, typename T>
+    struct IterableExtensions
+    {
+        template<typename TPredicate>
+        requires CallableWithReturnType<TPredicate, bool, const T&>
+        [[nodiscard]] Vector<ReferenceWrapper<T>> filter(TPredicate&& predicate) const
+        {
+            return neo::filter(*static_cast<const TContainer*>(this), predicate);
+        }
+        
+        template<typename TSelector>
+        requires Callable<TSelector, T> &&(!IsSame<ReturnType<TSelector, T>, void>)
+        [[nodiscard]] Vector<ReferenceWrapper<ReturnType<TSelector, const T&>>> select(TSelector&& selector) const
+        {
+            return neo::select(*static_cast<const TContainer*>(this), selector);
+        }
+        
+        template<typename TComparerFunc>
+        requires CallableWithReturnType<TComparerFunc, bool, const T&, const T&>
+        [[nodiscard]] constexpr bool contains(const T& what, TComparerFunc comparer)
+        {
+            return neo::contains(*static_cast<const TContainer*>(this), what, comparer);
+        }
+        
+        [[nodiscard]] constexpr bool contains(const T& what)
+        {
+            return neo::contains(*static_cast<const TContainer*>(this), what, DefaultEqualityComparer<const T&>);
+        }
+    };
 }
 
 using neo::contains;
