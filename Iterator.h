@@ -58,12 +58,12 @@ namespace neo
                 return data;
         }
 
-        constexpr bool operator==(const DefaultIteratorContainer& other)
+        constexpr bool operator==(const DefaultIteratorContainer& other) const
         {
             return data == other.data;
         }
 
-        constexpr bool operator!=(const DefaultIteratorContainer& other)
+        constexpr bool operator!=(const DefaultIteratorContainer& other) const
         {
             return data != other.data;
         }
@@ -101,137 +101,7 @@ namespace neo
     protected:
         TContainer m_element;
     };
-
-    template<typename T, typename TContainer = DefaultIteratorContainer<T>>
-    class InputIterator : public Iterator<T, TContainer>
-    {
-    public:
-        explicit constexpr InputIterator(T element) :
-            Iterator<T, TContainer>(element)
-        {
-        }
-        constexpr InputIterator(const InputIterator& other) :
-            Iterator<T, TContainer>(other)
-        {
-        }
-        constexpr InputIterator(InputIterator&& other) :
-            Iterator<T, TContainer>(move(other))
-        {
-        }
-
-        constexpr InputIterator& operator=(const InputIterator& other)
-        {
-            this->m_element = other.m_element;
-            return *this;
-        }
-
-        constexpr InputIterator& operator=(InputIterator&& other)
-        {
-            this->m_element = move(other.m_element);
-        }
-
-        constexpr bool operator!=(const InputIterator& other) const
-        {
-            return this->m_element != other.m_element;
-        }
-
-        constexpr decltype(auto) operator*()
-        {
-            return *this->m_element;
-        }
-
-        constexpr decltype(auto) operator*() const
-        {
-            return *this->m_element;
-        }
-
-        constexpr decltype(auto) operator->()
-        {
-            return &this->m_element;
-        }
-
-        constexpr decltype(auto) operator->() const
-        {
-            return &this->m_element;
-        }
-
-        //To be implemented by the class using iterators
-        constexpr InputIterator& operator++()
-        {
-            this->m_element++;
-            return *this;
-        }
-
-        constexpr InputIterator operator++(int)
-        {
-            auto prev = *this;
-            this->m_element++;
-            return prev;
-        }
-    };
-
-    template<typename T, typename TContainer = DefaultIteratorContainer<T>>
-    class OutputIterator : public Iterator<T, TContainer>
-    {
-    public:
-        constexpr explicit OutputIterator(T element) :
-            Iterator<T, TContainer>(element)
-        {
-        }
-        constexpr OutputIterator(const OutputIterator& other) :
-            Iterator<T, TContainer>(other)
-        {
-        }
-        constexpr OutputIterator(OutputIterator&& other) :
-            Iterator<T, TContainer>(move(other))
-        {
-        }
-
-        constexpr OutputIterator& operator=(const OutputIterator& other)
-        {
-            this->m_element = other.m_element;
-            return *this;
-        }
-
-        constexpr OutputIterator& operator=(OutputIterator&& other)
-        {
-            this->m_element = other.m_element;
-        }
-
-        constexpr decltype(auto) operator*()
-        {
-            return *this->m_element;
-        }
-
-        constexpr decltype(auto) operator*() const
-        {
-            return *this->m_element;
-        }
-
-        constexpr decltype(auto) operator->()
-        {
-            return &this->m_element;
-        }
-
-        constexpr decltype(auto) operator->() const
-        {
-            return &this->m_element;
-        }
-
-        //To be implemented by the class using iterators
-        constexpr OutputIterator& operator++()
-        {
-            this->m_element++;
-            return *this;
-        }
-
-        constexpr OutputIterator operator++(int)
-        {
-            auto prev = *this;
-            this->m_element++;
-            return prev;
-        }
-    };
+    
 
     template<typename T, typename TContainer = DefaultIteratorContainer<T>>
     class ForwardIterator : public Iterator<T, TContainer>
@@ -276,15 +146,29 @@ namespace neo
         {
             return *this->m_element;
         }
-
+    
         constexpr decltype(auto) operator->()
         {
-            return &this->m_element;
+            if constexpr(IsPointer<T> && !IsRvalueReference<decltype(forward<T>(*this->m_element))>)
+                return &*this->m_element;
+            else
+                return *this->m_element;
         }
-
+    
         constexpr decltype(auto) operator->() const
         {
-            return &this->m_element;
+            if constexpr(IsPointer<T> && !IsRvalueReference<decltype(forward<T>(*this->m_element))>)
+                return &*this->m_element;
+            else
+                return *this->m_element;
+        }
+    
+        constexpr const TContainer& ptr() const
+        {
+            if constexpr(IsPointer<TContainer>)
+                return &this->m_element;
+            else
+                return this->m_element;
         }
 
         //To be implemented by the class using iterators
@@ -332,9 +216,14 @@ namespace neo
             return *this;
         }
 
-        constexpr bool operator!=(const BidirectionalIterator& other)
+        constexpr bool operator!=(const BidirectionalIterator& other) const
         {
             return this->m_element != other.m_element;
+        }
+    
+        constexpr bool operator==(const BidirectionalIterator& other) const
+        {
+            return this->m_element == other.m_element;
         }
 
         constexpr decltype(auto) operator*()
@@ -346,15 +235,29 @@ namespace neo
         {
             return *this->m_element;
         }
-
+    
         constexpr decltype(auto) operator->()
         {
-            return &this->m_element;
+            if constexpr(IsPointer<T> && !IsRvalueReference<decltype(*this->m_element)>)
+                return &*this->m_element;
+            else
+                return *this->m_element;
         }
-
+    
         constexpr decltype(auto) operator->() const
         {
-            return &this->m_element;
+            if constexpr(IsPointer<T> && !IsRvalueReference<decltype(*this->m_element)>)
+                return &*this->m_element;
+            else
+                return *this->m_element;
+        }
+    
+        constexpr const TContainer& ptr() const
+        {
+            if constexpr(IsPointer<TContainer>)
+                return &this->m_element;
+            else
+                return this->m_element;
         }
 
         //To be implemented by the class using iterators
@@ -385,6 +288,4 @@ namespace neo
 
 using neo::BidirectionalIterator;
 using neo::ForwardIterator;
-using neo::InputIterator;
 using neo::Iterator;
-using neo::OutputIterator;
