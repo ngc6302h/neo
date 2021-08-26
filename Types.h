@@ -18,6 +18,9 @@
 #pragma once
 #include "Util.h"
 
+#ifndef NEO_BASIC_TYPES
+#define NEO_BASIC_TYPES
+
 using i8 = __INT8_TYPE__;
 using u8 = __UINT8_TYPE__;
 using i16 = __INT16_TYPE__;
@@ -26,6 +29,9 @@ using i32 = __INT32_TYPE__;
 using u32 = __UINT32_TYPE__;
 using i64 = __INT64_TYPE__;
 using u64 = __UINT64_TYPE__;
+
+using f32 = float;
+using f64 = double;
 
 using int8_t = i8;
 using uint8_t = u8;
@@ -37,6 +43,8 @@ using int64_t = i64;
 using uint64_t = u64;
 
 using size_t = __SIZE_TYPE__;
+#endif
+
 namespace neo
 {
     template<typename T>
@@ -46,10 +54,10 @@ namespace neo
             ref(const_cast<T*>(&obj))
         {
         }
-
-        constexpr ReferenceWrapper(T& obj) :
-            ref(&obj)
+        
+        constexpr ~ReferenceWrapper()
         {
+            ref = nullptr;
         }
 
         constexpr operator T&() const
@@ -57,10 +65,28 @@ namespace neo
             return *ref;
         }
 
-        constexpr ReferenceWrapper& operator=(const ReferenceWrapper&) = default;
-        constexpr ReferenceWrapper(const ReferenceWrapper&) = default;
+        constexpr ReferenceWrapper& operator=(const ReferenceWrapper& other)
+        {
+            if (this == &other)
+                return *this;
+            ref = other.ref;
+            return *this;
+        };
+        
+        constexpr ReferenceWrapper& operator=(const T& other) const
+        {
+            ref =  &const_cast<T&>(other);
+            return *this;
+        };
+    
+        constexpr ReferenceWrapper& operator=(T& other)
+        {
+            ref = &other;
+            return *this;
+        };
 
-        T* ref;
+    private:
+        T* ref {nullptr};
     };
 
     template<typename T>
