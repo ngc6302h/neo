@@ -20,37 +20,37 @@
 namespace neo
 {
     template<typename T>
-    class UniquePtr
+    class OwnPtr
     {
     public:
-        UniquePtr() = delete;
-        UniquePtr& operator=(const UniquePtr&) = delete;
+        OwnPtr() = delete;
+        OwnPtr& operator=(const OwnPtr&) = delete;
 
-        constexpr explicit UniquePtr(T* obj) :
+        constexpr explicit OwnPtr(T* obj) :
             m_data(obj)
         {
             VERIFY(obj != nullptr);
         }
 
-        constexpr UniquePtr(UniquePtr&& other) :
+        constexpr OwnPtr(OwnPtr&& other) :
             m_data(other.m_data)
         {
             other.m_data = nullptr;
         }
 
         template<typename... Args>
-        static constexpr UniquePtr make(Args&&... args)
+        static constexpr OwnPtr make(Args&&... args)
         {
-            return UniquePtr(new T(forward<Args>(args)...));
+            return OwnPtr(new T(forward<Args>(args)...));
         }
 
-        constexpr UniquePtr& operator=(UniquePtr&& other)
+        constexpr OwnPtr& operator=(OwnPtr&& other)
         {
             m_data = other.m_data;
             other.m_data = nullptr;
         }
 
-        constexpr ~UniquePtr()
+        constexpr ~OwnPtr()
         {
             delete m_data;
         }
@@ -355,5 +355,5 @@ namespace neo
     };
 }
 using neo::RefPtr;
-using neo::UniquePtr;
+using neo::OwnPtr;
 using neo::WeakPtr;
