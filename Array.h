@@ -17,7 +17,7 @@
 
 #pragma once
 #include "Assert.h"
-#include "IterableUtilExtensionsFwdDecl.h"
+#include "IterableUtil.h"
 #include "Iterator.h"
 #include "Span.h"
 #include "TypeTags.h"
@@ -111,13 +111,13 @@ namespace neo
             return ConstBidIt(&m_storage[Size]);
         }
 
-        template<typename U = EnableIf<InequalityComparable<T>, Array<T, Size>>>
-        [[nodiscard]] constexpr bool operator==(const U& other) const
+        template<typename K, typename = EnableIf<InequalityComparable<K>>>
+        [[nodiscard]] constexpr bool operator==(const Array& other) const
         {
             return span() == other.span();
         }
-
-        template<typename = EnableIf<InequalityComparable<T>>>
+    
+        template<typename K, typename = EnableIf<InequalityComparable<K>>>
         [[nodiscard]] constexpr bool operator!=(const Array& other) const
         {
             return span() != other.span();
@@ -149,14 +149,15 @@ namespace neo
             return neo::select(*this, selector);
         }
 
-        template<typename TComparerFunc>
-        requires CallableWithReturnType<TComparerFunc, bool, const T&, const T&>
-        [[nodiscard]] constexpr bool contains(const T& what, TComparerFunc comparer = DefaultEqualityComparer<const T&>) const
+        template<typename U, typename TComparerFunc>
+        requires CallableWithReturnType<TComparerFunc, bool, const T&, const U&>
+        [[nodiscard]] constexpr bool contains(const U& what, TComparerFunc comparer = DefaultEqualityComparer<const T&>) const
         {
             return neo::contains(*this, what, comparer);
         }
-
-        [[nodiscard]] constexpr bool contains(const T& what) const
+    
+        template<typename Identity = IdentityType<T>>
+        [[nodiscard]] constexpr bool contains(const Identity& what) const requires InequalityComparable<Identity>
         {
             return neo::contains(*this, what, DefaultEqualityComparer<T>);
         }
