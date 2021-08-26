@@ -16,6 +16,8 @@
  */
 
 #pragma once
+#include "Assert.h"
+#include "TypeTraits.h"
 #include "Types.h"
 
 namespace neo
@@ -34,28 +36,21 @@ namespace neo
     public:
         static constexpr size_t TYPE_COUNT = sizeof...(Types);
 
-        template<typename T, typename... TRemaining>
-        void DestroyAtIndex(size_t i)
-        {
-            if (i == 0)
-                ((T*)&this->m_storage)->~T();
-            else
-                DestroyAtIndex<TRemaining...>(i - 1);
-        }
-
         ~Variant()
         {
+            //if (this->m_active_type != -1)
+                //DestroyAtIndex<Types...>(this->m_active_type);
         }
 
         template<typename T, typename = EnableIf<PackContains<T, Types...>>>
-        explicit constexpr Variant(const T& other)
+        constexpr Variant(const T& other)
         {
             new (&this->m_storage) T(other);
             this->m_active_type = IndexOfType<T, Types...>;
         }
 
         template<typename T, typename = EnableIf<PackContains<T, Types...>>>
-        explicit constexpr Variant(T&& other)
+        constexpr Variant(T&& other)
         {
             new (&this->m_storage) T(move(other));
             this->m_active_type = IndexOfType<T, Types...>;
@@ -76,6 +71,14 @@ namespace neo
         }
 
         template<typename T, typename = EnableIf<PackContains<T, Types...>>>
+        constexpr const T& get() const
+        {
+            [[maybe_unused]] bool valid = this->m_active_type == IndexOfType<T, Types...>; // cannot use a variadic expression in a macro
+            VERIFY(valid);
+            return *reinterpret_cast<const T*>(&this->m_storage);
+        }
+
+        template<typename T, typename = EnableIf<PackContains<T, Types...>>>
         constexpr Variant& operator=(const T& other)
         {
             reinterpret_cast<T*>(&this->m_storage)->~T();
@@ -89,6 +92,11 @@ namespace neo
             reinterpret_cast<T*>(&this->m_storage)->~T();
             *reinterpret_cast<T*>(&this->m_storage) = move(*reinterpret_cast<T*>(&other.m_storage));
             return *this;
+        }
+
+        constexpr size_t index_of_active_type() const
+        {
+            return this->m_active_type;
         }
     };
 }
