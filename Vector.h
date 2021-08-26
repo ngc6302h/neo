@@ -17,12 +17,13 @@
 
 #pragma once
 #include "Assert.h"
-#include "IterableUtilExtensionsFwdDecl.h"
+#include "IterableUtil.h"
 #include "Iterator.h"
 #include "Span.h"
 #include "TypeTags.h"
 #include "TypeTraits.h"
 #include "Types.h"
+#include "Concepts.h"
 #include <malloc.h>
 
 namespace neo
@@ -38,48 +39,36 @@ namespace neo
         constexpr Vector() :
             m_capacity(DEFAULT_SIZE)
         {
-            if constexpr (IsTriviallyConstructible<T>)
-                m_data = new T[DEFAULT_SIZE];
-            else
-                m_data = (T*)malloc(sizeof(T) * DEFAULT_SIZE);
+            allocate(DEFAULT_SIZE);
         }
 
         ~Vector()
         {
-            delete[] m_data;
+            clean();
+            deallocate();
         }
 
-        explicit constexpr Vector(size_t initial_capacity, bool resize_to_capacity = false)
+        explicit constexpr Vector(size_t initial_capacity, bool resize_to_capacity = false) :
+            m_capacity(initial_capacity), m_size(resize_to_capacity ? initial_capacity : 0)
         {
             VERIFY(initial_capacity > 0);
-            if constexpr (IsTriviallyConstructible<T>)
-                m_data = new T[initial_capacity];
-            else
-                m_data = (T*)malloc(sizeof(T) * initial_capacity);
-            m_capacity = initial_capacity;
-            m_size = resize_to_capacity ? initial_capacity : 0;
+            allocate(initial_capacity);
         }
 
         constexpr Vector(const Vector& other) :
             m_capacity(other.m_capacity), m_size(other.m_size)
         {
-            if constexpr (IsTriviallyConstructible<T>)
-                m_data = new T[other.m_capacity];
-            else
-                m_data = (T*)malloc(sizeof(T) * other.m_capacity);
-            if constexpr (IsTriviallyCopyable<T>)
-                __builtin_memcpy(m_data, other.m_data, other.m_size * sizeof(T));
-            else
+            VERIFY(other.m_size > 0);
+            allocate(other.m_size);
+            for (size_t i = 0; i < m_size; i++)
             {
-                for (size_t i = 0; i < m_size; i++)
-                    m_data[i] = other.m_data[i];
+                m_data[i] = other.m_data[i];
             }
         }
 
         constexpr Vector(Vector&& other) :
-            m_capacity(other.m_capacity), m_size(other.m_size)
+            m_data(other.m_data), m_capacity(other.m_capacity), m_size(other.m_size)
         {
-            m_data = other.m_data;
             other.m_capacity = 0;
             other.m_size = 0;
             other.m_data = nullptr;
@@ -89,16 +78,10 @@ namespace neo
             m_capacity(other.size()), m_size(other.size())
         {
             VERIFY(other.size() > 0);
-            if constexpr (IsTriviallyConstructible<T>)
-                m_data = new T[m_size];
-            else
-                m_data = (T*)malloc(sizeof(T) * m_size);
-            if constexpr (IsTriviallyCopyable<T>)
-                __builtin_memcpy(m_data, other.m_data, other.m_size * sizeof(T));
-            else
+            allocate(other.m_size);
+            for (size_t i = 0; i < m_size; i++)
             {
-                for (size_t i = 0; i < m_size; i++)
-                    m_data[i] = other.m_data[i];
+                m_data[i] = other.m_data[i];
             }
         }
 
@@ -107,20 +90,14 @@ namespace neo
             if (&other == this)
                 return *this;
 
-            delete[] m_data;
-            m_size = other.size();
             m_capacity = other.capacity();
-            if constexpr (IsTriviallyConstructible<T>)
-                m_data = new T[m_size];
-            else
-                m_data = (T*)malloc(sizeof(T) * m_size);
-            if constexpr (IsTriviallyCopyable<T>)
-                __builtin_memcpy(m_data, other.m_data, other.m_size * sizeof(T));
-            else
-            {
-                for (size_t i = 0; i < m_size; i++)
-                    m_data[i] = other.m_data[i];
-            }
+            m_size = other.size();
+            clean();
+            deallocate();
+            allocate(other.m_size);
+            for (size_t i = 0; i < m_size; i++)
+                m_data[i] = other.m_data[i];
+            return *this;
         }
 
         constexpr Vector& operator=(Vector&& other)
@@ -128,7 +105,8 @@ namespace neo
             if (&other == this)
                 return *this;
 
-            delete[] m_data;
+            clean();
+            deallocate();
             m_size = other.size();
             m_capacity = other.capacity();
             m_data = other.m_data;
@@ -138,13 +116,14 @@ namespace neo
             return *this;
         }
 
-        constexpr void append(const T& e)
+        constexpr void append(const RemoveReferenceWrapper<T>& e)
         {
             ensure_capacity(m_size + 1);
             m_data[m_size++] = e;
         }
-
-        constexpr void append(T&& e)
+    
+        template<typename> requires MoveAssignable<T>
+        constexpr void append(RemoveReferenceWrapper<T>&& e)
         {
             ensure_capacity(m_size + 1);
             m_data[m_size++] = move(e);
@@ -171,34 +150,22 @@ namespace neo
             return m_capacity;
         }
 
-        constexpr void resize(size_t new_size)
+        constexpr void change_capacity(size_t new_capcity)
         {
-            VERIFY(new_size > 0);
-            if (new_size <= m_size)
+            VERIFY(new_capcity > 0);
+            
+            T* new_buf = (T*) calloc(new_capcity, sizeof(T));
+            for (size_t i = 0; i < m_size; i++)
             {
-                m_size = new_size;
-                return;
+                if constexpr(MoveAssignable<T>)
+                    new_buf[i] = move(m_data[i]);
+                else
+                    new_buf[i] = m_data[i];
             }
-
-            T* new_buffer;
-            if constexpr (IsTriviallyConstructible<T>)
-                new_buffer = new T[new_size];
-            else
-                new_buffer = (T*)malloc(sizeof(T) * new_size);
-            if constexpr (IsTriviallyCopyable<T>)
-                __builtin_memcpy(new_buffer, m_data, m_size * sizeof(T));
-            else
-            {
-                for (size_t i = 0; i < min(m_size, new_size); i++)
-                {
-                    new_buffer[i] = move(m_data[i]);
-                }
-            }
-            delete[] m_data;
-            m_data = new_buffer;
-            if (new_size > m_capacity)
-                m_capacity = new_size;
-            m_size = new_size;
+            clean();
+            deallocate();
+            m_data = new_buf;
+            m_capacity = new_capcity;
         }
 
         constexpr void ensure_capacity(size_t new_capacity)
@@ -206,9 +173,7 @@ namespace neo
             VERIFY(new_capacity > 0);
             if (m_capacity < new_capacity)
             {
-                size_t current_size = m_size;
-                resize(new_capacity);
-                m_size = current_size;
+                change_capacity(new_capacity);
             }
         }
 
@@ -266,7 +231,7 @@ namespace neo
         constexpr void shrink_to_fit()
         {
             VERIFY(m_size > 0);
-            resize(m_size);
+            change_capacity(m_size);
         }
 
         [[nodiscard]] constexpr Span<T> span()
@@ -300,6 +265,22 @@ namespace neo
         }
 
     private:
+        constexpr void clean()
+        {
+            for (size_t i = 0; i < m_size; i++)
+                m_data[i].~T();
+        }
+
+        constexpr void allocate(size_t size)
+        {
+            m_data = (T*) calloc(size, sizeof(T));
+        }
+
+        constexpr void deallocate()
+        {
+            free(m_data);
+        }
+
         T* m_data { nullptr };
         size_t m_capacity { 0 };
         size_t m_size { 0 };
