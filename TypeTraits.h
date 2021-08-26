@@ -40,7 +40,7 @@ namespace neo::detail
     };
 }
 
-#ifndef _GLIBCXX_TYPE_TRAITS
+#ifndef NEO_DO_NOT_DEFINE_STD
 //move must live in std, required for the compiler
 
 namespace std
@@ -280,6 +280,7 @@ namespace neo
 }
 
 //required for tuple structured binding support
+
 namespace std
 {
     template<size_t I, typename TTuple>
