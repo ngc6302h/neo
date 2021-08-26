@@ -16,7 +16,7 @@
  */
 
 #pragma once
-
+#include "Assert.h"
 namespace neo
 {
     template<typename T>
@@ -149,10 +149,24 @@ namespace neo
 
         constexpr RefPtr& operator=(const RefPtr& other)
         {
-            assert(*other.m_reference_counter != 0);
+            VERIFY(*other.m_reference_counter != 0);
 
+            ~RefPtr();
+            
             m_data = other.m_data;
             m_control = other.m_control;
+            if constexpr (SharedBetweenThreads)
+                __atomic_add_fetch(&m_control->reference_count, 1, __ATOMIC_ACQ_REL);
+            else
+                m_control->reference_count++;
+        }
+    
+        constexpr RefPtr& operator=(const T*& other)
+        {
+            ~RefPtr();
+            
+            m_data = const_cast<T*>(other);
+            m_control = new ControlBlock {1, 0};
             if constexpr (SharedBetweenThreads)
                 __atomic_add_fetch(&m_control->reference_count, 1, __ATOMIC_ACQ_REL);
             else
@@ -161,8 +175,10 @@ namespace neo
 
         constexpr RefPtr& operator=(RefPtr&& other)
         {
-            assert(*other.m_reference_counter != 0);
-
+            VERIFY(*other.m_reference_counter != 0);
+    
+            ~RefPtr();
+            
             m_data = other.m_data;
             m_control = other.m_control;
             other.m_data = nullptr;
