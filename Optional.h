@@ -41,13 +41,22 @@ namespace neo
         {
             new (&m_storage) T(other);
         }
+    
+        constexpr Optional(const Optional& other) :
+                m_has_value(other.m_has_value)
+        {
+            if (other.has_value())
+            {
+                new (&m_storage) Optional(other.value());
+            }
+        }
 
         constexpr Optional(T&& other) :
             m_has_value(true)
         {
             new (&m_storage) T(move(other));
         }
-
+        
         constexpr Optional(Optional&& other) :
             m_has_value(other.m_has_value)
         {
@@ -118,7 +127,7 @@ namespace neo
         [[nodiscard]] constexpr const T& value() const
         {
             VERIFY(has_value());
-            return *reinterpret_cast<T*>(&m_storage);
+            return *reinterpret_cast<const T*>(&m_storage);
         }
 
         [[nodiscard]] constexpr T release_value()
