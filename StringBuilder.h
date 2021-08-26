@@ -33,7 +33,7 @@ namespace neo
         }
 
         explicit StringBuilder(const StringView& string) :
-            m_string(new char[DEFAULT_CAPACITY]), m_current_offset(string.byte_size()), m_capacity(string.byte_size())
+            m_string(new char[max(DEFAULT_CAPACITY, string.byte_size())]), m_current_offset(string.byte_size()), m_capacity(max(DEFAULT_CAPACITY, string.byte_size()))
         {
             __builtin_memcpy(m_string, string.non_null_terminated_buffer(), string.byte_size());
         }
@@ -164,7 +164,7 @@ namespace neo
                 auto end = --StringViewBidIt(m_string + m_current_offset);
                 while (isspace(*end))
                     --end;
-                m_current_offset = end->data - m_string;
+                m_current_offset = end.ptr().data - m_string;
             }
 
             if ((from_where & TrimMode::Start) == TrimMode::Start)
@@ -172,8 +172,8 @@ namespace neo
                 auto start = StringViewBidIt(m_string);
                 while (isspace(*start))
                     ++start;
-                m_current_offset = m_string + m_current_offset - start->data + 1;
-                __builtin_memcpy(m_string, start->data, m_current_offset);
+                m_current_offset = m_string + m_current_offset - start.ptr().data + 1;
+                __builtin_memcpy(m_string, start.ptr().data, m_current_offset);
             }
             return *this;
         }

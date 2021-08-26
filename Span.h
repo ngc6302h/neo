@@ -93,7 +93,7 @@ namespace neo
 
         [[nodiscard]] constexpr ConstBidIt begin() const
         {
-            return BidIt(m_data);
+            return ConstBidIt(m_data);
         }
 
         [[nodiscard]] constexpr BidIt end()
@@ -103,7 +103,7 @@ namespace neo
 
         [[nodiscard]] constexpr ConstBidIt end() const
         {
-            return BidIt(m_data + m_size);
+            return ConstBidIt(m_data + m_size);
         }
 
         template<typename>
