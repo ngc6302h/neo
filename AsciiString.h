@@ -173,10 +173,10 @@ namespace neo
 
         [[nodiscard]] constexpr AsciiString substring(AsciiStringBidIt start) const
         {
-            VERIFY(start->data <= end()->data);
+            VERIFY(&*start <= &*end());
             // little dirty but it allows the edge case where iterator
             // is end() and substring will be empty.
-            return { start->data, (size_t)(m_buffer + m_length - start->data) };
+            return { &*start, (size_t)(m_buffer + m_length - &*start) };
         }
 
         [[nodiscard]] constexpr AsciiString substring(size_t start) const
@@ -187,8 +187,8 @@ namespace neo
 
         [[nodiscard]] constexpr AsciiString substring(AsciiStringBidIt start, size_t length) const
         {
-            VERIFY(length <= m_length - (size_t)(start->data - m_buffer));
-            return { start->data, length };
+            VERIFY(length <= m_length - (size_t)(&*start - m_buffer));
+            return { &*start, length };
         }
 
         [[nodiscard]] constexpr AsciiString substring(size_t start, size_t length) const
@@ -208,14 +208,14 @@ namespace neo
                 ++current;
                 if (*current == by)
                 {
-                    strings.construct(_begin->data, current->data - _begin->data);
+                    strings.construct(&*_begin, &*current - &*_begin);
                     while (*current == by)
                         ++current;
                     _begin = current;
                 }
             } while (current != _end);
             if (_begin != _end)
-                strings.construct(_begin->data, current->data - _begin->data);
+                strings.construct(&*_begin, &*current - &*_begin);
             return strings;
         }
 
@@ -229,19 +229,19 @@ namespace neo
             do
             {
                 ++current;
-                if (AsciiStringView(current->data, min(by.length(), (size_t)(_end->data - current->data))).starts_with(by))
+                if (AsciiStringView(&*current, min(by.length(), (size_t)(&*_end - &*current))).starts_with(by))
                 {
-                    strings.construct(_begin->data, current->data - _begin->data);
+                    strings.construct(&*_begin, &*current - &*_begin);
                     do
                     {
                         for (auto to_skip = by.length(); to_skip > 0; to_skip--)
                             ++current;
-                    } while (AsciiStringView(current->data, min(by.length(), (size_t)(_end->data - current->data))).starts_with(by));
+                    } while (AsciiStringView(&*current, min(by.length(), (size_t)(&*_end - &*current))).starts_with(by));
                     _begin = current;
                 }
             } while (current != _end);
             if (_begin != _end)
-                strings.construct(_begin->data, current->data - _begin->data);
+                strings.construct(&*_begin, &*current - &*_begin);
             return strings;
         }
 

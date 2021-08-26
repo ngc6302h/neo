@@ -119,7 +119,7 @@ namespace neo
         [[nodiscard]] constexpr StringView substring_view(StringViewBidIt start) const
         {
             VERIFY(start != end());
-            return { start->data, static_cast<size_t>(m_view + m_byte_length - start->data) };
+            return { start.ptr().data, static_cast<size_t>(m_view + m_byte_length - start.ptr().data) };
         }
 
         [[nodiscard]] constexpr StringView substring_view(size_t index_codepoint_start) const
@@ -132,7 +132,7 @@ namespace neo
                 ;
             VERIFY(start != _end);
 
-            return { start->data, static_cast<size_t>(m_view + m_byte_length - start->data) };
+            return { start.ptr().data, static_cast<size_t>(m_view + m_byte_length - start.ptr().data) };
         }
 
         [[nodiscard]] constexpr StringView substring_view(StringViewBidIt start, size_t codepoint_length) const
@@ -145,7 +145,7 @@ namespace neo
                 ;
             VERIFY(last != _end);
 
-            return { start->data, static_cast<size_t>(last->data - start->data) };
+            return { start.ptr().data, static_cast<size_t>(last.ptr().data - start.ptr().data) };
         }
 
         [[nodiscard]] constexpr StringView substring_view(size_t codepoint_start, size_t codepoint_length) const
@@ -165,7 +165,7 @@ namespace neo
                 ;
             VERIFY(last != _end);
 
-            return { start->data, static_cast<size_t>(last->data - start->data) };
+            return { start.ptr().data, static_cast<size_t>(last.ptr().data - start.ptr().data) };
         }
 
         [[nodiscard]] Vector<StringView> split(Utf8Char by) const
@@ -179,14 +179,14 @@ namespace neo
                 ++current;
                 if (*current == by)
                 {
-                    strings.construct(_begin->data, current->data - _begin->data);
+                    strings.construct(_begin.ptr().data, current.ptr().data - _begin.ptr().data);
                     while (*current == by)
                         ++current;
                     _begin = current;
                 }
             } while (current != _end);
             if (_begin != _end)
-                strings.construct(_begin->data, current->data - _begin->data);
+                strings.construct(_begin.ptr().data, current.ptr().data - _begin.ptr().data);
             return strings;
         }
 
@@ -200,19 +200,19 @@ namespace neo
             do
             {
                 ++current;
-                if (StringView(current->data, min(by.byte_size(), (size_t)(_end->data - current->data))).starts_with(by))
+                if (StringView(current.ptr().data, min(by.byte_size(), (size_t)(_end.ptr().data - current.ptr().data))).starts_with(by))
                 {
-                    strings.construct(_begin->data, current->data - _begin->data);
+                    strings.construct(_begin.ptr().data, current.ptr().data - _begin.ptr().data);
                     do
                     {
                         for (auto to_skip = by.length(); to_skip > 0; to_skip--)
                             ++current;
-                    } while (StringView(current->data, min(by.byte_size(), (size_t)(_end->data - current->data))).starts_with(by));
+                    } while (StringView(current.ptr().data, min(by.byte_size(), (size_t)(_end.ptr().data - current.ptr().data))).starts_with(by));
                     _begin = current;
                 }
             } while (current != _end);
             if (_begin != _end)
-                strings.construct(_begin->data, current->data - _begin->data);
+                strings.construct(_begin.ptr().data, current.ptr().data - _begin.ptr().data);
             return strings;
         }
 
@@ -225,7 +225,7 @@ namespace neo
                 --_end;
                 while (isspace(*_end))
                     --_end;
-                copy.m_byte_length = _end->data - m_view;
+                copy.m_byte_length = _end.ptr().data - m_view;
             }
 
             if ((from_where & TrimMode::Start) == TrimMode::Start)
@@ -233,7 +233,7 @@ namespace neo
                 auto start = copy.begin();
                 while (isspace(*start))
                     ++start;
-                copy.m_view = start->data;
+                copy.m_view = start.ptr().data;
             }
             return copy;
         }

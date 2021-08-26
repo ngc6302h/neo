@@ -195,7 +195,7 @@ namespace neo
 
         [[nodiscard]] constexpr String substring(StringBidIt start) const
         {
-            return { start->data, static_cast<size_t>(m_buffer + m_byte_length - start->data) };
+            return { start.ptr().data, static_cast<size_t>(m_buffer + m_byte_length - start.ptr().data) };
         }
 
         [[nodiscard]] constexpr String substring(size_t index_codepoint_start) const
@@ -207,7 +207,7 @@ namespace neo
             while (index_codepoint_start-- && start++ != _end)
                 ;
 
-            return { start->data, static_cast<size_t>(m_buffer + m_byte_length - start->data) };
+            return { start.ptr().data, static_cast<size_t>(m_buffer + m_byte_length - start.ptr().data) };
         }
 
         [[nodiscard]] constexpr String substring(StringBidIt start, size_t codepoint_length) const
@@ -218,7 +218,7 @@ namespace neo
             while (codepoint_length-- && last++ != _end)
                 ;
 
-            return { start->data, static_cast<size_t>(last->data - start->data) };
+            return { start.ptr().data, static_cast<size_t>(last.ptr().data - start.ptr().data) };
         }
 
         [[nodiscard]] constexpr String substring(size_t codepoint_start, size_t codepoint_length) const
@@ -234,7 +234,7 @@ namespace neo
             while (codepoint_length-- && last++ != _end)
                 ;
 
-            return { start->data, static_cast<size_t>(last->data - start->data) };
+            return { start.ptr().data, static_cast<size_t>(last.ptr().data - start.ptr().data) };
         }
 
         [[nodiscard]] Vector<String> split(Utf8Char by) const
@@ -248,14 +248,14 @@ namespace neo
                 ++current;
                 if (*current == by)
                 {
-                    strings.construct(_begin->data, current->data - _begin->data);
+                    strings.construct(_begin.ptr().data, current.ptr().data - _begin.ptr().data);
                     while (*current == by)
                         ++current;
                     _begin = current;
                 }
             } while (current != _end);
             if (_begin != _end)
-                strings.construct(_begin->data, current->data - _begin->data);
+                strings.construct(_begin.ptr().data, current.ptr().data - _begin.ptr().data);
             return strings;
         }
 
@@ -269,19 +269,19 @@ namespace neo
             do
             {
                 ++current;
-                if (StringView(current->data, min(by.byte_size(), (size_t)(_end->data - current->data))).starts_with(by))
+                if (StringView(current.ptr().data, min(by.byte_size(), (size_t)(_end.ptr().data - current.ptr().data))).starts_with(by))
                 {
-                    strings.construct(_begin->data, current->data - _begin->data);
+                    strings.construct(_begin.ptr().data, current.ptr().data - _begin.ptr().data);
                     do
                     {
                         for (auto to_skip = by.length(); to_skip > 0; to_skip--)
                             ++current;
-                    } while (StringView(current->data, min(by.byte_size(), (size_t)(_end->data - current->data))).starts_with(by));
+                    } while (StringView(current.ptr().data, min(by.byte_size(), (size_t)(_end.ptr().data - current.ptr().data))).starts_with(by));
                     _begin = current;
                 }
             } while (current != _end);
             if (_begin != _end)
-                strings.construct(_begin->data, current->data - _begin->data);
+                strings.construct(_begin.ptr().data, current.ptr().data - _begin.ptr().data);
             return strings;
         }
 
@@ -319,7 +319,7 @@ namespace neo
                 --_end;
                 while (isspace(*_end))
                     --_end;
-                length -= _end->data - m_buffer;
+                length -= _end.ptr().data - m_buffer;
             }
 
             const char* start = m_buffer;
@@ -328,8 +328,8 @@ namespace neo
                 auto _start = begin();
                 while (isspace(*_start))
                     ++_start;
-                length -= _start->data - m_buffer;
-                start = _start->data;
+                length -= _start.ptr().data - m_buffer;
+                start = _start.ptr().data;
             }
             return String(start, length);
         }
@@ -370,6 +370,18 @@ namespace neo
             while (size--)
                 result += result ^ data[size] ^ (~(result * result + 3241));
             return result;
+        }
+    };
+    
+    template<typename T>
+    struct DefaultHasher;
+    
+    template<>
+    struct DefaultHasher<String>
+    {
+        static constexpr size_t hash(const String& str)
+        {
+            return StringHasher<String>::hash(str);
         }
     };
 }
