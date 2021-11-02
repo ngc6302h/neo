@@ -63,7 +63,7 @@ namespace neo {
             }
         
         private:
-            Optional<T> m_object;
+            Optional<T> m_object {};
             bool m_broken { false };
         };
     }
@@ -75,13 +75,13 @@ namespace neo {
     class Promise {
     public:
         Promise()
-                : m_state(create<detail::FutureState<T>>())
+                : m_state(RefPtr<detail::FutureState<T>>::make())
         {
         }
         
         ~Promise()
         {
-            if (!m_state.is_null())
+            if (!m_state.is_valid())
             {
                 if (!m_state->has_value())
                     m_state->break_promise();
@@ -104,7 +104,7 @@ namespace neo {
         
         [[nodiscard]] bool is_valid() const
         {
-            return !m_state.is_null();
+            return !m_state.is_valid();
         }
         
         void set_value(T const& value)
@@ -153,19 +153,19 @@ namespace neo {
         
         operator bool() const
         {
-            VERIFY(!m_state.is_null());
+            VERIFY(m_state.is_valid());
             return m_state->has_value();
         }
         
         [[nodiscard]] bool has_value() const
         {
-            VERIFY(!m_state.is_null());
+            VERIFY(m_state.is_valid());
             return m_state->has_value();
         }
         
         [[nodiscard]] bool is_broken() const
         {
-            VERIFY(!m_state.is_null());
+            VERIFY(m_state.is_valid());
             return m_state->is_broken();
         }
         
@@ -191,7 +191,7 @@ namespace neo {
         
         void wait() const
         {
-            VERIFY(!m_state.is_null());
+            VERIFY(m_state.is_valid());
             while (!m_state->has_value());
         }
     
