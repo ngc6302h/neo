@@ -20,6 +20,7 @@
 
 int main()
 {
+    printf("%s\n", get_current_dir_name());
     auto maybe_error = File::exists("file");
     TEST_FALSE(maybe_error.has_value());
     auto file_or_error = File::open("file", "rb");
@@ -44,7 +45,7 @@ int main()
     auto bytes_read_or_error = file.read(buf.span(), buf.size());
     TEST_FALSE(bytes_read_or_error.has_error());
     TEST_EQUAL(bytes_read_or_error.result(), (size_t)filesize_or_error.result());
-    auto new_file_or_error = File::open("file_test_copy", "r+");
+    auto new_file_or_error = File::open("file_test_copy", "w+");
     TEST(new_file_or_error.has_result());
     File copy = move(new_file_or_error.result());
     auto bytes_written_or_error = copy.write(buf.span().as_readonly(), buf.size());
