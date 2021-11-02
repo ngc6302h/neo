@@ -162,14 +162,14 @@ namespace neo
             return clamp(-1, 1, __builtin_memcmp(m_buffer, other.m_buffer, min(m_byte_length, other.m_byte_length) + 1));
         }
 
-        [[nodiscard]] constexpr StringBidIt begin() const
+        [[nodiscard]] constexpr StringIterator begin() const
         {
-            return StringBidIt(m_buffer);
+            return StringIterator(m_buffer, m_buffer+m_byte_length, m_buffer);
         }
 
-        [[nodiscard]] constexpr StringBidIt end() const
+        [[nodiscard]] constexpr StringIterator end() const
         {
-            return StringBidIt(m_buffer + m_byte_length);
+            return StringIterator(m_buffer, m_buffer + m_byte_length, m_buffer + m_byte_length);
         }
 
         //Size in bytes
@@ -181,10 +181,11 @@ namespace neo
         [[nodiscard]] constexpr size_t length() const
         {
             auto start = begin();
-            auto _end = end();
             size_t count = 0;
-            while (start++ != _end)
+            do
                 count++;
+            while(!(++start).is_end());
+
             return count;
         }
 
@@ -193,9 +194,9 @@ namespace neo
             return m_byte_length == 0 || m_buffer == nullptr;
         }
 
-        [[nodiscard]] constexpr String substring(StringBidIt start) const
+        [[nodiscard]] constexpr String substring(StringIterator start) const
         {
-            return { start.ptr().data, static_cast<size_t>(m_buffer + m_byte_length - start.ptr().data) };
+            return { start.ptr(), size_t(m_buffer + m_byte_length - start.ptr()) };
         }
 
         [[nodiscard]] constexpr String substring(size_t index_codepoint_start) const
@@ -203,14 +204,13 @@ namespace neo
             VERIFY(index_codepoint_start <= m_byte_length);
 
             auto start = begin();
-            auto _end = end();
-            while (index_codepoint_start-- && start++ != _end)
+            while (index_codepoint_start-- && !start++.is_end())
                 ;
 
-            return { start.ptr().data, static_cast<size_t>(m_buffer + m_byte_length - start.ptr().data) };
+            return {start.ptr(), static_cast<size_t>(m_buffer + m_byte_length - start.ptr()) };
         }
 
-        [[nodiscard]] constexpr String substring(StringBidIt start, size_t codepoint_length) const
+        [[nodiscard]] constexpr String substring(StringIterator start, size_t codepoint_length) const
         {
             VERIFY(codepoint_length <= m_byte_length);
             auto last = start;
@@ -218,7 +218,7 @@ namespace neo
             while (codepoint_length-- && last++ != _end)
                 ;
 
-            return { start.ptr().data, static_cast<size_t>(last.ptr().data - start.ptr().data) };
+            return {start.ptr(), static_cast<size_t>(last.ptr() - start.ptr()) };
         }
 
         [[nodiscard]] constexpr String substring(size_t codepoint_start, size_t codepoint_length) const
@@ -234,7 +234,7 @@ namespace neo
             while (codepoint_length-- && last++ != _end)
                 ;
 
-            return { start.ptr().data, static_cast<size_t>(last.ptr().data - start.ptr().data) };
+            return {start.ptr(), static_cast<size_t>(last.ptr() - start.ptr()) };
         }
 
         [[nodiscard]] Vector<String> split(Utf8Char by) const
@@ -248,14 +248,14 @@ namespace neo
                 ++current;
                 if (*current == by)
                 {
-                    strings.construct(_begin.ptr().data, current.ptr().data - _begin.ptr().data);
+                    strings.construct(_begin.ptr(), current.ptr() - _begin.ptr());
                     while (*current == by)
                         ++current;
                     _begin = current;
                 }
             } while (current != _end);
             if (_begin != _end)
-                strings.construct(_begin.ptr().data, current.ptr().data - _begin.ptr().data);
+                strings.construct(_begin.ptr(), current.ptr() - _begin.ptr());
             return strings;
         }
 
@@ -269,19 +269,19 @@ namespace neo
             do
             {
                 ++current;
-                if (StringView(current.ptr().data, min(by.byte_size(), (size_t)(_end.ptr().data - current.ptr().data))).starts_with(by))
+                if (StringView(current.ptr(), min(by.byte_size(), (size_t)(_end.ptr() - current.ptr()))).starts_with(by))
                 {
-                    strings.construct(_begin.ptr().data, current.ptr().data - _begin.ptr().data);
+                    strings.construct(_begin.ptr(), current.ptr() - _begin.ptr());
                     do
                     {
                         for (auto to_skip = by.length(); to_skip > 0; to_skip--)
                             ++current;
-                    } while (StringView(current.ptr().data, min(by.byte_size(), (size_t)(_end.ptr().data - current.ptr().data))).starts_with(by));
+                    } while (StringView(current.ptr(), min(by.byte_size(), (size_t)(_end.ptr() - current.ptr()))).starts_with(by));
                     _begin = current;
                 }
             } while (current != _end);
             if (_begin != _end)
-                strings.construct(_begin.ptr().data, current.ptr().data - _begin.ptr().data);
+                strings.construct(_begin.ptr(), current.ptr() - _begin.ptr());
             return strings;
         }
 
@@ -300,14 +300,21 @@ namespace neo
 
             return __builtin_memcmp(m_byte_length - other.m_byte_length + m_buffer, other.m_buffer, other.m_byte_length) == 0;
         }
-
-        [[nodiscard]] constexpr Optional<StringBidIt> contains(const String& other) const
+    
+        [[nodiscard]] constexpr StringIterator find(const String& other) const
         {
             if (!byte_size() || !other.byte_size() || byte_size() < other.byte_size())
-                return {};
-
+                return end();
+        
             char* hit = __builtin_strstr(m_buffer, other.m_buffer);
-            return hit != nullptr ? StringBidIt(hit) : Optional<StringBidIt>();
+            if (!hit)
+                return end();
+            return StringIterator(m_buffer, m_buffer + m_byte_length, hit);
+        }
+        
+        [[nodiscard]] constexpr bool contains(const String& other) const
+        {
+            return !find(other).is_end();
         }
 
         [[nodiscard]] constexpr String trim_whitespace(TrimMode from_where) const
@@ -319,7 +326,7 @@ namespace neo
                 --_end;
                 while (isspace(*_end))
                     --_end;
-                length -= _end.ptr().data - m_buffer;
+                length -= _end.ptr() - m_buffer;
             }
 
             const char* start = m_buffer;
@@ -328,8 +335,8 @@ namespace neo
                 auto _start = begin();
                 while (isspace(*_start))
                     ++_start;
-                length -= _start.ptr().data - m_buffer;
-                start = _start.ptr().data;
+                length -= _start.ptr() - m_buffer;
+                start = _start.ptr();
             }
             return String(start, length);
         }
