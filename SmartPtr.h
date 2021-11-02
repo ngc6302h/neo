@@ -17,6 +17,8 @@
 
 #pragma once
 #include "Assert.h"
+#include "Types.h"
+
 namespace neo
 {
     template<typename T>
