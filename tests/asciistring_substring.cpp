@@ -23,12 +23,12 @@ int main()
     AsciiString a { "String A" };
     AsciiString b = a.substring(0);
     TEST_EQUAL(a, b);
-    TEST_EQUAL(AsciiString { "tring A" }, a.substring(1));
+    TEST_EQUAL("tring A"_as, a.substring(1));
     TEST_EQUAL(b.substring(b.length()), ""_as);
     TEST_EQUAL(b.substring(b.length(), 0), ""_as);
-    TEST_EQUAL(b.substring(b.cbegin()), b);
-    TEST_EQUAL(b.substring(b.cbegin(), b.length()), b);
-    auto end = b.cend();
+    TEST_EQUAL(b.substring(b.begin()), b);
+    TEST_EQUAL(b.substring(b.begin(), b.length()), b);
+    auto end = b.end();
     TEST_EQUAL(b.substring(end), ""_as);
     return 0;
 }

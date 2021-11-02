@@ -23,12 +23,12 @@ int main()
     String a = "This is a string suited for unicode characters."_s;
     TEST_EQUAL(a.length(), 47);
     TEST_EQUAL(a.byte_size(), 47);
-    TEST_EQUAL(a.end()->data - a.begin()->data, 47);
-    TEST_EQUAL(a.end()->data - a.begin()->data, 47);
+    TEST_EQUAL(a.end().ptr() - a.begin().ptr(), 47);
+    TEST_EQUAL(a.end().ptr() - a.begin().ptr(), 47);
     TEST_EQUAL(String(a.span().data()), a);
     TEST_EQUAL(__builtin_strcmp((char*)a, a.null_terminated_characters()), 0);
     TEST(a.contains("suited for unicode characters"));
-    TEST_FALSE(a.contains("unicorn").has_value());
+    TEST_FALSE(a.contains("unicorn"));
     TEST(a.starts_with("This is a"));
     TEST_FALSE(a.starts_with("This isn't a"));
     TEST(a.ends_with("characters."));
