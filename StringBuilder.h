@@ -161,19 +161,19 @@ namespace neo
         {
             if ((from_where & TrimMode::End) == TrimMode::End)
             {
-                auto end = --StringViewBidIt(m_string + m_current_offset);
+                auto end = --StringIterator(m_string, m_string + m_current_offset, m_string + m_current_offset);
                 while (isspace(*end))
                     --end;
-                m_current_offset = end.ptr().data - m_string;
+                m_current_offset = end.ptr() - m_string;
             }
 
             if ((from_where & TrimMode::Start) == TrimMode::Start)
             {
-                auto start = StringViewBidIt(m_string);
+                auto start = StringIterator(m_string, m_string + m_current_offset, m_string);
                 while (isspace(*start))
                     ++start;
-                m_current_offset = m_string + m_current_offset - start.ptr().data + 1;
-                __builtin_memcpy(m_string, start.ptr().data, m_current_offset);
+                m_current_offset = m_string + m_current_offset - start.ptr() + 1;
+                __builtin_memcpy(m_string, start.ptr(), m_current_offset);
             }
             return *this;
         }

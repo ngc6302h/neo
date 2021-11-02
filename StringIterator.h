@@ -18,27 +18,27 @@
 #pragma once
 #include "Iterator.h"
 #include "Types.h"
+
 namespace neo
 {
     using Utf8Char = u32;
-    using AsciiStringBidIt = BidirectionalIterator<const char*>;
-    using AsciiStringViewBidIt = BidirectionalIterator<const char*>;
-
-    struct StringIteratorContainer
+    
+    class StringIteratorContainer
     {
-        const char* data;
-        //using TReturn = Utf8Char;
-
-        constexpr StringIteratorContainer(const char* ptr) :
-            data(ptr)
+    public:
+        explicit constexpr StringIteratorContainer(const char* base, const char* end, const char* current) :
+                m_base(base),
+                m_end(end),
+                m_current(current)
         {
         }
 
         constexpr Utf8Char operator*() const
         {
+            VERIFY(!is_end());
             //TODO: Research how to make this branchless
             int codepoint_size;
-            const char* ptr = data;
+            const char* ptr = m_current;
             if (((*ptr >> 7) & 1) == 0)
                 codepoint_size = 1;
             else if (((*ptr >> 5) & 7) == 6)
@@ -65,7 +65,7 @@ namespace neo
                 codepoint = (((u32)ptr[3]) & 0x3F) | (((u32)ptr[2]) & 0x3F) << 6 | (((u32)ptr[1]) & 0x3F) << 12 | (((u32)ptr[0]) & 7) << 18;
                 break;
             default:
-                __builtin_unreachable();
+                VERIFY_NOT_REACHED();
             }
             VERIFY(codepoint != 0);
             return codepoint;
@@ -73,7 +73,8 @@ namespace neo
 
         constexpr StringIteratorContainer& operator++()
         {
-            const char* ptr = data;
+            VERIFY(!is_end());
+            const char* ptr = m_current;
             if (((*ptr >> 7) & 1) == 0)
                 ptr++;
             else if (((*ptr >> 5) & 7) == 6)
@@ -84,14 +85,15 @@ namespace neo
                 ptr += 4;
             else
                 ptr++; //TODO: Verify this is correct behavior
-            data = ptr;
+            m_current = ptr;
             return *this;
         }
 
         constexpr StringIteratorContainer operator++(int)
         {
+            VERIFY(!is_end());
             auto prev = *this;
-            const char* ptr = data;
+            const char* ptr = m_current;
             if (((*ptr >> 7) & 1) == 0)
                 ptr++;
             else if (((*ptr >> 5) & 7) == 6)
@@ -102,43 +104,58 @@ namespace neo
                 ptr += 4;
             else
                 ptr++; //TODO: verify this is correct behavior
-            data = ptr;
+            m_current = ptr;
             return prev;
         }
 
         constexpr StringIteratorContainer& operator--()
         {
+            VERIFY(m_current > m_base);
             do
-                data--;
-            while ((((*data) >> 6) & 3) == 2);
+                m_current--;
+            while ((((*m_current) >> 6) & 3) == 2);
             return *this;
         }
 
         constexpr StringIteratorContainer operator--(int)
         {
+            VERIFY(m_current > m_base);
             auto prev = *this;
             do
-                data--;
-            while ((((*data) >> 6) & 3) == 2);
+                m_current--;
+            while ((((*m_current) >> 6) & 3) == 2);
             return prev;
+        }
+    
+        constexpr bool is_end() const
+        {
+            return *m_current == 0 || m_current == m_end;
+        }
+        
+        constexpr const char* ptr() const
+        {
+            return m_current;
         }
 
         constexpr bool operator!=(const StringIteratorContainer& other) const
         {
-            return data != other.data;
+            return m_current != other.m_current;
         }
 
         constexpr bool operator==(const StringIteratorContainer& other) const
         {
-            return data == other.data;
+            return m_current == other.m_current;
         }
+
+    private:
+        const char* m_base;
+        const char* m_end;
+        const char* m_current;
     };
-    using StringBidIt = BidirectionalIterator<const char*, StringIteratorContainer>;
-    using StringViewBidIt = BidirectionalIterator<const char*, StringIteratorContainer>;
+    using StringIterator = StringIteratorContainer;
+    using StringViewIterator = StringIteratorContainer;
 
 }
-using neo::AsciiStringBidIt;
-using neo::AsciiStringViewBidIt;
-using neo::StringBidIt;
-using neo::StringViewBidIt;
+using neo::StringIterator;
+using neo::StringViewIterator;
 using neo::Utf8Char;

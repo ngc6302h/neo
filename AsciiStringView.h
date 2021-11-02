@@ -29,12 +29,14 @@ namespace neo
     class AsciiStringView
     {
     public:
+        using AsciiStringIterator = Iterator<AsciiStringView>;
+    
         constexpr AsciiStringView() = default;
         constexpr AsciiStringView(const AsciiStringView& other) = default;
         constexpr ~AsciiStringView() = default;
 
-        constexpr AsciiStringView(const char* cstring) :
-            m_view(cstring), m_length(__builtin_strlen(cstring))
+        constexpr AsciiStringView(const char* unsafe_cstring) :
+            m_view(unsafe_cstring), m_length(__builtin_strlen(unsafe_cstring))
         {
         }
 
@@ -92,28 +94,28 @@ namespace neo
 
         [[nodiscard]] constexpr size_t length() const
         {
-            auto _begin = begin();
-            auto _end = end();
-            size_t count = 0;
-            while (_begin++ != _end)
-                count++;
-            return count;
+            return m_length;
+        }
+        
+        [[nodiscard]] constexpr size_t size() const
+        {
+            return m_length;
         }
 
-        [[nodiscard]] constexpr AsciiStringViewBidIt begin() const
+        [[nodiscard]] constexpr AsciiStringIterator begin() const
         {
-            return AsciiStringViewBidIt(m_view);
+            return {*this };
         }
 
-        [[nodiscard]] constexpr AsciiStringViewBidIt end() const
+        [[nodiscard]] constexpr AsciiStringIterator end() const
         {
-            return AsciiStringViewBidIt(m_view + m_length);
+            return { *this, m_length };
         }
 
-        [[nodiscard]] constexpr AsciiStringView substring_view(AsciiStringViewBidIt start) const
+        [[nodiscard]] constexpr AsciiStringView substring_view(AsciiStringIterator const& start) const
         {
-            //VERIFY(start != cend());
-            return { &*start, (size_t)(m_view + m_length - &*start) };
+            VERIFY(!start.index());
+            return substring_view(start, m_length - start.index());
         }
 
         [[nodiscard]] constexpr AsciiStringView substring_view(size_t start) const
@@ -122,10 +124,10 @@ namespace neo
             return { m_view + start, m_length - start };
         }
 
-        [[nodiscard]] constexpr AsciiStringView substring_view(AsciiStringViewBidIt start, size_t length) const
+        [[nodiscard]] constexpr AsciiStringView substring_view(AsciiStringIterator const& start, size_t length) const
         {
-            VERIFY(length <= m_length - (size_t)(&*start - m_view));
-            return { &*start, length };
+            VERIFY(!start.is_end());
+            return substring_view(start.index(), length);
         }
 
         [[nodiscard]] constexpr AsciiStringView substring_view(size_t start, size_t length) const
@@ -138,21 +140,21 @@ namespace neo
         {
             Vector<AsciiStringView> strings;
             auto _begin = begin();
-            auto current = _begin;
+            auto current = begin();
             auto _end = end();
             do
             {
                 ++current;
                 if (*current == by)
                 {
-                    strings.construct(&*_begin, &*current - &*_begin);
+                    strings.construct(&m_view[_begin.index()], current.index() - _begin.index());
                     while (*current == by)
                         ++current;
                     _begin = current;
                 }
             } while (current != _end);
             if (_begin != _end)
-                strings.construct(&*_begin, &*current - &*_begin);
+                strings.construct(&m_view[_begin.index()], current.index() - _begin.index());
             return strings;
         }
 
@@ -161,24 +163,24 @@ namespace neo
             VERIFY(!by.is_empty());
             Vector<AsciiStringView> strings;
             auto _begin = begin();
-            auto current = _begin;
+            auto current = begin();
             auto _end = end();
             do
             {
                 ++current;
-                if (AsciiStringView(&*current, min(by.length(), (size_t)(&*_end - &*current))).starts_with(by))
+                if (substring_view(current, min(by.length(), (size_t)end().index() - _begin.index())).starts_with(by))
                 {
-                    strings.construct(&*_begin, &*current - &*_begin);
+                    strings.construct(&m_view[_begin.index()], current.index() - _begin.index());
                     do
                     {
                         for (auto to_skip = by.length(); to_skip > 0; to_skip--)
                             ++current;
-                    } while (AsciiStringView(&*current, min(by.length(), (size_t)(&*_end - &*current))).starts_with(by));
+                    } while (substring_view(current, min(by.length(), (size_t)(current.index() - _begin.index()))).starts_with(by));
                     _begin = current;
                 }
             } while (current != _end);
             if (_begin != _end)
-                strings.construct(&*_begin, &*current - &*_begin);
+                strings.construct(&m_view[_begin.index()], current.index() - _begin.index());
             return strings;
         }
 
@@ -216,14 +218,20 @@ namespace neo
             return m_view[index];
         }
 
-        //Optional can't be constexpr yet so we return an iterator past the end if it isn't found
-        [[nodiscard]] constexpr AsciiStringViewBidIt contains(const AsciiStringView& other) const
+        constexpr bool contains(const AsciiStringView& other) const
+        {
+            return !find(other).is_end();
+        }
+    
+        constexpr AsciiStringIterator find(const AsciiStringView& other) const
         {
             if (is_empty() || other.is_empty() || length() < other.length())
                 return end();
-
+        
             char* hit = __builtin_strstr(m_view, other.m_view);
-            return hit != nullptr ? AsciiStringViewBidIt(hit) : AsciiStringViewBidIt(m_view + m_length);
+            if (!hit)
+                return end();
+            return {*this, size_t(hit - m_view)};
         }
 
         [[nodiscard]] constexpr bool starts_with(const AsciiStringView& other) const

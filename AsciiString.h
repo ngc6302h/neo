@@ -35,8 +35,9 @@ namespace neo
     class AsciiString
     {
         friend String;
-
     public:
+        using StringIterator = Iterator<AsciiString>;
+    
         constexpr ~AsciiString()
         {
             delete m_buffer;
@@ -135,17 +136,22 @@ namespace neo
             other.m_length = 0;
         }
 
-        [[nodiscard]] AsciiStringBidIt begin() const
+        [[nodiscard]]  constexpr StringIterator begin() const
         {
-            return AsciiStringBidIt(m_buffer);
+            return {m_buffer};
         }
 
-        [[nodiscard]] AsciiStringBidIt end() const
+        [[nodiscard]] constexpr StringIterator end() const
         {
-            return AsciiStringBidIt(m_buffer + m_length);
+            return {m_buffer, m_length};
         }
 
         [[nodiscard]] constexpr size_t length() const
+        {
+            return m_length;
+        }
+    
+        [[nodiscard]] constexpr size_t size() const
         {
             return m_length;
         }
@@ -171,24 +177,23 @@ namespace neo
             return { m_buffer, m_length };
         }
 
-        [[nodiscard]] constexpr AsciiString substring(AsciiStringBidIt start) const
+        [[nodiscard]] constexpr AsciiString substring(StringIterator const& start) const
         {
-            VERIFY(&*start <= &*end());
-            // little dirty but it allows the edge case where iterator
-            // is end() and substring will be empty.
-            return { &*start, (size_t)(m_buffer + m_length - &*start) };
+            VERIFY(!start.is_end());
+            
+            return  AsciiString { &m_buffer[start.index()], m_length - start.index() };
         }
 
         [[nodiscard]] constexpr AsciiString substring(size_t start) const
         {
             VERIFY(start <= m_length);
-            return { m_buffer + start, m_length - start };
+            return substring(start, m_length - start);
         }
 
-        [[nodiscard]] constexpr AsciiString substring(AsciiStringBidIt start, size_t length) const
+        [[nodiscard]] constexpr AsciiString substring(StringIterator start, size_t length) const
         {
-            VERIFY(length <= m_length - (size_t)(&*start - m_buffer));
-            return { &*start, length };
+            VERIFY(!start.is_end());
+            return substring(start.index(), length);
         }
 
         [[nodiscard]] constexpr AsciiString substring(size_t start, size_t length) const
@@ -201,21 +206,21 @@ namespace neo
         {
             Vector<AsciiString> strings;
             auto _begin = begin();
-            auto current = _begin;
+            auto current = begin();
             auto _end = end();
             do
             {
                 ++current;
                 if (*current == by)
                 {
-                    strings.construct(&*_begin, &*current - &*_begin);
+                    strings.construct(&m_buffer[_begin.index()], current.index() - _begin.index());
                     while (*current == by)
                         ++current;
                     _begin = current;
                 }
             } while (current != _end);
             if (_begin != _end)
-                strings.construct(&*_begin, &*current - &*_begin);
+                strings.construct(&m_buffer[_begin.index()], current.index() - _begin.index());
             return strings;
         }
 
@@ -224,24 +229,24 @@ namespace neo
             VERIFY(!by.is_empty());
             Vector<AsciiString> strings;
             auto _begin = begin();
-            auto current = _begin;
+            auto current = begin();
             auto _end = end();
             do
             {
                 ++current;
-                if (AsciiStringView(&*current, min(by.length(), (size_t)(&*_end - &*current))).starts_with(by))
+                if (AsciiStringView(&m_buffer[current.index()], min(by.length(), (size_t)(&m_buffer[_end.index()] - &m_buffer[current.index()]))).starts_with(by))
                 {
-                    strings.construct(&*_begin, &*current - &*_begin);
+                    strings.construct(&m_buffer[_begin.index()], current.index() - _begin.index());
                     do
                     {
                         for (auto to_skip = by.length(); to_skip > 0; to_skip--)
                             ++current;
-                    } while (AsciiStringView(&*current, min(by.length(), (size_t)(&*_end - &*current))).starts_with(by));
+                    } while (AsciiStringView(&m_buffer[current.index()], min(by.length(), (size_t)(&m_buffer[_end.index()] - &m_buffer[current.index()]))).starts_with(by));
                     _begin = current;
                 }
             } while (current != _end);
             if (_begin != _end)
-                strings.construct(&*_begin, &*current - &*_begin);
+                strings.construct(&m_buffer[_begin.index()], current.index() - _begin.index());
             return strings;
         }
 
@@ -249,50 +254,34 @@ namespace neo
         {
             if (!length() || !other.length() || other.length() > length())
                 return false;
-
-            for (size_t i = 0; i < other.length(); i++)
-            {
-                if ((*this)[i] != other[i])
-                    return false;
-            }
-            return true;
+    
+            return __builtin_memcmp(m_buffer, other.m_buffer, other.m_length) == 0;
         }
 
         [[nodiscard]] constexpr bool ends_with(const AsciiString& other)
         {
             if (!length() || !other.length() || other.length() > length())
                 return false;
-
-            for (size_t i = 0; i < other.length(); i++)
-            {
-                if ((*this)[length() - other.length() + i] != other[i])
-                    return false;
-            }
-            return true;
+    
+            return __builtin_memcmp(m_length - other.m_length + m_buffer, other.m_buffer, other.m_length) == 0;
         }
 
-        [[nodiscard]] constexpr Optional<size_t> contains(const AsciiString& other)
+        [[nodiscard]] constexpr StringIterator find(const AsciiString& other)
         {
             if (!length() || !other.length() || length() < other.length())
-                return {};
-
-            for (size_t i = 0; i < length() - other.length(); i++)
-            {
-                bool found = true;
-                for (size_t j = 0; j < other.length(); j++)
-                {
-                    if ((*this)[i + j] != other[j])
-                    {
-                        found = false;
-                        break;
-                    }
-                }
-                if (found)
-                    return { i };
-            }
-            return {};
+                return end();
+    
+            char* hit = __builtin_strstr(m_buffer, other.m_buffer);
+            if (!hit)
+                return end();
+            return { *this, size_t(hit - m_buffer) };
         }
-
+    
+        [[nodiscard]] constexpr bool contains(const AsciiString& other)
+        {
+            return !find(other).is_end();
+        }
+    
         [[nodiscard]] constexpr AsciiString trim_whitespace(TrimMode from_where) const
         {
             size_t length = m_length;

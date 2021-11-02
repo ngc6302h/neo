@@ -99,27 +99,27 @@ namespace neo
         [[nodiscard]] constexpr size_t length() const
         {
             auto start = begin();
-            auto _end = end();
-            size_t count = 0;
-            while (start++ != _end)
+            size_t count { 0 };
+            do
                 count++;
+            while(!(++start).is_end());
             return count;
         }
 
-        [[nodiscard]] constexpr const StringViewBidIt begin() const
+        [[nodiscard]] constexpr const StringViewIterator begin() const
         {
-            return StringViewBidIt(m_view);
+            return StringViewIterator(m_view, m_view + m_byte_length, m_view);
         }
 
-        [[nodiscard]] constexpr const StringViewBidIt end() const
+        [[nodiscard]] constexpr const StringViewIterator end() const
         {
-            return StringViewBidIt(m_view + m_byte_length);
+            return StringViewIterator(m_view, m_view + m_byte_length, m_view + m_byte_length);
         }
 
-        [[nodiscard]] constexpr StringView substring_view(StringViewBidIt start) const
+        [[nodiscard]] constexpr StringView substring_view(StringViewIterator start) const
         {
             VERIFY(start != end());
-            return { start.ptr().data, static_cast<size_t>(m_view + m_byte_length - start.ptr().data) };
+            return {start.ptr(), static_cast<size_t>(m_view + m_byte_length - start.ptr()) };
         }
 
         [[nodiscard]] constexpr StringView substring_view(size_t index_codepoint_start) const
@@ -132,10 +132,10 @@ namespace neo
                 ;
             VERIFY(start != _end);
 
-            return { start.ptr().data, static_cast<size_t>(m_view + m_byte_length - start.ptr().data) };
+            return {start.ptr(), static_cast<size_t>(m_view + m_byte_length - start.ptr()) };
         }
 
-        [[nodiscard]] constexpr StringView substring_view(StringViewBidIt start, size_t codepoint_length) const
+        [[nodiscard]] constexpr StringView substring_view(StringViewIterator start, size_t codepoint_length) const
         {
             VERIFY(codepoint_length < m_byte_length);
             VERIFY(codepoint_length != 0);
@@ -145,7 +145,7 @@ namespace neo
                 ;
             VERIFY(last != _end);
 
-            return { start.ptr().data, static_cast<size_t>(last.ptr().data - start.ptr().data) };
+            return {start.ptr(), static_cast<size_t>(last.ptr() - start.ptr()) };
         }
 
         [[nodiscard]] constexpr StringView substring_view(size_t codepoint_start, size_t codepoint_length) const
@@ -165,7 +165,7 @@ namespace neo
                 ;
             VERIFY(last != _end);
 
-            return { start.ptr().data, static_cast<size_t>(last.ptr().data - start.ptr().data) };
+            return {start.ptr(), static_cast<size_t>(last.ptr() - start.ptr()) };
         }
 
         [[nodiscard]] Vector<StringView> split(Utf8Char by) const
@@ -179,14 +179,14 @@ namespace neo
                 ++current;
                 if (*current == by)
                 {
-                    strings.construct(_begin.ptr().data, current.ptr().data - _begin.ptr().data);
+                    strings.construct(_begin.ptr(), current.ptr() - _begin.ptr());
                     while (*current == by)
                         ++current;
                     _begin = current;
                 }
             } while (current != _end);
             if (_begin != _end)
-                strings.construct(_begin.ptr().data, current.ptr().data - _begin.ptr().data);
+                strings.construct(_begin.ptr(), current.ptr() - _begin.ptr());
             return strings;
         }
 
@@ -200,19 +200,19 @@ namespace neo
             do
             {
                 ++current;
-                if (StringView(current.ptr().data, min(by.byte_size(), (size_t)(_end.ptr().data - current.ptr().data))).starts_with(by))
+                if (StringView(current.ptr(), min(by.byte_size(), (size_t)(_end.ptr() - current.ptr()))).starts_with(by))
                 {
-                    strings.construct(_begin.ptr().data, current.ptr().data - _begin.ptr().data);
+                    strings.construct(_begin.ptr(), current.ptr() - _begin.ptr());
                     do
                     {
                         for (auto to_skip = by.length(); to_skip > 0; to_skip--)
                             ++current;
-                    } while (StringView(current.ptr().data, min(by.byte_size(), (size_t)(_end.ptr().data - current.ptr().data))).starts_with(by));
+                    } while (StringView(current.ptr(), min(by.byte_size(), (size_t)(_end.ptr() - current.ptr()))).starts_with(by));
                     _begin = current;
                 }
             } while (current != _end);
             if (_begin != _end)
-                strings.construct(_begin.ptr().data, current.ptr().data - _begin.ptr().data);
+                strings.construct(_begin.ptr(), current.ptr() - _begin.ptr());
             return strings;
         }
 
@@ -225,7 +225,7 @@ namespace neo
                 --_end;
                 while (isspace(*_end))
                     --_end;
-                copy.m_byte_length = _end.ptr().data - m_view;
+                copy.m_byte_length = _end.ptr() - m_view;
             }
 
             if ((from_where & TrimMode::Start) == TrimMode::Start)
@@ -233,7 +233,7 @@ namespace neo
                 auto start = copy.begin();
                 while (isspace(*start))
                     ++start;
-                copy.m_view = start.ptr().data;
+                copy.m_view = start.ptr();
             }
             return copy;
         }
@@ -247,17 +247,23 @@ namespace neo
         {
             return m_view;
         }
-
-        //Optional can't be constexpr yet so we return an iterator past the end if it isn't found
-        [[nodiscard]] constexpr StringViewBidIt contains(const StringView& other) const
+    
+        [[nodiscard]] constexpr StringViewIterator find(const StringView& other) const
         {
             if (is_empty() || other.is_empty() || byte_size() < other.byte_size())
                 return end();
-
+        
             char* hit = __builtin_strstr(m_view, other.m_view);
-            return hit != nullptr ? StringViewBidIt(hit) : StringViewBidIt(m_view + m_byte_length);
+            if (!hit)
+                return end();
+            return StringViewIterator(m_view, m_view+m_byte_length, hit);
         }
 
+        [[nodiscard]] constexpr bool contains(const StringView& other) const
+        {
+            return !find(other).is_end();
+        }
+        
         [[nodiscard]] constexpr bool starts_with(const StringView& other) const
         {
             if (!byte_size() || !other.byte_size() || other.byte_size() > byte_size())
