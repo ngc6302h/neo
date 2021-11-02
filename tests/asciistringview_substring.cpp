@@ -26,10 +26,9 @@ int main()
     TEST_EQUAL(__builtin_strcmp(a.substring_view(0, 29).non_null_terminated_buffer(), "This program is free software"), 0);
     TEST_EQUAL(__builtin_strcmp(a.substring_view(29, 0).non_null_terminated_buffer(), ""), 0);
     TEST_EQUAL(__builtin_strcmp(a.substring_view(21, 8).non_null_terminated_buffer(), "software"), 0);
-    TEST_EQUAL(__builtin_strcmp(a.substring_view(a.cbegin()).non_null_terminated_buffer(), "This program is free software"), 0);
+    TEST_EQUAL(__builtin_strcmp(a.substring_view(a.begin()).non_null_terminated_buffer(), "This program is free software"), 0);
     TEST_EQUAL(__builtin_strcmp(a.substring_view(a.begin(), 28).non_null_terminated_buffer(), "This program is free software"), 0);
-    auto it = a.cend();
+    auto it = a.end();
     TEST_EQUAL(__builtin_strncmp(a.substring_view(--it, 0).non_null_terminated_buffer(), "e", 0), 0);
-    TEST_EQUAL(__builtin_strcmp(a.substring_view(a.cend(), 0).non_null_terminated_buffer(), ""), 0);
     return 0;
 }

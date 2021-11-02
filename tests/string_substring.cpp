@@ -23,7 +23,8 @@ int main()
     String a { "String A" };
     String b = a.substring(0);
     TEST_EQUAL(a, b);
-    TEST_EQUAL(String { "tring A" }, a.substring(1));
+    TEST_EQUAL("tring A"_s, a.substring(1));
+    printf("%d|\n", "tring A"_s == a.substring(1));
     TEST_EQUAL(b.substring(b.length()), ""_s);
     TEST_EQUAL(b.substring(b.length(), 0), ""_s);
     TEST_EQUAL(b.substring(b.begin()), b);
