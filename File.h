@@ -93,7 +93,7 @@ namespace neo
         {
             VERIFY(!path.is_empty());
 
-            _IO_FILE* file = fopen(path.non_null_terminated_buffer(), posix_open_mode);
+            FILE* file = fopen(path.non_null_terminated_buffer(), posix_open_mode);
             if (file == nullptr)
                 return (Error)errno;
             return File(file);
