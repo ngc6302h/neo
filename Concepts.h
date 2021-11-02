@@ -158,6 +158,12 @@ namespace neo
 
     template<typename T, typename U>
     concept SameAs = IsSame<T, U>;
+    
+    template<typename TBase, typename TDerived>
+    concept BaseOf = requires(TDerived* d)
+    {
+        static_cast<TBase*>(d);
+    };
 
     template<typename TCallable, typename... Args>
     concept Callable = requires(TCallable f, Args... args)
@@ -219,6 +225,7 @@ using neo::LessOrEqualThanComparable;
 using neo::LessThanComparable;
 using neo::MoveAssignable;
 using neo::MoveConstructable;
+using neo::BaseOf;
 using neo::Multiplicable;
 using neo::SameAs;
 using neo::Subtractable;
