@@ -34,8 +34,8 @@ namespace neo
         static constexpr size_t DEFAULT_SIZE { 16 };
 
     public:
-        using BidIt = BidirectionalIterator<T*>;
-        using ConstBidIt = BidirectionalIterator<const T*>;
+        using VectorIterator = Iterator<Vector>;
+        using VectorConstantIterator = Iterator<const Vector>;
         constexpr Vector() :
             m_capacity(DEFAULT_SIZE)
         {
@@ -244,24 +244,24 @@ namespace neo
             return { m_data, m_size };
         }
 
-        [[nodiscard]] constexpr ConstBidIt begin() const
+        [[nodiscard]] constexpr VectorConstantIterator begin() const
         {
-            return ConstBidIt(m_data);
+            return VectorConstIterator(*this);
         }
 
-        [[nodiscard]] constexpr BidIt begin()
+        [[nodiscard]] constexpr VectorIterator begin()
         {
-            return BidIt(m_data);
+            return VectorIterator(*this);
         }
 
-        [[nodiscard]] constexpr ConstBidIt end() const
+        [[nodiscard]] constexpr VectorConstantIterator end() const
         {
-            return ConstBidIt(m_data + m_size);
+            return VectorConstIterator(*this, m_size);
         }
 
-        [[nodiscard]] constexpr BidIt end()
+        [[nodiscard]] constexpr VectorIterator end()
         {
-            return BidIt(m_data + m_size);
+            return VectorIterator(*this, m_size);
         }
 
     private:
