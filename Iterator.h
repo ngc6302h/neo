@@ -20,272 +20,186 @@
 
 namespace neo
 {
-    template<typename T>
-    struct DefaultIteratorContainer
+    template<typename T, typename U>
+    class Iterator;
+    
+    template<typename TContainer>
+    class DefaultIteratorImplementation
     {
-        T data;
-
-        constexpr DefaultIteratorContainer(const T& other) :
-            data(other)
+        friend Iterator<TContainer, DefaultIteratorImplementation>;
+        
+        constexpr DefaultIteratorImplementation(TContainer& other) :
+                m_container(other),
+                m_index(0)
         {
         }
-
-        constexpr decltype(auto) operator++(int)
+    
+        constexpr DefaultIteratorImplementation(TContainer& other, size_t index) :
+                m_container(other),
+                m_index(index)
         {
-            return data++;
+        }
+    
+        constexpr DefaultIteratorImplementation& operator=(DefaultIteratorImplementation const& other)
+        {
+            m_index = other.m_index;
+            m_container = other.m_container;
+            return *this;
         }
 
-        constexpr decltype(auto) operator--(int)
+        constexpr DefaultIteratorImplementation operator++(int)
         {
-            return data--;
+            auto tmp = *this;
+            m_index++;
+            return move(tmp);
         }
 
-        constexpr decltype(auto) operator++()
+        constexpr DefaultIteratorImplementation operator--(int)
         {
-            return ++data;
+            auto tmp = *this;
+            m_index--;
+            return move(tmp);
         }
 
-        constexpr decltype(auto) operator--()
+        constexpr DefaultIteratorImplementation& operator++()
         {
-            return --data;
+            m_index++;
+            return *this;
+        }
+
+        constexpr DefaultIteratorImplementation& operator--()
+        {
+            m_index--;
+            return *this;
         }
 
         constexpr decltype(auto) operator*()
         {
-            if constexpr (IsPointer<T>)
-                return *data;
-            else
-                return data;
+            VERIFY(!is_end());
+            return m_container[m_index];
+        }
+        
+        constexpr decltype(auto) get()
+        {
+            VERIFY(!is_end());
+            return m_container[m_index];
+        }
+        
+        constexpr size_t index() const
+        {
+            return m_index;
+        }
+        
+        constexpr bool is_end() const
+        {
+            return m_index >= m_container.size();
         }
 
-        constexpr bool operator==(const DefaultIteratorContainer& other) const
+        constexpr bool operator==(const DefaultIteratorImplementation& other) const
         {
-            return data == other.data;
+            return m_index == other.m_index;
         }
 
-        constexpr bool operator!=(const DefaultIteratorContainer& other) const
+        constexpr bool operator!=(const DefaultIteratorImplementation& other) const
         {
-            return data != other.data;
+            return m_index != other.m_index;
         }
+    
+        TContainer& m_container;
+        size_t m_index;
     };
 
-    template<typename T, typename TContainer = DefaultIteratorContainer<T>>
+    template<typename TContainer, typename TIteratorImplementation = DefaultIteratorImplementation<TContainer>>
     class Iterator
     {
     public:
-        constexpr Iterator() = delete;
-        constexpr Iterator(T element) :
-            m_element(element)
+        Iterator() {};
+        
+        constexpr Iterator(TContainer const& container) : m_impl(const_cast<TContainer&>(container))
         {
         }
-        constexpr Iterator(const Iterator& other) :
-            m_element(other.m_element)
-        {
-        }
-        constexpr Iterator(Iterator&& other) :
-            m_element(move(other.m_element))
-        {
-        }
-
-        constexpr Iterator& operator=(const Iterator& other)
-        {
-            m_element = other.m_element;
-            return *this;
-        }
-
-        constexpr Iterator& operator=(Iterator&& other)
-        {
-            m_element = move(other.m_element);
-        }
-
-    protected:
-        TContainer m_element;
-    };
     
-
-    template<typename T, typename TContainer = DefaultIteratorContainer<T>>
-    class ForwardIterator : public Iterator<T, TContainer>
-    {
-    public:
-        constexpr ForwardIterator() = default;
-        constexpr ForwardIterator(T element) :
-            Iterator<T, TContainer>(element)
+        constexpr Iterator(TContainer const& container, size_t index) : m_impl(const_cast<TContainer&>(container), index)
         {
         }
-        constexpr ForwardIterator(const ForwardIterator& other) :
-            Iterator<T, TContainer>(other)
-        {
-        }
-        constexpr ForwardIterator(ForwardIterator&& other) :
-            Iterator<T, TContainer>(move(other))
+        
+        constexpr Iterator(Iterator const& other) : m_impl(other.m_impl)
         {
         }
 
-        constexpr ForwardIterator& operator=(const ForwardIterator& other)
+        constexpr Iterator& operator=(Iterator const& other)
         {
-            this->m_element = other.m_element;
+            m_impl = other.m_impl;
             return *this;
         }
 
-        constexpr ForwardIterator& operator=(ForwardIterator&& other)
+        constexpr bool operator!=(Iterator const& other) const
         {
-            this->m_element = other.m_element;
+            return this->m_impl != other.m_impl;
         }
-
-        constexpr bool operator!=(const ForwardIterator& other) const
+    
+        constexpr bool operator==(Iterator const& other) const
         {
-            return this->m_element != other.m_element;
+            return this->m_impl == other.m_impl;
         }
 
         constexpr decltype(auto) operator*()
         {
-            return *this->m_element;
+            return *this->m_impl;
         }
 
         constexpr decltype(auto) operator*() const
         {
-            return *this->m_element;
+            return *this->m_impl;
         }
     
         constexpr decltype(auto) operator->()
         {
-            if constexpr(IsPointer<T> && !IsRvalueReference<decltype(forward<T>(*this->m_element))>)
-                return &*this->m_element;
-            else
-                return *this->m_element;
+            return *this->m_impl;
         }
     
         constexpr decltype(auto) operator->() const
         {
-            if constexpr(IsPointer<T> && !IsRvalueReference<decltype(forward<T>(*this->m_element))>)
-                return &*this->m_element;
-            else
-                return *this->m_element;
-        }
-    
-        constexpr const TContainer& ptr() const
-        {
-            if constexpr(IsPointer<TContainer>)
-                return &this->m_element;
-            else
-                return this->m_element;
+            return *this->m_impl;
         }
 
         //To be implemented by the class using iterators
-        constexpr ForwardIterator& operator++()
+        constexpr Iterator& operator++()
         {
-            this->m_element++;
+            --this->m_impl;
             return *this;
         }
-
-        constexpr ForwardIterator operator++(int)
+        constexpr Iterator operator++(int)
         {
             auto prev = *this;
-            this->m_element++;
+            this->m_impl++;
             return prev;
         }
-    };
-
-    template<typename T, typename TContainer = DefaultIteratorContainer<T>>
-    class BidirectionalIterator : public Iterator<T, TContainer>
-    {
-    public:
-        explicit BidirectionalIterator() = default;
-        constexpr BidirectionalIterator(T element) :
-            Iterator<T, TContainer>(element)
+        constexpr Iterator& operator--()
         {
-        }
-        constexpr BidirectionalIterator(const BidirectionalIterator& other) :
-            Iterator<T, TContainer>(other)
-        {
-        }
-        constexpr BidirectionalIterator(BidirectionalIterator&& other) :
-            Iterator<T, TContainer>(move(other))
-        {
-        }
-
-        constexpr BidirectionalIterator& operator=(const BidirectionalIterator& other)
-        {
-            this->m_element = other.m_element;
+            --this->m_impl;
             return *this;
         }
-
-        constexpr BidirectionalIterator& operator=(BidirectionalIterator&& other)
-        {
-            this->m_element = other.m_element;
-            return *this;
-        }
-
-        constexpr bool operator!=(const BidirectionalIterator& other) const
-        {
-            return this->m_element != other.m_element;
-        }
-    
-        constexpr bool operator==(const BidirectionalIterator& other) const
-        {
-            return this->m_element == other.m_element;
-        }
-
-        constexpr decltype(auto) operator*()
-        {
-            return *this->m_element;
-        }
-
-        constexpr decltype(auto) operator*() const
-        {
-            return *this->m_element;
-        }
-    
-        constexpr decltype(auto) operator->()
-        {
-            if constexpr(IsPointer<T> && !IsRvalueReference<decltype(*this->m_element)>)
-                return &*this->m_element;
-            else
-                return *this->m_element;
-        }
-    
-        constexpr decltype(auto) operator->() const
-        {
-            if constexpr(IsPointer<T> && !IsRvalueReference<decltype(*this->m_element)>)
-                return &*this->m_element;
-            else
-                return *this->m_element;
-        }
-    
-        constexpr const TContainer& ptr() const
-        {
-            if constexpr(IsPointer<TContainer>)
-                return &this->m_element;
-            else
-                return this->m_element;
-        }
-
-        //To be implemented by the class using iterators
-        constexpr BidirectionalIterator& operator++()
-        {
-            this->m_element++;
-            return *this;
-        }
-        constexpr BidirectionalIterator operator++(int)
+        constexpr Iterator operator--(int)
         {
             auto prev = *this;
-            this->m_element++;
+            this->m_impl--;
             return prev;
         }
-        constexpr BidirectionalIterator& operator--()
+    
+        constexpr size_t index() const
         {
-            this->m_element--;
-            return *this;
+            return m_impl.index();
         }
-        constexpr BidirectionalIterator operator--(int)
+    
+        constexpr bool is_end() const
         {
-            auto prev = *this;
-            this->m_element--;
-            return prev;
+            return m_impl.is_end();
         }
+
+    private:
+        TIteratorImplementation m_impl;
     };
 }
 
-using neo::BidirectionalIterator;
-using neo::ForwardIterator;
 using neo::Iterator;
