@@ -28,8 +28,8 @@ namespace neo
     class Span
     {
     public:
-        using BidIt = BidirectionalIterator<T*>;
-        using ConstBidIt = BidirectionalIterator<const T*>;
+        using SpanIterator = Iterator<Span>;
+        using ConstantSpanIterator = Iterator<const Span>;
 
         constexpr Span() = default;
 
@@ -86,24 +86,24 @@ namespace neo
             return m_data[index];
         }
 
-        [[nodiscard]] constexpr BidIt begin()
+        [[nodiscard]] constexpr SpanIterator begin()
         {
-            return BidIt(m_data);
+            return SpanIterator(*this);
         }
 
-        [[nodiscard]] constexpr ConstBidIt begin() const
+        [[nodiscard]] constexpr ConstantSpanIterator begin() const
         {
-            return ConstBidIt(m_data);
+            return ConstantSpanIterator(m_data);
         }
 
-        [[nodiscard]] constexpr BidIt end()
+        [[nodiscard]] constexpr SpanIterator end()
         {
-            return BidIt(m_data + m_size);
+            return SpanIterator(m_data + m_size);
         }
 
-        [[nodiscard]] constexpr ConstBidIt end() const
+        [[nodiscard]] constexpr ConstantSpanIterator end() const
         {
-            return ConstBidIt(m_data + m_size);
+            return ConstantSpanIterator (m_data + m_size);
         }
 
         template<typename>
