@@ -22,12 +22,12 @@ int main()
 {
     AsciiString a = "This is a string suited for non-unicode characters. It provides constant time indexing."_as;
     TEST_EQUAL(a.length(), 87);
-    TEST_EQUAL(a.cend()->data - a.cbegin()->data, 87);
-    TEST_EQUAL(a.end()->data - a.begin()->data, 87);
+    TEST_EQUAL(a.end().index() - a.begin().index(), 87);
+    TEST_EQUAL(a.end().index() - a.begin().index(), 87);
     TEST_EQUAL(AsciiString(a.span().data()), a);
     TEST_EQUAL(__builtin_strcmp((char*)a, a.null_terminated_characters()), 0);
     TEST(a.contains("suited for non-unicode characters"));
-    TEST_FALSE(a.contains("unicorn").has_value());
+    TEST_FALSE(a.contains("unicorn"));
     TEST(a.starts_with("This is a"));
     TEST_FALSE(a.starts_with("This isn't a"));
     TEST(a.ends_with("time indexing."));
