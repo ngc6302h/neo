@@ -207,6 +207,22 @@ namespace neo
         {
             return at(m_size - 1);
         }
+        
+        constexpr T take_first()
+        {
+            T value = move(first());
+            m_size--;
+            for(size_t i = 0; i < m_size; i++)
+                m_data[i] = move(m_data[i+1]);
+            return move(value);
+        }
+        
+        constexpr T take_last()
+        {
+            T value = move(last());
+            m_size--;
+            return move(value);
+        }
 
         [[nodiscard]] constexpr T& operator[](size_t index)
         {
