@@ -106,10 +106,28 @@ namespace neo
     
     template<bool TBool, typename TTrueType, typename TFalseType>
     using Conditional = typename detail::conditional_t<TBool, TTrueType, TFalseType>::type;
-
-    struct TrueType;
-    struct FalseType;
-
+    
+    namespace detail
+    {
+        template<bool VBool, auto vtrue, auto vfalse>
+        struct value_conditional_t {};
+        
+        template<auto vtrue, auto vfalse>
+        struct value_conditional_t<true, vtrue, vfalse>
+        {
+            static constexpr decltype(auto) value = vtrue;
+        };
+        
+        template<auto vtrue, auto vfalse>
+        struct value_conditional_t<false, vtrue, vfalse>
+        {
+            static constexpr decltype(auto) value = vfalse;
+        };
+    }
+    
+    template<bool VBool, auto VTrueType, auto VFalseType>
+    static constexpr auto ValueConditional = detail::value_conditional_t<VBool,VTrueType, VFalseType>::value;
+    
     template<typename T>
     struct remove_pointer_t
     {
@@ -417,6 +435,7 @@ namespace neo
 using ssize_t = neo::MakeSigned<size_t>;
 
 using neo::Conditional;
+using neo::ValueConditional;
 using neo::DecayArray;
 using neo::EnableIf;
 using neo::FirstType;
