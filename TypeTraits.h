@@ -92,20 +92,20 @@ namespace neo
 
     namespace detail
     {
-        template<bool TBool, typename TrueType, typename FalseType>
+        template<bool TBool, typename TTrueType, typename TFalseType>
         struct conditional_t
         {
-            using type = TrueType;
+            using type = TTrueType;
         };
-        template<typename TrueType, typename FalseType>
-        struct conditional_t<false, TrueType, FalseType>
+        template<typename TTrueType, typename TFalseType>
+        struct conditional_t<false, TTrueType, TFalseType>
         {
-            using type = FalseType;
+            using type = TFalseType;
         };
     }
     
-    template<bool TBool, typename TrueType, typename FalseType>
-    using Conditional = typename detail::conditional_t<TBool, TrueType, FalseType>::type;
+    template<bool TBool, typename TTrueType, typename TFalseType>
+    using Conditional = typename detail::conditional_t<TBool, TTrueType, TFalseType>::type;
 
     struct TrueType;
     struct FalseType;
