@@ -262,7 +262,7 @@ namespace neo
 
         [[nodiscard]] constexpr VectorConstantIterator begin() const
         {
-            return VectorConstIterator(*this);
+            return VectorConstantIterator(*this);
         }
 
         [[nodiscard]] constexpr VectorIterator begin()
@@ -272,7 +272,7 @@ namespace neo
 
         [[nodiscard]] constexpr VectorConstantIterator end() const
         {
-            return VectorConstIterator(*this, m_size);
+            return VectorConstantIterator(*this, m_size);
         }
 
         [[nodiscard]] constexpr VectorIterator end()
