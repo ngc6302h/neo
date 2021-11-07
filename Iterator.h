@@ -49,6 +49,7 @@ namespace neo
 
         constexpr DefaultIteratorImplementation operator++(int)
         {
+            VERIFY(m_index < m_container.size());
             auto tmp = *this;
             m_index++;
             return move(tmp);
@@ -56,6 +57,7 @@ namespace neo
 
         constexpr DefaultIteratorImplementation operator--(int)
         {
+            VERIFY(m_index > 0);
             auto tmp = *this;
             m_index--;
             return move(tmp);
@@ -63,12 +65,14 @@ namespace neo
 
         constexpr DefaultIteratorImplementation& operator++()
         {
+            VERIFY(m_index < m_container.size());
             m_index++;
             return *this;
         }
 
         constexpr DefaultIteratorImplementation& operator--()
         {
+            VERIFY(m_index > 0);
             m_index--;
             return *this;
         }
@@ -166,7 +170,7 @@ namespace neo
         //To be implemented by the class using iterators
         constexpr Iterator& operator++()
         {
-            --this->m_impl;
+            ++this->m_impl;
             return *this;
         }
         constexpr Iterator operator++(int)
