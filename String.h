@@ -25,12 +25,16 @@
 #include "StringView.h"
 #include "Types.h"
 #include "Vector.h"
+#include "Span.h"
 
 namespace neo
 {
     class String
     {
     public:
+        using type = Utf8Char;
+        using raw_type = char;
+        
         constexpr String() = default;
         constexpr ~String()
         {
