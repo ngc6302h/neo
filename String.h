@@ -234,6 +234,13 @@ namespace neo
 
             return {start.ptr(), static_cast<size_t>(last.ptr() - start.ptr()) };
         }
+        
+        [[nodiscard]] static constexpr String substring(StringIterator const& start, StringIterator const& end)
+        {
+            VERIFY(!start.is_end());
+            VERIFY(start.ptr() < end.ptr());
+            return {start.ptr(), static_cast<size_t>(end.ptr() - start.ptr())};
+        }
 
         [[nodiscard]] constexpr String substring(size_t codepoint_start, size_t codepoint_length) const
         {
