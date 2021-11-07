@@ -39,6 +39,7 @@ namespace neo
         constexpr ~String()
         {
             delete m_buffer;
+            m_buffer = nullptr;
         }
 
         constexpr String(const String& other) :

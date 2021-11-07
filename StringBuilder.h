@@ -41,6 +41,7 @@ namespace neo
         ~StringBuilder()
         {
             delete[] m_string;
+            m_string = nullptr;
         }
 
         [[nodiscard]] String to_string() const
