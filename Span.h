@@ -93,17 +93,17 @@ namespace neo
 
         [[nodiscard]] constexpr ConstantSpanIterator begin() const
         {
-            return ConstantSpanIterator(m_data);
+            return ConstantSpanIterator(*this);
         }
 
         [[nodiscard]] constexpr SpanIterator end()
         {
-            return SpanIterator(m_data + m_size);
+            return SpanIterator(*this, m_size);
         }
 
         [[nodiscard]] constexpr ConstantSpanIterator end() const
         {
-            return ConstantSpanIterator (m_data + m_size);
+            return ConstantSpanIterator (*this, m_size);
         }
 
         template<typename>
