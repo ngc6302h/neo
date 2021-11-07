@@ -374,11 +374,7 @@ namespace neo
             }
             return String(start, length);
         }
-
-        [[nodiscard]] constexpr Span<char> span()
-        {
-            return { m_buffer, m_byte_length };
-        }
+        
 
         [[nodiscard]] constexpr char* null_terminated_characters() const
         {
