@@ -269,14 +269,14 @@ namespace neo
                 ++current;
                 if (*current == by)
                 {
-                    strings.construct(_begin.ptr(), current.ptr() - _begin.ptr());
+                    strings.construct(_begin.ptr(), static_cast<size_t>(current.ptr() - _begin.ptr()));
                     while (*current == by)
                         ++current;
                     _begin = current;
                 }
             } while (current != _end);
             if (_begin != _end)
-                strings.construct(_begin.ptr(), current.ptr() - _begin.ptr());
+                strings.construct(_begin.ptr(), static_cast<size_t>(current.ptr() - _begin.ptr()));
             return strings;
         }
 
@@ -292,7 +292,7 @@ namespace neo
                 ++current;
                 if (StringView(current.ptr(), min(by.byte_size(), (size_t)(_end.ptr() - current.ptr()))).starts_with(by))
                 {
-                    strings.construct(_begin.ptr(), current.ptr() - _begin.ptr());
+                    strings.construct(_begin.ptr(), static_cast<size_t>(current.ptr() - _begin.ptr()));
                     do
                     {
                         for (auto to_skip = by.length(); to_skip > 0; to_skip--)
@@ -302,7 +302,7 @@ namespace neo
                 }
             } while (current != _end);
             if (_begin != _end)
-                strings.construct(_begin.ptr(), current.ptr() - _begin.ptr());
+                strings.construct(_begin.ptr(), static_cast<size_t>( current.ptr() - _begin.ptr()));
             return strings;
         }
 

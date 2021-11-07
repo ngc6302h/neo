@@ -133,10 +133,7 @@ namespace neo
         constexpr T& construct(Args... args)
         {
             ensure_capacity(m_size + 1);
-            if constexpr (IsTrivial<T>)
-                m_data[m_size] = T { forward<Args>(args)... };
-            else
-                m_data[m_size] = T(forward<Args>(args)...);
+            m_data[m_size] = T { forward<Args>(args)... };
             return m_data[m_size++];
         }
 
