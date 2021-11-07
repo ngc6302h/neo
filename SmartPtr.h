@@ -54,6 +54,7 @@ namespace neo
         constexpr ~OwnPtr()
         {
             delete m_data;
+            m_data = nullptr;
         }
         
         [[nodiscard]] constexpr const T* leak_ptr() const
@@ -199,6 +200,7 @@ namespace neo
                 if (m_control->weak_reference_count == 0)
                 {
                     delete m_control;
+                    m_control = nullptr;
                 }
             }
         }
@@ -305,7 +307,9 @@ namespace neo
             if (m_control->reference_count == 0 && m_control->weak_reference_count == 0)
             {
                 delete m_data;
+                m_data = nullptr;
                 delete m_control;
+                m_control = nullptr;
             }
         }
         

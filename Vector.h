@@ -284,6 +284,7 @@ namespace neo
                 m_data[i].~T();
         }
 
+        //size is number of T elements
         constexpr void allocate(size_t size)
         {
             m_data = (T*) calloc(size, sizeof(T));
@@ -292,6 +293,7 @@ namespace neo
         constexpr void deallocate()
         {
             free(m_data);
+            m_data = nullptr;
         }
 
         T* m_data { nullptr };

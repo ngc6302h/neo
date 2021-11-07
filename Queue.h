@@ -121,6 +121,7 @@ namespace neo
         constexpr ~Queue()
         {
             delete m_first;
+            m_first = nullptr;
         }
 
         constexpr void add_back(const T& element)
