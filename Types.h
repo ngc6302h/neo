@@ -105,20 +105,29 @@ namespace neo
     template<typename T, size_t Size>
     struct initializer_list
     {
+        using type = T;
+        static constexpr size_t size = Size;
+        
         constexpr ~initializer_list() = default;
 
         [[nodiscard]] constexpr const T& operator[](size_t index) const
         {
-            return const_cast<initializer_list*>(this)->m_storage[index];
+            return m_storage[index];
         }
 
         [[nodiscard]] constexpr T& operator[](size_t index)
         {
-            return const_cast<initializer_list*>(this)->m_storage[index];
+            return m_storage[index];
         }
-
-        constexpr operator T*()
+        
+        [[nodiscard]] constexpr T* data()
         {
+            return m_storage;
+        }
+    
+        [[nodiscard]] constexpr T const* data() const
+        {
+            return m_storage;
         }
 
         T m_storage[Size];
@@ -130,3 +139,9 @@ namespace neo
 using nullptr_t = decltype(nullptr);
 
 using neo::ReferenceWrapper;
+
+namespace std
+{
+    template<typename T, size_t Size>
+    using initializer_list = neo::initializer_list<T, Size>;
+}
