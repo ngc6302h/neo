@@ -60,9 +60,24 @@ namespace neo
             ref = nullptr;
         }
 
-        constexpr operator T&() const
+        constexpr operator T&()
         {
             return *ref;
+        }
+    
+        constexpr operator T const&() const
+        {
+            return *ref;
+        }
+        
+        constexpr T* operator->()
+        {
+            return ref;
+        }
+        
+        constexpr T const* operator->() const
+        {
+            return ref;
         }
 
         constexpr ReferenceWrapper& operator=(const ReferenceWrapper& other)
@@ -70,12 +85,6 @@ namespace neo
             if (this == &other)
                 return *this;
             ref = other.ref;
-            return *this;
-        };
-        
-        constexpr ReferenceWrapper& operator=(const T& other) const
-        {
-            ref =  &const_cast<T&>(other);
             return *this;
         };
     
