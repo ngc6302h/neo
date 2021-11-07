@@ -330,6 +330,19 @@ namespace neo
         {
             return !find(other).is_end();
         }
+        
+        [[nodiscard]] constexpr bool contains(Utf8Char c) const
+        {
+            if (!byte_size())
+                return false;
+            
+            for (const auto ch : *this)
+            {
+                if (c == ch)
+                    return true;
+            }
+            return false;
+        }
 
         [[nodiscard]] constexpr String trim_whitespace(TrimMode from_where) const
         {
