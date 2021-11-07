@@ -427,6 +427,9 @@ namespace neo
 
     template<typename T>
     using RemoveReferenceWrapper = typename remove_reference_wrapper_t<T>::type;
+    
+    template<typename T>
+    using RewrapReference = ReferenceWrapper<RemoveReferenceWrapper<T>>;
 
     template<typename F, typename... Args>
     using ReturnType = decltype(declval<F>()(declval<Args>()...));
@@ -461,6 +464,7 @@ using neo::PackContains;
 using neo::RemovePointer;
 using neo::RemoveReference;
 using neo::RemoveReferenceWrapper;
+using neo::RewrapReference;
 using neo::ReturnType;
 using neo::TypeContains;
 using neo::TypeContainsN;
