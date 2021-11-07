@@ -51,10 +51,8 @@ namespace neo
             __builtin_memcpy(m_buffer, other.m_buffer, other.m_byte_length);
         }
 
-        constexpr String(String&& other)
+        constexpr String(String&& other) : m_buffer(other.m_buffer), m_byte_length(other.m_byte_length)
         {
-            m_buffer = other.m_buffer;
-            m_byte_length = other.m_byte_length;
             other.m_buffer = nullptr;
             other.m_byte_length = 0;
         }
@@ -131,7 +129,8 @@ namespace neo
                 return *this;
 
             delete[] m_buffer;
-            m_buffer = new char[other.m_byte_length];
+            m_buffer = new char[other.m_byte_length+1];
+            m_buffer[other.m_byte_length] = 0;
             m_byte_length = other.m_byte_length;
             __builtin_memcpy(m_buffer, other.m_buffer, other.m_byte_length);
             return *this;
