@@ -433,6 +433,32 @@ namespace neo
 
     template<typename F, typename... Args>
     using ReturnType = decltype(declval<F>()(declval<Args>()...));
+    
+    template<typename T>
+    static constexpr void TypedCopy(size_t num, T const* from, T* to)
+    {
+        for(size_t i = 0; i < num; ++i)
+            to[i] = from[i];
+    }
+    
+    template<typename T>
+    static constexpr void UntypedCopy(size_t num, T const* from, T* to)
+    {
+        __builtin_memcpy(to, from, num*sizeof(T));
+    }
+    
+    template<typename T>
+    static constexpr void OverlappingUntypedCopy(size_t num, T const* from, T* to)
+    {
+        __builtin_memmove(to, from, num*sizeof(T));
+    }
+    
+    template<typename T>
+    static constexpr void TypedMove(size_t num, T const* from, T* to)
+    {
+        for(size_t i = 0; i < num; ++i)
+            to[i] = move(from[i]);
+    }
 
 }
 using ssize_t = neo::MakeSigned<size_t>;
@@ -469,6 +495,10 @@ using neo::ReturnType;
 using neo::TypeContains;
 using neo::TypeContainsN;
 using neo::TypeOfIndex;
+using neo::TypedCopy;
+using neo::UntypedCopy;
+using neo::OverlappingUntypedCopy;
+using neo::TypedMove;
 
 using neo::declval;
 using neo::forward;
