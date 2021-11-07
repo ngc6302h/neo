@@ -108,6 +108,16 @@ namespace neo
         {
             return { m_buffer, m_byte_length };
         }
+        
+        [[nodiscard]] constexpr Span<raw_type> span()
+        {
+            return { m_buffer, m_byte_length };
+        }
+    
+        [[nodiscard]] constexpr Span<const raw_type> span() const
+        {
+            return { m_buffer, m_byte_length };
+        }
 
         constexpr operator StringView() const
         {
