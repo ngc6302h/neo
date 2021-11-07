@@ -18,6 +18,8 @@
 #pragma once
 
 #include "String.h"
+#include "TypeTraits.h"
+#include "Preprocessor.h"
 
 namespace neo
 {
@@ -32,5 +34,25 @@ namespace neo
     
     template<typename T>
     constinit StringView nameof = get_type_name<T>();
+
+    template<typename T>
+    constexpr StringView dynamic_nameof(T const& v);
+    
+    #define STRINGIFIABLE_ENUM(enum_name, ...) \
+    enum class enum_name                      \
+    {                                         \
+        __VA_ARGS__                           \
+    };                                         \
+    template<>                                    \
+    constexpr StringView dynamic_nameof<enum_name>(enum_name const& v) \
+    {                                               \
+        using enum enum_name;                       \
+        switch (v)                                  \
+    {                                               \
+        __FOR_EACH(__ENUM_CASE, __VA_ARGS__)        \
+        default: return "undefined";                \
+    }                                               \
+    }                                               \
+    
 }
 using neo::nameof;
