@@ -55,15 +55,16 @@ namespace neo
             allocate(initial_capacity);
         }
 
-        constexpr Vector(const Vector& other) :
-            m_capacity(other.m_capacity), m_size(other.m_size)
+        constexpr Vector(const Vector& other)
         {
-            VERIFY(other.m_size > 0);
-            allocate(other.m_size);
-            for (size_t i = 0; i < m_size; i++)
-            {
-                m_data[i] = other.m_data[i];
-            }
+            clean();
+            ensure_capacity(max(1UL, other.size()));
+            if constexpr (IsTriviallyCopyable<T>)
+                UntypedCopy(other.size(), other.data(), m_data);
+            else
+                TypedCopy(other.size(), other.data(), m_data);
+            m_size = other.m_size;
+    
         }
 
         constexpr Vector(Vector&& other) :
@@ -77,26 +78,47 @@ namespace neo
         explicit constexpr Vector(const Span<T>& other) :
             m_capacity(other.size()), m_size(other.size())
         {
-            VERIFY(other.size() > 0);
-            allocate(other.m_size);
-            for (size_t i = 0; i < m_size; i++)
+            clean();
+            ensure_capacity(max(1UL, other.size()));
+            if constexpr(IsTriviallyCopyable<T>)
+                UntypedCopy(other.size(), other.data(), m_data);
+            else
+                TypedCopy(other.size(), other.data(), m_data);
+            m_size = other.size();
+        }
+
+    private:
+        template<size_t ItemsLeft, typename TFirst, typename... TRest>
+        constexpr void initializer_list_copy_helper(size_t index, TFirst const& first, TRest const&... rest)
+        {
+            if constexpr(ItemsLeft != 0)
             {
-                m_data[i] = other.m_data[i];
+                m_data[index] = first;
+                if constexpr(ItemsLeft-1 != 0)
+                    initializer_list_copy_helper<ItemsLeft-1, TRest...>(index+1, rest...);
             }
+        }
+
+    public:
+        template<typename... Ts>
+        constexpr Vector(Ts const&... items) : m_capacity(sizeof...(Ts)), m_size(sizeof...(Ts))
+        {
+            allocate(sizeof...(items));
+            initializer_list_copy_helper<sizeof...(Ts), Ts...>(0, items...);
         }
 
         constexpr Vector& operator=(const Vector& other)
         {
             if (&other == this)
                 return *this;
-
-            m_capacity = other.capacity();
-            m_size = other.size();
+    
             clean();
-            deallocate();
-            allocate(other.m_size);
-            for (size_t i = 0; i < m_size; i++)
-                m_data[i] = other.m_data[i];
+            ensure_capacity(max(1UL, other.size()));
+            if constexpr(IsTriviallyCopyable<T>)
+                UntypedCopy(other.size(), other.data(), m_data);
+            else
+                TypedCopy(other.size(), other.data(), m_data);
+            m_size = other.size();
             return *this;
         }
 
@@ -115,18 +137,31 @@ namespace neo
             other.m_data = nullptr;
             return *this;
         }
-
-        constexpr void append(const RemoveReferenceWrapper<T>& e)
-        {
-            ensure_capacity(m_size + 1);
-            m_data[m_size++] = e;
-        }
     
         template<typename> requires MoveAssignable<T>
         constexpr void append(RemoveReferenceWrapper<T>&& e)
         {
             ensure_capacity(m_size + 1);
             m_data[m_size++] = move(e);
+        }
+    
+        constexpr void append(const RemoveReferenceWrapper<T>& e)
+        {
+            ensure_capacity(m_size + 1);
+            m_data[m_size++] = e;
+        }
+        
+        constexpr void remove_at(size_t index)
+        {
+            VERIFY(index < m_size);
+            if (index != m_size-1)
+            {
+                if constexpr(IsTriviallyCopyable<T>)
+                    OverlappingUntypedCopy(m_size-index, m_data+index+1, m_data+index);
+                else
+                    TypedMove(m_size-index-1, m_data+index+1, m_data+index);
+            }
+            m_size--;
         }
 
         template<typename... Args>
@@ -147,22 +182,19 @@ namespace neo
             return m_capacity;
         }
 
-        constexpr void change_capacity(size_t new_capcity)
+        constexpr void change_capacity(size_t new_capacity)
         {
-            VERIFY(new_capcity > 0);
+            VERIFY(new_capacity > 0);
             
-            T* new_buf = (T*) calloc(new_capcity, sizeof(T));
-            for (size_t i = 0; i < m_size; i++)
-            {
-                if constexpr(MoveAssignable<T>)
-                    new_buf[i] = move(m_data[i]);
-                else
-                    new_buf[i] = m_data[i];
-            }
+            T* new_buf = (T*) calloc(new_capacity, sizeof(T));
+            if constexpr (IsTriviallyCopyable<T>)
+                UntypedCopy(m_size, m_data, new_buf);
+            else
+                TypedMove(m_size, m_data, new_buf);
             clean();
             deallocate();
             m_data = new_buf;
-            m_capacity = new_capcity;
+            m_capacity = new_capacity;
         }
 
         constexpr void ensure_capacity(size_t new_capacity)
@@ -176,13 +208,20 @@ namespace neo
 
         [[nodiscard]] constexpr T& at(size_t index)
         {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waggressive-loop-optimizations"
+    
             VERIFY(index < m_size);
             return m_data[index];
+#pragma GCC diagnostic pop
         }
         [[nodiscard]] constexpr const T& at(size_t index) const
         {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waggressive-loop-optimizations"
             VERIFY(index < m_size);
             return m_data[index];
+#pragma GCC diagnostic pop
         }
 
         [[nodiscard]] constexpr const T& first() const
@@ -209,14 +248,14 @@ namespace neo
         {
             T value = move(first());
             m_size--;
-            for(size_t i = 0; i < m_size; i++)
-                m_data[i] = move(m_data[i+1]);
+            TypedMove(m_size, m_data+1, m_data);
             return move(value);
         }
         
         constexpr T take_last()
         {
             T value = move(last());
+            last().~T();
             m_size--;
             return move(value);
         }
