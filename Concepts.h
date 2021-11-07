@@ -175,7 +175,7 @@ namespace neo
     concept CallableWithReturnType = requires(TCallable f, Args... args)
     {
         {
-            f(args...)
+            f(forward<Args>(args)...)
             } -> SameAs<TReturn>;
     };
 
