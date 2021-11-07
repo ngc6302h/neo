@@ -138,12 +138,12 @@ namespace neo
     requires CallableWithReturnType<TFunc, bool, typename TContainer::type>
     [[nodiscard]] constexpr auto filter(const TContainer& where, TFunc&& selector)
     {
-        Vector<ReferenceWrapper<RemoveReferenceWrapper<typename TContainer::type>>> selected;
+        Vector<RewrapReference<typename TContainer::type>> selected;
         for (auto& i : where)
         {
             if (selector(i))
             {
-                selected.append(ReferenceWrapper<RemoveReferenceWrapper<typename TContainer::type>>(i));
+                selected.append(RewrapReference<typename TContainer::type>(i));
             }
         }
         return selected;
