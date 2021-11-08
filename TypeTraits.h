@@ -146,6 +146,43 @@ namespace neo
     template<typename T>
     using RemoveReference = typename detail::__RemoveReference<T>::type;
 
+    namespace detail
+    {
+        template<typename T>
+        struct remove_const_t
+        {
+            using type = T;
+        };
+        
+        template<typename T>
+        struct remove_const_t<const T>
+        {
+            using type = T;
+        };
+    
+        template<typename T>
+        struct remove_volatile_t
+        {
+            using type = T;
+        };
+    
+        template<typename T>
+        struct remove_volatile_t<volatile T>
+        {
+            using type = T;
+        };
+        
+    }
+    
+    template<typename T>
+    using RemoveConst = typename detail::remove_const_t<T>::type;
+    
+    template<typename T>
+    using RemoveVolatile = typename detail::remove_volatile_t<T>::type;
+    
+    template<typename T>
+    using RemoveCV = typename detail::remove_volatile_t<typename detail::remove_const_t<T>::type>::type;
+    
     template<typename T>
     struct make_signed
     {
@@ -329,7 +366,7 @@ namespace neo
     template<typename T>
     constexpr void swap(T& a, T& b)
     {
-        T& temp = move(a);
+        T temp = move(a);
         a = move(b);
         b = move(temp);
     }
