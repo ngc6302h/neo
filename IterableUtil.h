@@ -195,10 +195,22 @@ namespace neo
         requires CallableWithReturnType<TComparerFunc, bool, const T&, const T&>
         [[nodiscard]] constexpr bool contains(const T& what, TComparerFunc comparer)
         {
-            return neo::contains(*static_cast<const TContainer*>(this), what, comparer);
+            return neo::contains(*static_cast<TContainer*>(this), what, comparer);
         }
         
         [[nodiscard]] constexpr bool contains(const T& what)
+        {
+            return neo::contains(*static_cast<TContainer*>(this), what, DefaultEqualityComparer<const T&>);
+        }
+    
+        template<typename TComparerFunc>
+        requires CallableWithReturnType<TComparerFunc, bool, const T&, const T&>
+        [[nodiscard]] constexpr bool contains(const T& what, TComparerFunc comparer) const
+        {
+            return neo::contains(*static_cast<const TContainer*>(this), what, comparer);
+        }
+    
+        [[nodiscard]] constexpr bool contains(const T& what) const
         {
             return neo::contains(*static_cast<const TContainer*>(this), what, DefaultEqualityComparer<const T&>);
         }
