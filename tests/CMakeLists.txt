@@ -30,5 +30,6 @@ add_executable(future future.cpp)
 add_test(Future future)
 add_executable(variant variant.cpp)
 add_test(Variant variant)
-
+add_executable(generic_lexer generic_lexer.cpp)
+add_test(GenericLexer generic_lexer)
 include_directories(${CMAKE_SOURCE_DIR})
