@@ -50,8 +50,14 @@ namespace neo
     template<typename T>
     struct ReferenceWrapper
     {
+        using type = T;
         constexpr ReferenceWrapper(const T& obj) :
             ref(const_cast<T*>(&obj))
+        {
+        }
+    
+        constexpr ReferenceWrapper(ReferenceWrapper const& obj) :
+                ref(const_cast<T*>(obj.ref))
         {
         }
         
