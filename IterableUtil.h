@@ -69,7 +69,7 @@ namespace neo
 
     template<Iterable TContainer, typename TComparerFunc>
     requires CallableWithReturnType<TComparerFunc, bool, typename TContainer::type, typename TContainer::type>
-    constexpr void sort(const TContainer& what, TComparerFunc comparer)
+    constexpr void sort(TContainer& what, TComparerFunc comparer)
     {
         for (auto& x : what)
         {
