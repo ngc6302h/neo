@@ -148,6 +148,19 @@ namespace neo
         }
         return selected;
     }
+    
+    template<IterableContainer TContainer, typename TComparerFunc>
+    requires CallableWithReturnType<TComparerFunc, bool, typename TContainer::type const&, typename TContainer::type const&>
+    [[nodiscard]] constexpr auto sorted_view(TContainer const& what, TComparerFunc&& comparer)
+    {
+        Vector<RewrapReference<typename TContainer::type>> view;
+        for (auto& i : what)
+        {
+            view.append(RewrapReference<typename TContainer::type>(i));
+        }
+        sort(view, comparer);
+        return view;
+    }
 
     template<IterableContainer TContainer, typename TSelector>
     requires Callable<TSelector, typename TContainer::type> &&(!IsSame<ReturnType<TSelector, RemoveReferenceWrapper<typename TContainer::type>>, void>)
@@ -188,6 +201,20 @@ namespace neo
         [[nodiscard]] constexpr bool contains(const T& what)
         {
             return neo::contains(*static_cast<const TContainer*>(this), what, DefaultEqualityComparer<const T&>);
+        }
+    
+        template<typename TComparerFunc>
+        requires CallableWithReturnType<TComparerFunc, bool, T const&, T const&>
+        [[nodiscard]] constexpr Vector<RewrapReference<T>> sort(TComparerFunc comparer)
+        {
+            return neo::sorted_view(*static_cast<TContainer*>(this), comparer);
+        }
+    
+        template<typename TComparerFunc>
+        requires CallableWithReturnType<TComparerFunc, bool, T const&, T const&>
+        [[nodiscard]] constexpr Vector<RewrapReference<const T>> sort(TComparerFunc comparer) const
+        {
+            return neo::sorted_view(*static_cast<const TContainer*>(this), comparer);
         }
     };
 }
