@@ -131,7 +131,32 @@ namespace neo
         t.begin();
         t.end();
     };
+    
+    template<typename T>
+    concept Integral = IsIntegral<T>;
+    
+    template<typename T>
+    concept FloatingPoint = IsFloatingPoint<T>;
+    
+    template<typename T>
+    concept Arithmetic =  Integral<T> || FloatingPoint<T>;
+    
+    template<typename T>
+    concept Enum = __is_enum(T);
+    
+    template<typename T>
+    concept Pointer = IsPointer<T>;
+    
+    template<typename T>
+    concept NullPtr = IsNullptr<T>;
+    
+    //FIXME: Implement
+    //template<typename T>
+    //concept MemberPointer =
 
+    template<typename T>
+    concept Scalar = Arithmetic<T> || Enum<T> || Pointer<T> || NullPtr<T>; //|| MemberPointer<T>;
+    
     template<typename T>
     concept CopyConstructable = requires(const T& t)
     {
@@ -220,6 +245,13 @@ using neo::Incrementable;
 using neo::Indexable;
 using neo::InequalityComparable;
 using neo::Iterable;
+using neo::Integral;
+using neo::FloatingPoint;
+using neo::Arithmetic;
+using neo::Enum;
+using neo::Pointer;
+using neo::NullPtr;
+using neo::Scalar;
 using neo::IterableContainer;
 using neo::LessOrEqualThanComparable;
 using neo::LessThanComparable;
