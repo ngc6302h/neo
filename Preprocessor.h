@@ -17,6 +17,10 @@
 
 #pragma once
 
+#if defined(__GLIBCXX__) || defined(_LIBCPP_VERSION)
+#define NEO_DO_NOT_DEFINE_STD
+#endif
+
 //The following method to implement a FOR_EACH macro is extracted from https://www.scs.stanford.edu/~dm/blog/va-opt.html
 #define __PARENS ()
 #define __EXPAND(...) __EXPAND4(__EXPAND4(__EXPAND4(__EXPAND4(__VA_ARGS__))))

@@ -16,6 +16,7 @@
  */
 
 #pragma once
+#include "Preprocessor.h"
 #include "Util.h"
 
 #ifndef NEO_BASIC_TYPES
@@ -146,8 +147,10 @@ using nullptr_t = decltype(nullptr);
 
 using neo::ReferenceWrapper;
 
+#ifndef NEO_DO_NOT_DEFINE_STD
 namespace std
 {
     template<typename T, size_t Size>
     using initializer_list = neo::initializer_list<T, Size>;
 }
+#endif
