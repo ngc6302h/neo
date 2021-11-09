@@ -15,16 +15,36 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#pragma once
+#include "execinfo.h"
+#include "stdio.h"
 extern "C"
 {
-    [[noreturn]] extern void
-    __assert_fail(const char* __assertion, const char* __file, unsigned int __line, const char* __function) noexcept(true);
+    [[noreturn]] extern void __assert_fail(const char* __assertion, const char* __file, unsigned int __line, const char* __function) noexcept(true);
 }
 
-#ifdef DEBUG
-    #define VERIFY(expr) (static_cast<bool>(expr) ? void(0) : __assert_fail(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__))
-    #define VERIFY_NOT_REACHED() VERIFY(false)
+static char __backtrace_buffer[sizeof(void*)*256];
+[[maybe_unused]] [[noreturn]] static void print_backtrace_and_fail(const char* __assertion, const char* __file, unsigned int __line, const char* __function)
+{
+    fprintf(stdout, "Backtrace for failed thread:\n");
+    auto num_addresses = backtrace(reinterpret_cast<void **>(__backtrace_buffer), 256);
+    char** resolved_symbols = backtrace_symbols(reinterpret_cast<void* const*>(__backtrace_buffer), num_addresses);
+    for(int i = 0; i < num_addresses; ++i)
+        fprintf(stderr, "%s\n", resolved_symbols[i]);
+    __builtin_free(resolved_symbols);
+    __assert_fail(__assertion, __file, __line, __function);
+}
+
+#ifdef VERBOSE_ASSERTS
+#define __ASSERT_FAILED print_backtrace_and_fail
+#else
+#define __ASSERT_FAILED __assert_fail
+#endif
+
+#ifdef DEBUG_ASSERTS
+    #define VERIFY(expr) if (!(expr)) [[unlikely]] { __ASSERT_FAILED(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); }
+    #define VERIFY_NOT_REACHED() __ASSERT_FAILED("Reached unreachable code!", __FILE__, __LINE__, __PRETTY_FUNCTION__)
 #else
     #define VERIFY(expr)
-    #define VERIFY_NOT_REACHED() /*abort()*/ __builtin_trap()
+    #define VERIFY_NOT_REACHED() print_backtrace_and_fail("Reached unreachable code!", __FILE__, __LINE__, __PRETTY_FUNCTION__)
 #endif

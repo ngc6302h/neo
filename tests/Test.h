@@ -16,17 +16,10 @@
  */
 
 #pragma once
+#include <Assert.h>
 
-extern "C"
-{
-    [[noreturn]] extern void
-    __assert_fail(const char* __assertion, const char* __file, unsigned int __line, const char* __function) noexcept(true);
-}
-
-#define STRINGIFY(x) #x
-
-#define TEST(expr) (static_cast<bool>(expr) ? void(0) : __assert_fail(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__))
-#define TEST_FALSE(expr) (static_cast<bool>(!(expr)) ? void(0) : __assert_fail(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__))
-#define TEST_EQUAL(expr1, expr2) (static_cast<bool>(expr1 == expr2) ? void(0) : __assert_fail(STRINGIFY(expr1 == expr2), __FILE__, __LINE__, __PRETTY_FUNCTION__))
-#define TEST_NOT_EQUAL(expr1, expr2) (static_cast<bool>(expr1 != expr2) ? void(0) : __assert_fail(STRINGIFY(expr1 != expr2), __FILE__, __LINE__, __PRETTY_FUNCTION__))
-#define TEST_UNREACHABLE() TEST(false)
+#define TEST(expr) VERIFY(expr)
+#define TEST_FALSE(expr) VERIFY(!(expr))
+#define TEST_EQUAL(expr1, expr2) VERIFY(expr1 == expr2)
+#define TEST_NOT_EQUAL(expr1, expr2) VERIFY(expr1 != expr2)
+#define TEST_UNREACHABLE() VERIFY_NOT_REACHED()
