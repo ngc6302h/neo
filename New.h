@@ -16,7 +16,10 @@
  */
 
 #pragma once
+#include "Preprocessor.h"
 #include "Types.h"
 
+#ifndef NEO_DO_NOT_DEFINE_STD
 constexpr void* operator new(size_t, void* where) { return where; }
 constexpr void* operator new[](size_t, void* where) { return where; }
+#endif
