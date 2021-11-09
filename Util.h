@@ -48,3 +48,8 @@ constexpr T clamp(T minval, T maxval, T value)
     return value > maxval ? maxval : value < minval ? minval
                                                     : value;
 }
+
+//true if the architecture is little endian
+static constexpr bool LittleEndian = __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__;
+//true if the architecture is big endian
+static constexpr bool BigEndian = __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__;
