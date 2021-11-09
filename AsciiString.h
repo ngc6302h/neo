@@ -154,7 +154,10 @@ namespace neo
     
         [[nodiscard]] constexpr size_t size() const
         {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
             return m_length;
+#pragma GCC diagnostic pop
         }
 
         [[nodiscard]] constexpr bool is_empty() const
@@ -271,16 +274,16 @@ namespace neo
         {
             if (!length() || !other.length() || length() < other.length())
                 return end();
-    
+            
             char* hit = __builtin_strstr(m_buffer, other.m_buffer);
             if (!hit)
                 return end();
-            return { *this, size_t(hit - m_buffer) };
+            return { m_buffer, size_t(hit - m_buffer) };
         }
     
         [[nodiscard]] constexpr bool contains(const AsciiString& other)
         {
-            return !find(other).is_end();
+            return find(other) != end();
         }
     
         [[nodiscard]] constexpr AsciiString trim_whitespace(TrimMode from_where) const
