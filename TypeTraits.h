@@ -491,6 +491,15 @@ namespace neo
     }
     
     template<typename T>
+    static constexpr void Copy(size_t num, T const* from, T* to)
+    {
+        if constexpr (IsTrivial<T>)
+            UntypedCopy(num, from, to);
+        else
+            TypedCopy(num, from, to);
+    }
+    
+    template<typename T>
     static constexpr void TypedMove(size_t num, T const* from, T* to)
     {
         for(size_t i = 0; i < num; ++i)
@@ -536,6 +545,7 @@ using neo::TypedCopy;
 using neo::UntypedCopy;
 using neo::OverlappingUntypedCopy;
 using neo::TypedMove;
+using neo::Copy;
 
 using neo::declval;
 using neo::forward;
