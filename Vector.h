@@ -59,10 +59,7 @@ namespace neo
         {
             clean();
             ensure_capacity(max(1UL, other.size()));
-            if constexpr (IsTriviallyCopyable<T>)
-                UntypedCopy(other.size(), other.data(), m_data);
-            else
-                TypedCopy(other.size(), other.data(), m_data);
+            Copy(other.size(), other.data(), m_data);
             m_size = other.m_size;
     
         }
@@ -80,10 +77,7 @@ namespace neo
         {
             clean();
             ensure_capacity(max(1UL, other.size()));
-            if constexpr(IsTriviallyCopyable<T>)
-                UntypedCopy(other.size(), other.data(), m_data);
-            else
-                TypedCopy(other.size(), other.data(), m_data);
+            Copy(other.size(), other.data(), m_data);
             m_size = other.size();
         }
 
@@ -114,10 +108,7 @@ namespace neo
     
             clean();
             ensure_capacity(max(1UL, other.size()));
-            if constexpr(IsTriviallyCopyable<T>)
-                UntypedCopy(other.size(), other.data(), m_data);
-            else
-                TypedCopy(other.size(), other.data(), m_data);
+            Copy(other.size(), other.data(), m_data);
             m_size = other.size();
             return *this;
         }
@@ -156,7 +147,7 @@ namespace neo
             VERIFY(index < m_size);
             if (index != m_size-1)
             {
-                if constexpr(IsTriviallyCopyable<T>)
+                if constexpr(IsTrivial<T>)
                     OverlappingUntypedCopy(m_size-index, m_data+index+1, m_data+index);
                 else
                     TypedMove(m_size-index-1, m_data+index+1, m_data+index);
@@ -197,12 +188,12 @@ namespace neo
             m_capacity = new_capacity;
         }
 
-        constexpr void ensure_capacity(size_t new_capacity)
+        constexpr void ensure_capacity(size_t needed_capacity)
         {
-            VERIFY(new_capacity > 0);
-            if (m_capacity < new_capacity)
+            VERIFY(needed_capacity > 0);
+            if (m_capacity < needed_capacity)
             {
-                change_capacity(new_capacity);
+                change_capacity(needed_capacity*2);
             }
         }
 
@@ -319,8 +310,11 @@ namespace neo
     private:
         constexpr void clean()
         {
-            for (size_t i = 0; i < m_size; i++)
-                m_data[i].~T();
+            if constexpr(!IsTrivial<T>)
+            {
+                for (size_t i = 0; i < m_size; i++)
+                    m_data[i].~T();
+            }
         }
 
         //size is number of T elements
