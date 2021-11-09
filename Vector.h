@@ -142,6 +142,20 @@ namespace neo
             m_data[m_size++] = e;
         }
         
+        constexpr void append(Span<RemoveReferenceWrapper<T>> const& items)
+        {
+            ensure_capacity(m_size+items.size());
+            Copy(items.size(), items.data(), m_data+m_size);
+            m_size+=items.size();
+        }
+    
+        constexpr void append(Span<RemoveReferenceWrapper<T>>&& items)
+        {
+            ensure_capacity(m_size+items.size());
+            TypedMove(items.size(), items.data(), m_data+m_size);
+            m_size+=items.size();
+        }
+        
         constexpr void remove_at(size_t index)
         {
             VERIFY(index < m_size);
@@ -275,6 +289,12 @@ namespace neo
         {
             VERIFY(m_size > 0);
             change_capacity(m_size);
+        }
+        
+        constexpr void clear()
+        {
+            clean();
+            m_size = 0;
         }
 
         [[nodiscard]] constexpr Span<T> span()
