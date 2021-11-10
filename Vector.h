@@ -213,20 +213,20 @@ namespace neo
 
         [[nodiscard]] constexpr T& at(size_t index)
         {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Waggressive-loop-optimizations"
+//#pragma GCC diagnostic push
+//#pragma GCC diagnostic ignored "-Waggressive-loop-optimizations"
     
             VERIFY(index < m_size);
             return m_data[index];
-#pragma GCC diagnostic pop
+//#pragma GCC diagnostic pop
         }
         [[nodiscard]] constexpr const T& at(size_t index) const
         {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Waggressive-loop-optimizations"
+//#pragma GCC diagnostic push
+//#pragma GCC diagnostic ignored "-Waggressive-loop-optimizations"
             VERIFY(index < m_size);
             return m_data[index];
-#pragma GCC diagnostic pop
+//#pragma GCC diagnostic pop
         }
 
         [[nodiscard]] constexpr const T& first() const
