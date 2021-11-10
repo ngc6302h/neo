@@ -16,6 +16,8 @@
  */
 
 #pragma once
+#define DEBUG_ASSERTS 1
+#define VERBOSE_ASSERTS 1
 #include <Assert.h>
 
 #define TEST(expr) VERIFY(expr)
