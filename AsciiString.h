@@ -139,12 +139,12 @@ namespace neo
 
         [[nodiscard]]  constexpr StringIterator begin() const
         {
-            return {m_buffer};
+            return {*this };
         }
 
         [[nodiscard]] constexpr StringIterator end() const
         {
-            return {m_buffer, m_length};
+            return {*this, m_length};
         }
 
         [[nodiscard]] constexpr size_t length() const

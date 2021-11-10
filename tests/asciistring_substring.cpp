@@ -29,6 +29,6 @@ int main()
     TEST_EQUAL(b.substring(b.begin()), b);
     TEST_EQUAL(b.substring(b.begin(), b.length()), b);
     auto end = b.end();
-    TEST_EQUAL(b.substring(end), ""_as);
+    TEST_EQUAL(b.substring(--end), "A"_as);
     return 0;
 }
