@@ -136,6 +136,12 @@ namespace neo
     concept Integral = IsIntegral<T>;
     
     template<typename T>
+    concept Signed = IsSigned<T>;
+    
+    template<typename T>
+    concept Unsigned = IsUnsigned<T>;
+    
+    template<typename T>
     concept FloatingPoint = IsFloatingPoint<T>;
     
     template<typename T>
@@ -247,6 +253,8 @@ using neo::InequalityComparable;
 using neo::Iterable;
 using neo::Integral;
 using neo::FloatingPoint;
+using neo::Signed;
+using neo::Unsigned;
 using neo::Arithmetic;
 using neo::Enum;
 using neo::Pointer;
