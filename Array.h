@@ -27,16 +27,14 @@
 namespace neo
 {
     template<typename T, size_t Size>
-    struct Array
+    struct Array : IterableExtensions<Array<T, Size>, RemoveReferenceWrapper<T>>
     {
         using type = T;
         using ArrayIterator = Iterator<Array>;
         using ConstantArrayIterator = Iterator<const Array>;
 
         constexpr ~Array() = default;
-
-        //constexpr Array() = default;
-
+        
         constexpr Array& operator=(const Array& other)
         {
             if (this == &other)
@@ -57,6 +55,40 @@ namespace neo
             {
                 m_storage[i] = move(other.m_storage[i]);
             }
+        }
+
+    private:
+        template<size_t ItemsLeft, typename TFirst, typename... TRest>
+        constexpr void initializer_list_copy_helper(size_t index, TFirst&& first, TRest&&... rest)
+        {
+            if constexpr(ItemsLeft != 0)
+            {
+                m_storage[index] = forward<TFirst>(first);
+                if constexpr(ItemsLeft-1 != 0)
+                    initializer_list_copy_helper<ItemsLeft-1, TRest...>(index+1, forward<TRest>(rest)...);
+            }
+        }
+
+    public:
+        template<typename... Ts> requires (IsSameValue<Size, sizeof...(Ts)>)
+        constexpr Array(Ts&&... items)
+        {
+            initializer_list_copy_helper<sizeof...(Ts), Ts...>(0, forward<Ts>(items)...);
+        }
+        
+        [[nodiscard]] constexpr size_t size() const
+        {
+            return Size;
+        }
+        
+        [[nodiscard]] constexpr T* data()
+        {
+            return m_storage;
+        }
+        
+        [[nodiscard]] constexpr T const* data() const
+        {
+            return m_storage;
         }
 
         [[nodiscard]] constexpr T& at(size_t index)
@@ -93,22 +125,22 @@ namespace neo
 
         [[nodiscard]] constexpr ArrayIterator begin()
         {
-            return BidIt(*this);
+            return ArrayIterator(*this);
         }
 
         [[nodiscard]] constexpr ConstantArrayIterator begin() const
         {
-            return ConstBidIt(*this);
+            return ConstantArrayIterator(*this);
         }
 
         [[nodiscard]] constexpr ArrayIterator end()
         {
-            return BidIt(*this, Size);
+            return ArrayIterator(*this, Size);
         }
 
         [[nodiscard]] constexpr ConstantArrayIterator end() const
         {
-            return ConstBidIt(*this, Size);
+            return ConstantArrayIterator(*this, Size);
         }
 
         template<typename K, typename = EnableIf<InequalityComparable<K>>>
@@ -133,33 +165,6 @@ namespace neo
         constexpr const T& get() const
         {
             return m_storage[Index];
-        }
-
-        template<typename TPredicate>
-        requires CallableWithReturnType<TPredicate, bool, const T&>
-        [[nodiscard]] Vector<ReferenceWrapper<T>> filter(TPredicate&& predicate) const
-        {
-            return neo::filter(*this, predicate);
-        }
-
-        template<typename TSelector>
-        requires Callable<TSelector, T> &&(!IsSame<ReturnType<TSelector, T>, void>)
-            [[nodiscard]] Vector<ReferenceWrapper<ReturnType<TSelector, const T&>>> select(TSelector&& selector) const
-        {
-            return neo::select(*this, selector);
-        }
-
-        template<typename U, typename TComparerFunc>
-        requires CallableWithReturnType<TComparerFunc, bool, const T&, const U&>
-        [[nodiscard]] constexpr bool contains(const U& what, TComparerFunc comparer = DefaultEqualityComparer<const T&>) const
-        {
-            return neo::contains(*this, what, comparer);
-        }
-    
-        template<typename Identity = IdentityType<T>>
-        [[nodiscard]] constexpr bool contains(const Identity& what) const requires InequalityComparable<Identity>
-        {
-            return neo::contains(*this, what, DefaultEqualityComparer<T>);
         }
 
         T m_storage[Size];
