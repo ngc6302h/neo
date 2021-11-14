@@ -269,7 +269,7 @@ namespace neo
     template<typename T, typename U>
     constexpr bool IsSame = is_same<T, U>::value;
 
-    template<typename T, T t, T u>
+    template<auto t, auto u>
     constexpr bool IsSameValue = t == u;
 
     template<typename T, typename... Pack>
@@ -390,7 +390,7 @@ namespace neo
     constexpr bool IsNullptr = IsSame<T, decltype(nullptr)>;
 
     template<typename T>
-    constexpr bool IsCharacter = IsSame<T, char> || IsSame<T, unsigned char> || IsSame<T, wchar_t> || IsSame<T, char8_t> || IsSame<T, char16_t> || IsSame<T, char32_t>;
+    constexpr bool IsCharacter = IsSame<T, char> || IsSame<T, signed char> || IsSame<T, unsigned char> || IsSame<T, wchar_t> || IsSame<T, char8_t> || IsSame<T, char16_t> || IsSame<T, char32_t>;
 
 #if __has_builtin(__is_integral)
     template<typename T>
@@ -398,7 +398,7 @@ namespace neo
         = __is_integral(T);
 #else
     template<typename T>
-    constexpr bool IsIntegral = IsSame<T, unsigned char> || IsSame<T, unsigned short> || IsSame<T, unsigned int> || IsSame<T, unsigned long> || IsSame<T, long long> || IsSame<T, char> || IsSame<T, short> || IsSame<T, int> || IsSame<T, long> || IsSame<T, long long> || IsCharacter<T>;
+    constexpr bool IsIntegral = IsSame<T, signed char> || IsSame<T, unsigned char> || IsSame<T, unsigned short> || IsSame<T, unsigned int> || IsSame<T, unsigned long> || IsSame<T, long long> || IsSame<T, char> || IsSame<T, short> || IsSame<T, int> || IsSame<T, long> || IsSame<T, long long> || IsCharacter<T>;
 #endif
 #if __has_builtin(__is_floating_point)
     template<typename T>
@@ -416,6 +416,12 @@ namespace neo
     constexpr bool IsFundamental = IsIntegral<T> || IsFloatingPoint<T> || IsNullptr<T>;
 #endif
 
+    template<typename T>
+    constexpr bool IsSigned = static_cast<T>(-1) < static_cast<T>(0);
+    
+    template<typename T>
+    constexpr bool IsUnsigned = !IsSigned<T>;
+    
     namespace detail
     {
         template<typename T>
@@ -521,6 +527,8 @@ using neo::IsCharacter;
 using neo::IsFloatingPoint;
 using neo::IsFundamental;
 using neo::IsIntegral;
+using neo::IsSigned;
+using neo::IsUnsigned;
 using neo::IsLvalueReference;
 using neo::IsNullptr;
 using neo::IsPointer;
