@@ -128,7 +128,7 @@ namespace neo
             auto size_or_error = file_or_error.result().size();
             if (size_or_error.has_error())
                 return (Error)errno;
-            Vector<u8> buffer(size_or_error.result(), true);
+            Vector<u8> buffer((size_t)size_or_error.result(), true);
             auto bytes_read_or_error = file_or_error.result().read(buffer.span(), buffer.size());
             if (bytes_read_or_error.has_error())
                 return (Error)errno;
