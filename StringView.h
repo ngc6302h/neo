@@ -225,7 +225,7 @@ namespace neo
                 --_end;
                 while (isspace(*_end))
                     --_end;
-                copy.m_byte_length = _end.ptr() - m_view;
+                copy.m_byte_length = _end.ptr() - m_view + 1;
             }
 
             if ((from_where & TrimMode::Start) == TrimMode::Start)
