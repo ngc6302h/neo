@@ -22,6 +22,7 @@ namespace neo
     enum TrimMode
     {
         Start = 1,
-        End = 2
+        End = 2,
+        Both = Start | End
     };
 }
