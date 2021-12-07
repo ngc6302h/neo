@@ -39,6 +39,10 @@ namespace neo
                 m_index(index)
         {
         }
+        
+        constexpr DefaultIteratorImplementation(DefaultIteratorImplementation const& other) : m_container(other.m_container), m_index(other.m_index)
+        {
+        }
     
         constexpr DefaultIteratorImplementation& operator=(DefaultIteratorImplementation const& other)
         {
