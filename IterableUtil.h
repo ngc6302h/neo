@@ -33,11 +33,13 @@ namespace neo
     {
         auto begin = where.begin();
         auto end = where.end();
-        do
+        while (begin != end)
         {
             if (comparer(*begin, what))
                 return begin;
-        } while (begin++ != end);
+            else
+                ++begin;
+        }
         return end;
     }
 
