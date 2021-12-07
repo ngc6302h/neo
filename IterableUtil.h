@@ -48,7 +48,23 @@ namespace neo
     {
         return find(where, what, DefaultEqualityComparer<T>);
     }
-
+    
+    template<IterableContainer TContainer, typename TPredicate>
+    requires CallableWithReturnType<TPredicate, bool, typename TContainer::type const&>
+    [[nodiscard]] constexpr auto find(TContainer const& where, TPredicate&& finder)
+    {
+        auto begin = where.begin();
+        auto end = where.end();
+        while (begin != end)
+        {
+            if (finder(*begin))
+                return begin;
+            else
+                ++begin;
+        }
+        return end;
+    }
+    
     template<IterableContainer TContainer, typename T, typename TComparerFunc>
     requires CallableWithReturnType<TComparerFunc, bool, const typename TContainer::type&, const T&>
     [[nodiscard]] constexpr bool contains(const TContainer& where, const T& what, TComparerFunc comparer)
@@ -114,7 +130,7 @@ namespace neo
 
     template<typename TTupleA, typename TTupleB>
     requires(TTupleA::size() == TTupleA::size())
-        [[nodiscard]] constexpr decltype(auto) zip(const TTupleA& a, const TTupleB& b)
+    [[nodiscard]] constexpr decltype(auto) zip(const TTupleA& a, const TTupleB& b)
     {
         return detail::_zip<TTupleA::size(), TTupleA, TTupleB>::zip(a, b);
     }
@@ -165,10 +181,13 @@ namespace neo
     }
 
     template<IterableContainer TContainer, typename TSelector>
-    requires Callable<TSelector, typename TContainer::type> &&(!IsSame<ReturnType<TSelector, RemoveReferenceWrapper<typename TContainer::type>>, void>)
-        [[nodiscard]] constexpr auto select(const TContainer& where, TSelector&& selector)
+    requires Callable<TSelector, typename TContainer::type&> &&(!IsSame<ReturnType<TSelector, RemoveReferenceWrapper<typename TContainer::type>&>, void>)
+        [[nodiscard]] constexpr auto select(TContainer& where, TSelector&& selector)
     {
-        Vector<ReferenceWrapper<ReturnType<TSelector, const RemoveReferenceWrapper<typename TContainer::type>&>>> items;
+        using StorageT = Conditional<IsLvalueReference<ReturnType<TSelector, RemoveReferenceWrapper<typename TContainer::type>&>>,
+                ReferenceWrapper<RemoveReference<ReturnType<TSelector, RemoveReferenceWrapper<typename TContainer::type>&>>>,
+                ReturnType<TSelector, RemoveReferenceWrapper<typename TContainer::type>&>>;
+        Vector<StorageT> items;
         for (auto& i : where)
         {
             items.construct(selector(i));
@@ -176,33 +195,105 @@ namespace neo
         return items;
     }
     
+    template<IterableContainer TContainer, typename TPredicate>
+    requires CallableWithReturnType<TPredicate, bool, typename TContainer::type const&>
+    [[nodiscard]] constexpr bool any(TContainer const& where, TPredicate&& predicate)
+    {
+        for (auto const& v : where)
+            if (predicate(v))
+                return true;
+        return false;
+    }
+    
+    template<IterableContainer TContainer, typename TPredicate>
+    requires CallableWithReturnType<TPredicate, bool, typename TContainer::type const&>
+    [[nodiscard]] constexpr bool all(TContainer const& where, TPredicate&& predicate)
+    {
+        for (auto const& v : where)
+            if (!predicate(v))
+                return false;
+        return true;
+    }
+    
+    template<IterableContainer TContainer, typename TTransformer>
+    requires Callable<TTransformer, typename TContainer::type&>
+    constexpr TContainer& transform(TContainer& where, TTransformer&& how)
+    {
+        for (auto& v : where)
+            how(v);
+        return where;
+    };
+    
+    template<IterableContainer TContainer, typename TAccumulation, typename TAccumulator>
+    requires Callable<TAccumulator, TAccumulation&, typename TContainer::type const&>
+    [[nodiscard]] constexpr TAccumulation accumulate(TContainer const& what, TAccumulator&& accumulator, TAccumulation initial_value = {})
+    {
+        for (auto const& v : what)
+            accumulator(initial_value, v);
+        return initial_value;
+    }
+    
+    template<IterableContainer TContainer, typename TAccumulation>
+    [[nodiscard]] constexpr TAccumulation accumulate(TContainer const& what, TAccumulation initial_value = {})
+    {
+        return neo::accumulate(what, [](auto& acc, auto const& v) { acc+=v; }, initial_value);
+    }
+    
     template<typename TContainer, typename T>
     struct IterableExtensions
     {
         template<typename TPredicate>
-        requires CallableWithReturnType<TPredicate, bool, const T&>
-        [[nodiscard]] Vector<ReferenceWrapper<T>> filter(TPredicate&& predicate) const
+        requires CallableWithReturnType<TPredicate, bool, T const&>
+        [[nodiscard]] const Vector<const ReferenceWrapper<T>> filter(TPredicate&& predicate) const
         {
-            return neo::filter(*static_cast<const TContainer*>(this), predicate);
+            return neo::filter(*static_cast<TContainer const*>(this), predicate);
+        }
+    
+        template<typename TPredicate>
+        requires CallableWithReturnType<TPredicate, bool, T const&>
+        [[nodiscard]] Vector<ReferenceWrapper<T>> filter(TPredicate&& predicate)
+        {
+            return neo::filter(*static_cast<TContainer const*>(this), predicate);
         }
         
         template<typename TSelector>
-        requires Callable<TSelector, T> &&(!IsSame<ReturnType<TSelector, T>, void>)
-        [[nodiscard]] Vector<ReferenceWrapper<ReturnType<TSelector, const T&>>> select(TSelector&& selector) const
+        requires Callable<TSelector, T> &&(!IsSame<ReturnType<TSelector, T const&>, void>)
+        [[nodiscard]] auto select(TSelector&& selector) const
         {
             return neo::select(*static_cast<const TContainer*>(this), selector);
+        }
+    
+        template<typename TSelector>
+        requires Callable<TSelector, T> &&(!IsSame<ReturnType<TSelector, T&>, void>)
+        [[nodiscard]] auto select(TSelector&& selector)
+        {
+            return neo::select(*static_cast<TContainer*>(this), selector);
         }
         
         template<typename TComparerFunc>
         requires CallableWithReturnType<TComparerFunc, bool, const T&, const T&>
-        [[nodiscard]] constexpr bool contains(const T& what, TComparerFunc comparer)
+        [[nodiscard]] bool contains(const T& what, TComparerFunc comparer)
         {
             return neo::contains(*static_cast<TContainer*>(this), what, comparer);
         }
         
-        [[nodiscard]] constexpr bool contains(const T& what)
+        [[nodiscard]] bool contains(const T& what)
         {
             return neo::contains(*static_cast<TContainer*>(this), what, DefaultEqualityComparer<const T&>);
+        }
+    
+        template<typename TPredicate>
+        requires CallableWithReturnType<TPredicate, bool, T const&>
+        [[nodiscard]] constexpr auto find(TPredicate&& finder) const
+        {
+            return neo::find(*static_cast<TContainer const*>(this), finder);
+        }
+    
+        template<typename TPredicate>
+        requires CallableWithReturnType<TPredicate, bool, T const&>
+        [[nodiscard]] constexpr auto find(TPredicate&& finder)
+        {
+            return const_cast<RemoveConst<typename TContainer::VectorConstantIterator>&&>(neo::find(*static_cast<TContainer const*>(this), finder));
         }
     
         template<typename TComparerFunc>
@@ -226,9 +317,43 @@ namespace neo
     
         template<typename TComparerFunc>
         requires CallableWithReturnType<TComparerFunc, bool, T const&, T const&>
-        [[nodiscard]] constexpr Vector<RewrapReference<const T>> sort(TComparerFunc comparer) const
+        [[nodiscard]] constexpr const Vector<RewrapReference<const T>> sort(TComparerFunc comparer) const
         {
             return neo::sorted_view(*static_cast<const TContainer*>(this), comparer);
+        }
+    
+        template<typename TPredicate>
+        requires CallableWithReturnType<TPredicate, bool, T const&>
+        [[nodiscard]] constexpr bool any(TPredicate&& predicate) const
+        {
+            return neo::any(*static_cast<TContainer const*>(this), predicate);
+        }
+    
+        template<typename TPredicate>
+        requires CallableWithReturnType<TPredicate, bool, T const&>
+        [[nodiscard]] constexpr bool all(TPredicate&& predicate) const
+        {
+            return neo::all(*static_cast<TContainer const*>(this), predicate);
+        }
+    
+        template<typename TTransformer>
+        requires Callable<TTransformer, T&>
+        constexpr TContainer& transform(TTransformer&& how)
+        {
+            return neo::transform(*static_cast<TContainer*>(this), how);
+        }
+    
+        template<typename TAccumulation, typename TAccumulator>
+        requires Callable<TAccumulator, TAccumulation&, T const&>
+        [[nodiscard]] constexpr TAccumulation accumulate(TAccumulator&& accumulator, TAccumulation initial_value = {})
+        {
+            return neo::accumulate(*static_cast<TContainer const*>(this), accumulator, initial_value);
+        }
+    
+        template<typename TAccumulation = T>
+        [[nodiscard]] constexpr TAccumulation accumulate(TAccumulation initial_value = {})
+        {
+            return neo::accumulate(*static_cast<TContainer const*>(this), initial_value);
         }
     };
 }
@@ -240,3 +365,7 @@ using neo::for_each;
 using neo::select;
 using neo::sort;
 using neo::zip;
+using neo::any;
+using neo::all;
+using neo::transform;
+using neo::accumulate;
