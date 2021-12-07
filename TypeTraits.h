@@ -476,7 +476,7 @@ namespace neo
     using RewrapReference = ReferenceWrapper<RemoveReferenceWrapper<T>>;
 
     template<typename F, typename... Args>
-    using ReturnType = decltype(declval<F>()(declval<Args>()...));
+    using ReturnType = decltype(declval<F>()(forward<Args>(declval<Args>())...));
     
     template<typename T>
     static constexpr void TypedCopy(size_t num, T const* from, T* to)
