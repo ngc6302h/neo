@@ -49,6 +49,19 @@ constexpr T clamp(T minval, T maxval, T value)
                                                     : value;
 }
 
+constexpr void* neo_memmem(void* string, size_t string_length, void* substring, size_t substring_length)
+{
+    const char* haystack = static_cast<const char *>(string);
+    const char* needle = static_cast<const char *>(substring);
+    
+    for (size_t i = 0; i <= string_length - substring_length; i++)
+    {
+        if (__builtin_memcmp(haystack+i, needle, substring_length) == 0)
+            return (void *) (haystack+i);
+    }
+    return nullptr;
+}
+
 //true if the architecture is little endian
 static constexpr bool LittleEndian = __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__;
 //true if the architecture is big endian
