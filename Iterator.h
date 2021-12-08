@@ -56,7 +56,7 @@ namespace neo
             VERIFY(m_index < m_container.size());
             auto tmp = *this;
             m_index++;
-            return move(tmp);
+            return tmp;
         }
 
         constexpr DefaultIteratorImplementation operator--(int)
@@ -64,7 +64,7 @@ namespace neo
             VERIFY(m_index > 0);
             auto tmp = *this;
             m_index--;
-            return move(tmp);
+            return tmp;
         }
 
         constexpr DefaultIteratorImplementation& operator++()
