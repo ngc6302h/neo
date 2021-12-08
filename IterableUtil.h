@@ -42,7 +42,7 @@ namespace neo
         }
         return end;
     }
-
+    
     template<IterableContainer TContainer, typename T>
     [[nodiscard]] constexpr auto find(const TContainer& where, const T& what)
     {
@@ -78,13 +78,13 @@ namespace neo
         }
         return false;
     }
-
+    
     template<IterableContainer TContainer, typename T>
     [[nodiscard]] constexpr bool contains(const TContainer& where, const T& what)
     {
         return contains(where, what, DefaultEqualityComparer<T>);
     }
-
+    
     template<Iterable TContainer, typename TComparerFunc>
     requires CallableWithReturnType<TComparerFunc, bool, typename TContainer::type, typename TContainer::type>
     constexpr void sort(TContainer& what, TComparerFunc comparer)
@@ -100,7 +100,7 @@ namespace neo
             }
         }
     }
-
+    
     namespace detail
     {
         template<size_t Size, FixedContainer TTupleA, FixedContainer TTupleB, typename... TupleTypes>
@@ -109,38 +109,38 @@ namespace neo
             static constexpr decltype(auto) zip(const TTupleA& a, const TTupleB& b, TupleTypes... tuples)
             {
                 return _zip<
-                    Size - 1,
-                    typename TTupleA::base_type, typename TTupleB::base_type, TupleTypes..., Tuple<typename TTupleA::first_type, typename TTupleB::first_type>>::zip(static_cast<typename TTupleA::base_type>(a),
-                    static_cast<typename TTupleB::base_type>(b),
-                    tuples...,
-                    make_tuple<typename TTupleA::first_type, typename TTupleB::first_type>(a.template get<0>(), b.template get<0>()));
+                        Size - 1,
+                        typename TTupleA::base_type, typename TTupleB::base_type, TupleTypes..., Tuple<typename TTupleA::first_type, typename TTupleB::first_type>>::zip(static_cast<typename TTupleA::base_type>(a),
+                                                                                                                                                                         static_cast<typename TTupleB::base_type>(b),
+                                                                                                                                                                         tuples...,
+                                                                                                                                                                         make_tuple<typename TTupleA::first_type, typename TTupleB::first_type>(a.template get<0>(), b.template get<0>()));
             }
         };
-
+        
         template<typename TTupleA, typename TTupleB, typename... TupleTypes>
         struct _zip<1, TTupleA, TTupleB, TupleTypes...>
         {
             static constexpr decltype(auto) zip(const TTupleA& a, const TTupleB& b, TupleTypes... tuples)
             {
                 return make_tuple<TupleTypes..., Tuple<typename TTupleA::first_type, typename TTupleB::first_type>>(
-                    tuples..., make_tuple(a.template get<0>(), b.template get<0>()));
+                        tuples..., make_tuple(a.template get<0>(), b.template get<0>()));
             }
         };
     }
-
+    
     template<typename TTupleA, typename TTupleB>
     requires(TTupleA::size() == TTupleA::size())
     [[nodiscard]] constexpr decltype(auto) zip(const TTupleA& a, const TTupleB& b)
     {
         return detail::_zip<TTupleA::size(), TTupleA, TTupleB>::zip(a, b);
     }
-
+    
     template<typename TTupleA, typename TTupleB, typename... TTuples>
     [[nodiscard]] constexpr decltype(auto) zip(const TTupleA& first, const TTupleB& second, const TTuples&... tuples) requires(IsSameValue<size_t, TTupleA::size(), TTuples::size()>&&...)
     {
         return zip(zip(first, second), tuples...);
     }
-
+    
     template<IterableContainer TContainer, typename TFunc>
     requires Callable<TFunc, typename TContainer::type, typename TContainer::type>
     constexpr TContainer& for_each(TContainer& where, TFunc do_what)
@@ -151,7 +151,7 @@ namespace neo
         }
         return where;
     }
-
+    
     template<IterableContainer TContainer, typename TFunc>
     requires CallableWithReturnType<TFunc, bool, typename TContainer::type>
     [[nodiscard]] constexpr auto filter(const TContainer& where, TFunc&& selector)
@@ -179,10 +179,10 @@ namespace neo
         sort(view, comparer);
         return view;
     }
-
+    
     template<IterableContainer TContainer, typename TSelector>
     requires Callable<TSelector, typename TContainer::type&> &&(!IsSame<ReturnType<TSelector, RemoveReferenceWrapper<typename TContainer::type>&>, void>)
-        [[nodiscard]] constexpr auto select(TContainer& where, TSelector&& selector)
+    [[nodiscard]] constexpr auto select(TContainer& where, TSelector&& selector)
     {
         using StorageT = Conditional<IsLvalueReference<ReturnType<TSelector, RemoveReferenceWrapper<typename TContainer::type>&>>,
                 ReferenceWrapper<RemoveReference<ReturnType<TSelector, RemoveReferenceWrapper<typename TContainer::type>&>>>,
@@ -244,14 +244,7 @@ namespace neo
     {
         template<typename TPredicate>
         requires CallableWithReturnType<TPredicate, bool, T const&>
-        [[nodiscard]] const Vector<const ReferenceWrapper<T>> filter(TPredicate&& predicate) const
-        {
-            return neo::filter(*static_cast<TContainer const*>(this), predicate);
-        }
-    
-        template<typename TPredicate>
-        requires CallableWithReturnType<TPredicate, bool, T const&>
-        [[nodiscard]] Vector<ReferenceWrapper<T>> filter(TPredicate&& predicate)
+        [[nodiscard]] decltype(auto) filter(TPredicate&& predicate) const
         {
             return neo::filter(*static_cast<TContainer const*>(this), predicate);
         }
@@ -262,17 +255,10 @@ namespace neo
         {
             return neo::select(*static_cast<const TContainer*>(this), selector);
         }
-    
-        template<typename TSelector>
-        requires Callable<TSelector, T> &&(!IsSame<ReturnType<TSelector, T&>, void>)
-        [[nodiscard]] auto select(TSelector&& selector)
-        {
-            return neo::select(*static_cast<TContainer*>(this), selector);
-        }
         
-        template<typename TComparerFunc>
-        requires CallableWithReturnType<TComparerFunc, bool, const T&, const T&>
-        [[nodiscard]] bool contains(const T& what, TComparerFunc comparer)
+        template<typename U, typename TComparerFunc>
+        requires CallableWithReturnType<TComparerFunc, bool, const T&, const U&>
+        [[nodiscard]] bool contains(const U& what, TComparerFunc comparer)
         {
             return neo::contains(*static_cast<TContainer*>(this), what, comparer);
         }
@@ -281,75 +267,75 @@ namespace neo
         {
             return neo::contains(*static_cast<TContainer*>(this), what, DefaultEqualityComparer<const T&>);
         }
-    
+        
         template<typename TPredicate>
         requires CallableWithReturnType<TPredicate, bool, T const&>
         [[nodiscard]] constexpr auto find(TPredicate&& finder) const
         {
             return neo::find(*static_cast<TContainer const*>(this), finder);
         }
-    
+        
         template<typename TPredicate>
         requires CallableWithReturnType<TPredicate, bool, T const&>
         [[nodiscard]] constexpr auto find(TPredicate&& finder)
         {
             return const_cast<RemoveConst<typename TContainer::VectorConstantIterator>&&>(neo::find(*static_cast<TContainer const*>(this), finder));
         }
-    
+        
         template<typename TComparerFunc>
         requires CallableWithReturnType<TComparerFunc, bool, const T&, const T&>
         [[nodiscard]] constexpr bool contains(const T& what, TComparerFunc comparer) const
         {
             return neo::contains(*static_cast<const TContainer*>(this), what, comparer);
         }
-    
+        
         [[nodiscard]] constexpr bool contains(const T& what) const
         {
             return neo::contains(*static_cast<const TContainer*>(this), what, DefaultEqualityComparer<const T&>);
         }
-    
+        
         template<typename TComparerFunc>
         requires CallableWithReturnType<TComparerFunc, bool, T const&, T const&>
         [[nodiscard]] constexpr Vector<RewrapReference<T>> sort(TComparerFunc comparer)
         {
             return neo::sorted_view(*static_cast<TContainer*>(this), comparer);
         }
-    
+        
         template<typename TComparerFunc>
         requires CallableWithReturnType<TComparerFunc, bool, T const&, T const&>
         [[nodiscard]] constexpr const Vector<RewrapReference<const T>> sort(TComparerFunc comparer) const
         {
             return neo::sorted_view(*static_cast<const TContainer*>(this), comparer);
         }
-    
+        
         template<typename TPredicate>
         requires CallableWithReturnType<TPredicate, bool, T const&>
         [[nodiscard]] constexpr bool any(TPredicate&& predicate) const
         {
             return neo::any(*static_cast<TContainer const*>(this), predicate);
         }
-    
+        
         template<typename TPredicate>
         requires CallableWithReturnType<TPredicate, bool, T const&>
         [[nodiscard]] constexpr bool all(TPredicate&& predicate) const
         {
             return neo::all(*static_cast<TContainer const*>(this), predicate);
         }
-    
+        
         template<typename TTransformer>
         requires Callable<TTransformer, T&>
         constexpr TContainer& transform(TTransformer&& how)
         {
             return neo::transform(*static_cast<TContainer*>(this), how);
         }
-    
+        
         template<typename TAccumulation, typename TAccumulator>
         requires Callable<TAccumulator, TAccumulation&, T const&>
         [[nodiscard]] constexpr TAccumulation accumulate(TAccumulator&& accumulator, TAccumulation initial_value = {})
         {
             return neo::accumulate(*static_cast<TContainer const*>(this), accumulator, initial_value);
         }
-    
+        
         template<typename TAccumulation = T>
         [[nodiscard]] constexpr TAccumulation accumulate(TAccumulation initial_value = {})
         {
