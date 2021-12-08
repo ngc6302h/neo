@@ -167,6 +167,13 @@ namespace neo
 
             return {start.ptr(), static_cast<size_t>(last.ptr() - start.ptr()) };
         }
+    
+        [[nodiscard]] static constexpr StringView substring_view(StringViewIterator const& start, StringViewIterator const& end)
+        {
+            VERIFY(!start.is_end());
+            VERIFY(start.ptr() < end.ptr());
+            return StringView {start.ptr(), static_cast<size_t>(end.ptr() - start.ptr())};
+        }
 
         [[nodiscard]] Vector<StringView> split(Utf8Char by) const
         {
