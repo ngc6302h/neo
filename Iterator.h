@@ -163,12 +163,12 @@ namespace neo
     
         constexpr decltype(auto) operator->()
         {
-            return *this->m_impl;
+            return &*this->m_impl;
         }
     
         constexpr decltype(auto) operator->() const
         {
-            return *this->m_impl;
+            return &*this->m_impl;
         }
 
         //To be implemented by the class using iterators
