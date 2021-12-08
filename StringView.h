@@ -259,8 +259,8 @@ namespace neo
         {
             if (is_empty() || other.is_empty() || byte_size() < other.byte_size())
                 return end();
-        
-            char* hit = __builtin_strstr(m_view, other.m_view);
+    
+            char* hit = static_cast<char *>(neo_memmem((void *) m_view, m_byte_length, (void*)other.m_view, other.m_byte_length));
             if (!hit)
                 return end();
             return StringViewIterator(m_view, m_view+m_byte_length, hit);
