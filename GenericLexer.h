@@ -96,78 +96,57 @@ namespace neo
             i64 priority;
             bool (*when)(Utf8Char);
             LexingRuleAction do_;
-            bool (*while_)(Utf8Char);
+            bool (*while_)(Utf8Char, StringView const&);
             bool (*save_if)(String const&);
             GenericLexerTokenType save_as;
         };
         
         
-        GenericLexer(Vector<LexingRule> const& lexing_rules, bool(*is_whitespace)(Utf8Char) = [](Utf8Char c) -> bool { return isspace(c); }) :
-        m_lexing_rules(lexing_rules),
-        is_whitespace(is_whitespace)
+        GenericLexer(Vector<LexingRule> const& lexing_rules) : m_lexing_rules(lexing_rules)
         {
             VERIFY(lexing_rules.size()>0);
+            sort(m_lexing_rules, [](GenericLexer::LexingRule const& a, GenericLexer::LexingRule const& b) { return a.priority < b.priority; });
         }
         
         [[nodiscard]] Vector<GenericLexerToken> tokenize(String const& source)
         {
-#define DO_CUSTOM_LEXING_RULE(do_when) \
-            rules = m_lexing_rules     \
-                .filter([](LexingRule const& rule) { return rule.priority do_when; })                                   \
-                .sort([](GenericLexer::LexingRule const& a, GenericLexer::LexingRule const& b) { return a.priority < b.priority; });               \
-            for(const auto& rule : rules)                                                                               \
-            {                                                                                                           \
-                if (rule->when(*current))                                                                               \
-                {                                                                                                       \
-                    tmp = current;                                                                                      \
-                    do     \
-                    {                  \
-                    ++tmp; \
-                    }                  \
-                    while(tmp != end && rule->while_(*tmp)); \
-                    chunk = neo::String::substring(current.it, tmp.it);                                                 \
-                    if (rule->do_ == LexingRuleAction::Read && rule->save_if(chunk))                                    \
-                    {                                                                                                   \
-                        tokens.construct(rule->save_as, current.linepos, chunk);                                        \
-                    }                                                                                                   \
-                    else                                                                                                \
-                    {                                                                                                   \
-                        continue;                                                                                       \
-                    }                                                                                                   \
-                    current = tmp;                                                                                      \
-                    goto main_loop;                                                                                     \
-                }                                                                                                       \
-            }                                                                                                           \
-            
             Vector<GenericLexerToken> tokens;
             MultilineStringIterator current = source.begin(), end = source.end(), tmp = source.begin();
             String chunk;
             
-            Vector<ReferenceWrapper<LexingRule>> rules;
             while(current != end)
             {
-                DO_CUSTOM_LEXING_RULE(< 0);
-                if (is_whitespace(*current))
+                for (const auto& rule: m_lexing_rules)
                 {
-                    tokens.append({GenericLexerTokenType::Whitespace, current.linepos, String(current.it.ptr(), 1)});
-                    ++current;
+                    if (rule.when(*current))
+                    {
+                        tmp = current;
+                        do
+                        {
+                            ++tmp;
+                        }
+                        while (tmp != end && rule.while_(*tmp, StringView::substring_view(current.it, tmp.it)));
+                        chunk = neo::String::substring(current.it, tmp.it);
+                        if (rule.do_ == LexingRuleAction::Read && rule.save_if(chunk))
+                        {
+                            tokens.construct(rule.save_as, current.linepos, chunk);
+                        }
+                        else continue;
+                        
+                        current = tmp;
+                        goto main_loop;
+                    }
                 }
-                else
-                {
-                    DO_CUSTOM_LEXING_RULE(> 0);
-                    
-                    tokens.append({GenericLexerTokenType::Unknown, current.linepos, String(current++.it.ptr(), 1)});
-                }
+                
+                tokens.append({GenericLexerTokenType::Unknown, current.linepos, String(current++.it.ptr(), 1)});
                 main_loop:
                 continue;
             }
             return tokens;
-#undef DO_CUSTOM_LEXING_RULE
         }
     private:
         Vector<LexingRule> m_lexing_rules;
-        
-         bool (*is_whitespace)(const Utf8Char);
     };
 }
 using neo::GenericLexer;
+using neo::GenericLexerTokenType;
