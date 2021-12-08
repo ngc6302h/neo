@@ -7,9 +7,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 include_directories(${CMAKE_SOURCE_DIR})
 
-set(DCMAKE_CXX_FLAGS_RELEASE "-O3 -flto -Wall -Wextra -Werror")
+set(DCMAKE_CXX_FLAGS_RELEASE "-O3 -flto -DNDEBUG -Wall -Wextra -Werror")
 set(DCMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -flto -DNDEBUG -Wall -Wextra -Werror")
-set(DCMAKE_CXX_FLAGS_DEBUG "-Og -g -DNDEBUG -DDEBUG -fsanitize=address -fsanitize=undefined -Wall -Wextra -Werror")
+set(DCMAKE_CXX_FLAGS_DEBUG "-Og -g -DDEBUG -fsanitize=address -fsanitize=undefined -Wall -Wextra -Werror")
 add_compile_options(-fno-exceptions -Wall -Wextra -fdiagnostics-color -Werror -pthread)
 
 option(ENABLE_DEBUG_ASSERTS "Defines #DEBUG" ON)
