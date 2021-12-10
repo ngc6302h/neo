@@ -254,7 +254,7 @@ namespace neo
             T value = move(first());
             m_size--;
             TypedMove(m_size, m_data+1, m_data);
-            return move(value);
+            return value;
         }
         
         constexpr T take_last()
@@ -262,7 +262,7 @@ namespace neo
             T value = move(last());
             last().~T();
             m_size--;
-            return move(value);
+            return value;
         }
 
         [[nodiscard]] constexpr T& operator[](size_t index)
