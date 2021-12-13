@@ -5,12 +5,12 @@
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
- 
+
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- 
+
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
@@ -29,12 +29,13 @@
 
 namespace neo
 {
-    class String
+    class String : public IString<String, StringIterator>
     {
     public:
-        using type = Utf8Char;
-        using raw_type = char;
-        
+        using character_type = Utf8Char;
+        using storage_type = char;
+        using iterator = StringIterator;
+
         constexpr String() = default;
         constexpr ~String()
         {
@@ -51,7 +52,8 @@ namespace neo
             __builtin_memcpy(m_buffer, other.m_buffer, other.m_byte_length);
         }
 
-        constexpr String(String&& other) : m_buffer(other.m_buffer), m_byte_length(other.m_byte_length)
+        constexpr String(String&& other) :
+            m_buffer(other.m_buffer), m_byte_length(other.m_byte_length)
         {
             other.m_buffer = nullptr;
             other.m_byte_length = 0;
@@ -107,16 +109,6 @@ namespace neo
         {
             return { m_buffer, m_byte_length };
         }
-        
-        [[nodiscard]] constexpr Span<raw_type> span()
-        {
-            return { m_buffer, m_byte_length };
-        }
-    
-        [[nodiscard]] constexpr Span<const raw_type> span() const
-        {
-            return { m_buffer, m_byte_length };
-        }
 
         constexpr operator StringView() const
         {
@@ -129,7 +121,7 @@ namespace neo
                 return *this;
 
             delete[] m_buffer;
-            m_buffer = new char[other.m_byte_length+1];
+            m_buffer = new char[other.m_byte_length + 1];
             m_buffer[other.m_byte_length] = 0;
             m_byte_length = other.m_byte_length;
             __builtin_memcpy(m_buffer, other.m_buffer, other.m_byte_length);
@@ -149,234 +141,18 @@ namespace neo
             return *this;
         }
 
-        [[nodiscard]] constexpr operator char*() const
-        {
-            return m_buffer;
-        }
-
-        [[nodiscard]] constexpr bool operator==(const String& other) const
-        {
-            if (m_byte_length != other.m_byte_length)
-                return false;
-            return __builtin_memcmp(m_buffer, other.m_buffer, min(m_byte_length, other.m_byte_length) + 1) == 0;
-        }
-
-        [[nodiscard]] constexpr bool operator!=(const String& other) const
-        {
-            return !(*this == other);
-        }
-
-        [[nodiscard]] constexpr int operator<=>(const String& other) const
-        {
-            if (m_byte_length < other.m_byte_length)
-                return -1;
-            else if (m_byte_length > other.m_byte_length)
-                return 1;
-
-            return clamp(-1, 1, __builtin_memcmp(m_buffer, other.m_buffer, min(m_byte_length, other.m_byte_length) + 1));
-        }
-
-        [[nodiscard]] constexpr StringIterator begin() const
-        {
-            return StringIterator(m_buffer, m_buffer+m_byte_length, m_buffer);
-        }
-
-        [[nodiscard]] constexpr StringIterator end() const
-        {
-            return StringIterator(m_buffer, m_buffer + m_byte_length, m_buffer + m_byte_length);
-        }
-
-        //Size in bytes
+        // Size in bytes
         [[nodiscard]] constexpr size_t byte_size() const
         {
             return m_byte_length;
         }
 
-        [[nodiscard]] constexpr size_t length() const
-        {
-            auto start = begin();
-            size_t count = 0;
-            do
-                count++;
-            while(!(++start).is_end());
-
-            return count;
-        }
-
-        [[nodiscard]] constexpr bool is_empty() const
-        {
-            return m_byte_length == 0 || m_buffer == nullptr;
-        }
-
-        [[nodiscard]] constexpr String substring(StringIterator start) const
-        {
-            return { start.ptr(), size_t(m_buffer + m_byte_length - start.ptr()) };
-        }
-
-        [[nodiscard]] constexpr String substring(size_t index_codepoint_start) const
-        {
-            VERIFY(index_codepoint_start <= m_byte_length);
-
-            auto start = begin();
-            while (index_codepoint_start-- && !start++.is_end())
-                ;
-
-            return {start.ptr(), static_cast<size_t>(m_buffer + m_byte_length - start.ptr()) };
-        }
-
-        [[nodiscard]] constexpr String substring(StringIterator start, size_t codepoint_length) const
-        {
-            VERIFY(codepoint_length <= m_byte_length);
-            auto last = start;
-            auto _end = end();
-            while (codepoint_length-- && last++ != _end)
-                ;
-
-            return {start.ptr(), static_cast<size_t>(last.ptr() - start.ptr()) };
-        }
-        
-        [[nodiscard]] static constexpr String substring(StringIterator const& start, StringIterator const& end)
-        {
-            VERIFY(!start.is_end());
-            VERIFY(start.ptr() < end.ptr());
-            return {start.ptr(), static_cast<size_t>(end.ptr() - start.ptr())};
-        }
-
-        [[nodiscard]] constexpr String substring(size_t codepoint_start, size_t codepoint_length) const
-        {
-            VERIFY(codepoint_length <= m_byte_length);
-            auto start = begin();
-            auto _end = end();
-
-            while (codepoint_start-- && start++ != _end)
-                ;
-
-            auto last = start;
-            while (codepoint_length-- && last++ != _end)
-                ;
-
-            return {start.ptr(), static_cast<size_t>(last.ptr() - start.ptr()) };
-        }
-
-        [[nodiscard]] Vector<String> split(Utf8Char by) const
-        {
-            Vector<String> strings;
-            auto _begin = begin();
-            auto current = _begin;
-            auto _end = end();
-            do
-            {
-                ++current;
-                if (*current == by)
-                {
-                    strings.construct(_begin.ptr(), static_cast<size_t>(current.ptr() - _begin.ptr()));
-                    while (*current == by)
-                        ++current;
-                    _begin = current;
-                }
-            } while (current != _end);
-            if (_begin != _end)
-                strings.construct(_begin.ptr(), static_cast<size_t>(current.ptr() - _begin.ptr()));
-            return strings;
-        }
-
-        [[nodiscard]] Vector<String> split(const StringView& by) const
-        {
-            VERIFY(!by.is_empty());
-            Vector<String> strings;
-            auto _begin = begin();
-            auto current = _begin;
-            auto _end = end();
-            do
-            {
-                ++current;
-                if (StringView(current.ptr(), min(by.byte_size(), (size_t)(_end.ptr() - current.ptr()))).starts_with(by))
-                {
-                    strings.construct(_begin.ptr(), static_cast<size_t>(current.ptr() - _begin.ptr()));
-                    do
-                    {
-                        for (auto to_skip = by.length(); to_skip > 0; to_skip--)
-                            ++current;
-                    } while (StringView(current.ptr(), min(by.byte_size(), (size_t)(_end.ptr() - current.ptr()))).starts_with(by));
-                    _begin = current;
-                }
-            } while (current != _end);
-            if (_begin != _end)
-                strings.construct(_begin.ptr(), static_cast<size_t>( current.ptr() - _begin.ptr()));
-            return strings;
-        }
-
-        [[nodiscard]] constexpr bool starts_with(const String& other) const
-        {
-            if (!byte_size() || !other.byte_size() || other.byte_size() > byte_size())
-                return false;
-
-            return __builtin_memcmp(m_buffer, other.m_buffer, other.m_byte_length) == 0;
-        }
-
-        [[nodiscard]] constexpr bool ends_with(const String& other) const
-        {
-            if (!byte_size() || !other.byte_size() || other.byte_size() > byte_size())
-                return false;
-
-            return __builtin_memcmp(m_byte_length - other.m_byte_length + m_buffer, other.m_buffer, other.m_byte_length) == 0;
-        }
-    
-        [[nodiscard]] constexpr StringIterator find(const String& other) const
-        {
-            if (!byte_size() || !other.byte_size() || byte_size() < other.byte_size())
-                return end();
-        
-            char* hit = __builtin_strstr(m_buffer, other.m_buffer);
-            if (!hit)
-                return end();
-            return StringIterator(m_buffer, m_buffer + m_byte_length, hit);
-        }
-        
-        [[nodiscard]] constexpr bool contains(const String& other) const
-        {
-            return !find(other).is_end();
-        }
-        
-        [[nodiscard]] constexpr bool contains(Utf8Char c) const
-        {
-            if (!byte_size())
-                return false;
-            
-            for (const auto ch : *this)
-            {
-                if (c == ch)
-                    return true;
-            }
-            return false;
-        }
-
-        [[nodiscard]] constexpr String trim_whitespace(TrimMode from_where) const
-        {
-            size_t length = m_byte_length;
-            if ((from_where & TrimMode::End) == TrimMode::End)
-            {
-                auto _end = end();
-                --_end;
-                while (isspace(*_end))
-                    --_end;
-                length -= _end.ptr() - m_buffer;
-            }
-
-            const char* start = m_buffer;
-            if ((from_where & TrimMode::Start) == TrimMode::Start)
-            {
-                auto _start = begin();
-                while (isspace(*_start))
-                    ++_start;
-                length -= _start.ptr() - m_buffer;
-                start = _start.ptr();
-            }
-            return String(start, length);
-        }
-        
-
         [[nodiscard]] constexpr char* null_terminated_characters() const
+        {
+            return m_buffer;
+        }
+
+        [[nodiscard]] constexpr storage_type* data() const
         {
             return m_buffer;
         }
@@ -397,7 +173,7 @@ namespace neo
     template<>
     struct StringHasher<String>
     {
-        static constexpr size_t hash(const String& str)
+        static constexpr size_t hash(String const& str)
         {
             VERIFY(str.length() != 0);
 
@@ -409,10 +185,10 @@ namespace neo
             return result;
         }
     };
-    
+
     template<typename T>
     struct DefaultHasher;
-    
+
     template<>
     struct DefaultHasher<String>
     {

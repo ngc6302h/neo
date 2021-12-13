@@ -5,12 +5,12 @@
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
- 
+
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- 
+
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
@@ -34,7 +34,7 @@ namespace neo
         using ConstantArrayIterator = Iterator<const Array>;
 
         constexpr ~Array() = default;
-        
+
         constexpr Array& operator=(const Array& other)
         {
             if (this == &other)
@@ -61,31 +61,31 @@ namespace neo
         template<size_t ItemsLeft, typename TFirst, typename... TRest>
         constexpr void initializer_list_copy_helper(size_t index, TFirst&& first, TRest&&... rest)
         {
-            if constexpr(ItemsLeft != 0)
+            if constexpr (ItemsLeft != 0)
             {
                 m_storage[index] = forward<TFirst>(first);
-                if constexpr(ItemsLeft-1 != 0)
-                    initializer_list_copy_helper<ItemsLeft-1, TRest...>(index+1, forward<TRest>(rest)...);
+                if constexpr (ItemsLeft - 1 != 0)
+                    initializer_list_copy_helper<ItemsLeft - 1, TRest...>(index + 1, forward<TRest>(rest)...);
             }
         }
 
     public:
-        template<typename... Ts> requires (IsSameValue<Size, sizeof...(Ts)>)
-        constexpr Array(Ts&&... items)
+        template<typename... Ts>
+        requires(IsSameValue<Size, sizeof...(Ts)>) constexpr Array(Ts&&... items)
         {
             initializer_list_copy_helper<sizeof...(Ts), Ts...>(0, forward<Ts>(items)...);
         }
-        
+
         [[nodiscard]] constexpr size_t size() const
         {
             return Size;
         }
-        
+
         [[nodiscard]] constexpr T* data()
         {
             return m_storage;
         }
-        
+
         [[nodiscard]] constexpr T const* data() const
         {
             return m_storage;
@@ -148,7 +148,7 @@ namespace neo
         {
             return span() == other.span();
         }
-    
+
         template<typename K, typename = EnableIf<InequalityComparable<K>>>
         [[nodiscard]] constexpr bool operator!=(const Array& other) const
         {

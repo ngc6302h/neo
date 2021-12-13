@@ -23,7 +23,7 @@ struct LifetimeLogger
 int main()
 {
     Variant<int, String, LifetimeLogger, bool> variant {LifetimeLogger() };
-    TEST_EQUAL(nameof<decltype(variant)>, "neo::Variant<int, neo::String, LifetimeLogger, bool>");
+    TEST_EQUAL(nameof<decltype(variant)>, "neo::Variant<int, neo::String, LifetimeLogger, bool>"_sv);
     variant = "Hello world"_s;
     TEST(variant.check_type_active<String>());
     TEST_FALSE(variant.check_type_active<int>());

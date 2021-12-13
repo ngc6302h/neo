@@ -5,12 +5,12 @@
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
- 
+
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- 
+
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
@@ -42,7 +42,7 @@ namespace neo::detail
 }
 
 #ifndef NEO_DO_NOT_DEFINE_STD
-//move must live in std, required for the compiler
+// move must live in std, required for the compiler
 
 namespace std
 {
@@ -77,7 +77,6 @@ namespace std
 #endif
 using std::move;
 
-
 namespace neo
 {
     namespace detail
@@ -104,31 +103,33 @@ namespace neo
             using type = TFalseType;
         };
     }
-    
+
     template<bool TBool, typename TTrueType, typename TFalseType>
     using Conditional = typename detail::conditional_t<TBool, TTrueType, TFalseType>::type;
-    
+
     namespace detail
     {
         template<bool VBool, auto vtrue, auto vfalse>
-        struct value_conditional_t {};
-        
+        struct value_conditional_t
+        {
+        };
+
         template<auto vtrue, auto vfalse>
         struct value_conditional_t<true, vtrue, vfalse>
         {
             static constexpr decltype(auto) value = vtrue;
         };
-        
+
         template<auto vtrue, auto vfalse>
         struct value_conditional_t<false, vtrue, vfalse>
         {
             static constexpr decltype(auto) value = vfalse;
         };
     }
-    
+
     template<bool VBool, auto VTrueType, auto VFalseType>
-    static constexpr auto ValueConditional = detail::value_conditional_t<VBool,VTrueType, VFalseType>::value;
-    
+    static constexpr auto ValueConditional = detail::value_conditional_t<VBool, VTrueType, VFalseType>::value;
+
     template<typename T>
     struct remove_pointer_t
     {
@@ -154,36 +155,36 @@ namespace neo
         {
             using type = T;
         };
-        
+
         template<typename T>
         struct remove_const_t<const T>
         {
             using type = T;
         };
-    
+
         template<typename T>
         struct remove_volatile_t
         {
             using type = T;
         };
-    
+
         template<typename T>
         struct remove_volatile_t<volatile T>
         {
             using type = T;
         };
-        
+
     }
-    
+
     template<typename T>
     using RemoveConst = typename detail::remove_const_t<T>::type;
-    
+
     template<typename T>
     using RemoveVolatile = typename detail::remove_volatile_t<T>::type;
-    
+
     template<typename T>
     using RemoveCV = typename detail::remove_volatile_t<typename detail::remove_const_t<T>::type>::type;
-    
+
     template<typename T>
     struct make_signed
     {
@@ -309,21 +310,21 @@ namespace neo
     template<int Index, typename T, typename... Types>
     struct type_of_index
     {
-        using type = typename type_of_index<Index-1, Types...>::type;
+        using type = typename type_of_index<Index - 1, Types...>::type;
     };
-    
+
     template<typename T, typename... Types>
     struct type_of_index<0, T, Types...>
     {
         using type = T;
     };
-    
+
     template<typename T>
     struct type_of_index<0, T>
     {
         using type = T;
     };
-    
+
     template<int Index, typename... Types>
     using TypeOfIndex = typename type_of_index<Index, Types...>::type;
 
@@ -335,7 +336,7 @@ namespace neo
     constexpr bool TypeContains = TypeContainsN<T, U, Ts...> > 0;
 }
 
-//required for tuple structured binding support
+// required for tuple structured binding support
 
 namespace std
 {
@@ -418,10 +419,10 @@ namespace neo
 
     template<typename T>
     constexpr bool IsSigned = static_cast<T>(-1) < static_cast<T>(0);
-    
+
     template<typename T>
     constexpr bool IsUnsigned = !IsSigned<T>;
-    
+
     namespace detail
     {
         template<typename T>
@@ -471,32 +472,32 @@ namespace neo
 
     template<typename T>
     using RemoveReferenceWrapper = typename remove_reference_wrapper_t<T>::type;
-    
+
     template<typename T>
     using RewrapReference = ReferenceWrapper<RemoveReferenceWrapper<T>>;
 
     template<typename F, typename... Args>
     using ReturnType = decltype(declval<F>()(forward<Args>(declval<Args>())...));
-    
+
     template<typename T>
     static constexpr void TypedCopy(size_t num, T const* from, T* to)
     {
-        for(size_t i = 0; i < num; ++i)
+        for (size_t i = 0; i < num; ++i)
             to[i] = from[i];
     }
-    
+
     template<typename T>
     static constexpr void UntypedCopy(size_t num, T const* from, T* to)
     {
-        __builtin_memcpy(to, from, num*sizeof(T));
+        __builtin_memcpy(to, from, num * sizeof(T));
     }
-    
+
     template<typename T>
     static constexpr void OverlappingUntypedCopy(size_t num, T const* from, T* to)
     {
-        __builtin_memmove(to, from, num*sizeof(T));
+        __builtin_memmove(to, from, num * sizeof(T));
     }
-    
+
     template<typename T>
     static constexpr void Copy(size_t num, T const* from, T* to)
     {
@@ -505,11 +506,11 @@ namespace neo
         else
             TypedCopy(num, from, to);
     }
-    
+
     template<typename T>
     static constexpr void TypedMove(size_t num, T const* from, T* to)
     {
-        for(size_t i = 0; i < num; ++i)
+        for (size_t i = 0; i < num; ++i)
             to[i] = move(from[i]);
     }
 
@@ -517,7 +518,7 @@ namespace neo
 using ssize_t = neo::MakeSigned<size_t>;
 
 using neo::Conditional;
-using neo::ValueConditional;
+using neo::Copy;
 using neo::DecayArray;
 using neo::EnableIf;
 using neo::FirstType;
@@ -527,34 +528,34 @@ using neo::IsCharacter;
 using neo::IsFloatingPoint;
 using neo::IsFundamental;
 using neo::IsIntegral;
-using neo::IsSigned;
-using neo::IsUnsigned;
 using neo::IsLvalueReference;
 using neo::IsNullptr;
 using neo::IsPointer;
 using neo::IsRvalueReference;
 using neo::IsSame;
 using neo::IsSameValue;
+using neo::IsSigned;
 using neo::IsTrivial;
 using neo::IsTriviallyAssignable;
 using neo::IsTriviallyConstructible;
 using neo::IsTriviallyCopyable;
 using neo::IsTriviallyDestructible;
+using neo::IsUnsigned;
 using neo::MakeSigned;
+using neo::OverlappingUntypedCopy;
 using neo::PackContains;
 using neo::RemovePointer;
 using neo::RemoveReference;
 using neo::RemoveReferenceWrapper;
-using neo::RewrapReference;
 using neo::ReturnType;
+using neo::RewrapReference;
 using neo::TypeContains;
 using neo::TypeContainsN;
-using neo::TypeOfIndex;
 using neo::TypedCopy;
-using neo::UntypedCopy;
-using neo::OverlappingUntypedCopy;
 using neo::TypedMove;
-using neo::Copy;
+using neo::TypeOfIndex;
+using neo::UntypedCopy;
+using neo::ValueConditional;
 
 using neo::declval;
 using neo::forward;

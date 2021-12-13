@@ -30,7 +30,7 @@ namespace neo
     {
     public:
         using AsciiStringIterator = Iterator<AsciiStringView>;
-    
+
         constexpr AsciiStringView() = default;
         constexpr AsciiStringView(const AsciiStringView& other) = default;
         constexpr ~AsciiStringView() = default;
@@ -96,7 +96,7 @@ namespace neo
         {
             return m_length;
         }
-        
+
         [[nodiscard]] constexpr size_t size() const
         {
             return m_length;
@@ -104,7 +104,7 @@ namespace neo
 
         [[nodiscard]] constexpr AsciiStringIterator begin() const
         {
-            return {*this };
+            return { *this };
         }
 
         [[nodiscard]] constexpr AsciiStringIterator end() const
@@ -222,16 +222,16 @@ namespace neo
         {
             return !find(other).is_end();
         }
-    
+
         constexpr AsciiStringIterator find(const AsciiStringView& other) const
         {
             if (is_empty() || other.is_empty() || length() < other.length())
                 return end();
-        
+
             char* hit = __builtin_strstr(m_view, other.m_view);
             if (!hit)
                 return end();
-            return {*this, size_t(hit - m_view)};
+            return { *this, size_t(hit - m_view) };
         }
 
         [[nodiscard]] constexpr bool starts_with(const AsciiStringView& other) const

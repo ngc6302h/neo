@@ -5,12 +5,12 @@
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
- 
+
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- 
+
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
@@ -20,7 +20,7 @@
 #include "Util.h"
 
 #ifndef NEO_BASIC_TYPES
-#define NEO_BASIC_TYPES
+    #define NEO_BASIC_TYPES
 
 using i8 = __INT8_TYPE__;
 using u8 = __UINT8_TYPE__;
@@ -56,12 +56,12 @@ namespace neo
             ref(const_cast<T*>(&obj))
         {
         }
-    
+
         constexpr ReferenceWrapper(ReferenceWrapper const& obj) :
-                ref(const_cast<T*>(obj.ref))
+            ref(const_cast<T*>(obj.ref))
         {
         }
-        
+
         constexpr ~ReferenceWrapper()
         {
             ref = nullptr;
@@ -71,17 +71,17 @@ namespace neo
         {
             return *ref;
         }
-    
+
         constexpr operator T const&() const
         {
             return *ref;
         }
-        
+
         constexpr T* operator->()
         {
             return ref;
         }
-        
+
         constexpr T const* operator->() const
         {
             return ref;
@@ -94,7 +94,7 @@ namespace neo
             ref = other.ref;
             return *this;
         };
-    
+
         constexpr ReferenceWrapper& operator=(T& other)
         {
             ref = &other;
@@ -102,7 +102,7 @@ namespace neo
         };
 
     private:
-        T* ref {nullptr};
+        T* ref { nullptr };
     };
 
     template<typename T>
@@ -114,7 +114,7 @@ namespace neo
     {
         using type = T;
         static constexpr size_t size = Size;
-        
+
         constexpr ~initializer_list() = default;
 
         [[nodiscard]] constexpr const T& operator[](size_t index) const
@@ -126,12 +126,12 @@ namespace neo
         {
             return m_storage[index];
         }
-        
+
         [[nodiscard]] constexpr T* data()
         {
             return m_storage;
         }
-    
+
         [[nodiscard]] constexpr T const* data() const
         {
             return m_storage;

@@ -131,38 +131,38 @@ namespace neo
         t.begin();
         t.end();
     };
-    
+
     template<typename T>
     concept Integral = IsIntegral<T>;
-    
+
     template<typename T>
     concept Signed = IsSigned<T>;
-    
+
     template<typename T>
     concept Unsigned = IsUnsigned<T>;
-    
+
     template<typename T>
     concept FloatingPoint = IsFloatingPoint<T>;
-    
+
     template<typename T>
-    concept Arithmetic =  Integral<T> || FloatingPoint<T>;
-    
+    concept Arithmetic = Integral<T> || FloatingPoint<T>;
+
     template<typename T>
     concept Enum = __is_enum(T);
-    
+
     template<typename T>
     concept Pointer = IsPointer<T>;
-    
+
     template<typename T>
     concept NullPtr = IsNullptr<T>;
-    
-    //FIXME: Implement
-    //template<typename T>
-    //concept MemberPointer =
+
+    // FIXME: Implement
+    // template<typename T>
+    // concept MemberPointer =
 
     template<typename T>
     concept Scalar = Arithmetic<T> || Enum<T> || Pointer<T> || NullPtr<T>; //|| MemberPointer<T>;
-    
+
     template<typename T>
     concept CopyConstructable = requires(const T& t)
     {
@@ -189,7 +189,7 @@ namespace neo
 
     template<typename T, typename U>
     concept SameAs = IsSame<T, U>;
-    
+
     template<typename TBase, typename TDerived>
     concept BaseOf = requires(TDerived* d)
     {
@@ -235,6 +235,8 @@ namespace neo
     };
 }
 using neo::Addable;
+using neo::Arithmetic;
+using neo::BaseOf;
 using neo::Callable;
 using neo::CallableWithReturnType;
 using neo::Container;
@@ -243,30 +245,28 @@ using neo::CopyConstructable;
 using neo::Decrementable;
 using neo::Dereferenceable;
 using neo::Divisible;
+using neo::Enum;
 using neo::EqualityComparable;
 using neo::FixedContainer;
+using neo::FloatingPoint;
 using neo::GreaterOrEqualThanComparable;
 using neo::GreaterThanComparable;
 using neo::Incrementable;
 using neo::Indexable;
 using neo::InequalityComparable;
-using neo::Iterable;
 using neo::Integral;
-using neo::FloatingPoint;
-using neo::Signed;
-using neo::Unsigned;
-using neo::Arithmetic;
-using neo::Enum;
-using neo::Pointer;
-using neo::NullPtr;
-using neo::Scalar;
+using neo::Iterable;
 using neo::IterableContainer;
 using neo::LessOrEqualThanComparable;
 using neo::LessThanComparable;
 using neo::MoveAssignable;
 using neo::MoveConstructable;
-using neo::BaseOf;
 using neo::Multiplicable;
+using neo::NullPtr;
+using neo::Pointer;
 using neo::SameAs;
+using neo::Scalar;
+using neo::Signed;
 using neo::Subtractable;
 using neo::ThreeWayComparable;
+using neo::Unsigned;

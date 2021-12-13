@@ -5,12 +5,12 @@
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
- 
+
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- 
+
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
@@ -21,24 +21,25 @@
 
 namespace neo
 {
-    template<typename T, size_t Alignment> requires(Alignment>0)
-    class Aligned
+    template<typename T, size_t Alignment>
+    requires(Alignment > 0) class Aligned
     {
     public:
-        constexpr Aligned(T value) : m_value(value)
+        constexpr Aligned(T value) :
+            m_value(value)
         {
             VERIFY(value % Alignment == 0);
         }
-        
+
         constexpr Aligned& operator=(T value)
         {
             VERIFY(value % Alignment == 0);
             m_value = value;
         }
-        
+
         constexpr T get() const
         {
-            if constexpr(Pointer<T>)
+            if constexpr (Pointer<T>)
             {
                 T v = reinterpret_cast<T>(__builtin_assume_aligned(m_value, Alignment));
                 __builtin_assume(v % Alignment == 0);
@@ -50,10 +51,10 @@ namespace neo
                 return m_value;
             }
         }
-        
+
         constexpr operator T() const
         {
-            if constexpr(Pointer<T>)
+            if constexpr (Pointer<T>)
             {
                 T v = reinterpret_cast<T>(__builtin_assume_aligned(m_value, Alignment));
                 __builtin_assume(v % Alignment == 0);
@@ -65,6 +66,7 @@ namespace neo
                 return m_value;
             }
         }
+
     private:
         T m_value;
     };

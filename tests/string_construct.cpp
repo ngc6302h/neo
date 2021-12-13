@@ -22,7 +22,7 @@ int main()
 {
     TEST(String().is_empty());
     TEST_FALSE(String("This is a string").is_empty());
-    TEST_EQUAL(__builtin_strcmp("Stri", (char*)String("String A", 4)), 0);
+    TEST_EQUAL(__builtin_strcmp("Stri", (char const*)String("String A", 4)), 0);
     TEST_EQUAL(__builtin_strcmp(String("This is a string"), "This is a string"), 0);
     TEST_FALSE("This is a string"_s.is_empty());
     TEST(""_s.is_empty());
