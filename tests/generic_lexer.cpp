@@ -84,13 +84,13 @@ int main()
                   "\treturn (void *)ALIGN((unsigned long)(req + 1) +\n"
                   "\t\t\t     crypto_ahash_reqsize(ahash),\n"
                   "\t\t\t     __alignof__(struct scatterlist));\n"
-                  "}";
+                  "}"_sv;
     
     auto separator_lex_rule = neo::GenericLexer::LexingRule{
             90,
             [](Utf8Char c) { static Vector<Utf8Char> separators = {'(', ')', ';', ':', '{', '}', ',', '\'', '"'}; return separators.contains(c); },
             neo::GenericLexer::LexingRuleAction::Read,
-            [](Utf8Char c) { static Vector<Utf8Char> separators = {'(', ')', ';', ':', '{', '}', ',', '\'', '"'}; return !separators.contains(c) && !isspace(c) && !ISALPHA(c) && !ISNUM(c); },
+            [](Utf8Char c, StringView const&) { static Vector<Utf8Char> separators = {'(', ')', ';', ':', '{', '}', ',', '\'', '"'}; return !separators.contains(c) && !isspace(c) && !ISALPHA(c) && !ISNUM(c); },
             [](String const& word) { static Vector<String> separators = {"(", ")", ";", ":", "{", "}", ",", "'", "\""}; return separators.contains(word); },
             neo::GenericLexerTokenType::Separator
     };
@@ -99,7 +99,7 @@ int main()
         100,
         [](Utf8Char c) { return ISALPHA(c); },
         neo::GenericLexer::LexingRuleAction::Read,
-        [](Utf8Char c) { return ISALPHA(c); },
+        [](Utf8Char c, StringView const&) { return ISALPHA(c); },
         [](String const& word) { static Vector<String> keywords = {"void", "struct", "static", "inline", "int", "unsigned", "short", "char", "long", "signed", "const", "if", "for", "do", "while", "goto", "return"}; return keywords.contains(word); },
         neo::GenericLexerTokenType::Keyword
     };
@@ -108,7 +108,7 @@ int main()
             200,
             [](Utf8Char c) { static Vector<String> operators = {"+", "-", "*", "/", "=", "==", "!=", "<", ">", "!", "%"}; return contains(operators, c, string_contains_char); },
             neo::GenericLexer::LexingRuleAction::Read,
-            [](Utf8Char c) { static Vector<String> operators = {"+", "-", "*", "/", "=", "==", "!=", "<", ">", "!", "%"}; return contains(operators, c, string_contains_char); },
+            [](Utf8Char c, StringView const&) { static Vector<String> operators = {"+", "-", "*", "/", "=", "==", "!=", "<", ">", "!", "%"}; return contains(operators, c, string_contains_char); },
             [](String const& word) { static Vector<String> operators = {"+", "-", "*", "/", "=", "==", "!=", "<", ">", "!", "%"}; return operators.contains(word); },
             neo::GenericLexerTokenType::Operator
     };
@@ -117,7 +117,7 @@ int main()
         400,
         [](Utf8Char c) { return ISALPHA(c) || c == '_'; },
         neo::GenericLexer::LexingRuleAction::Read,
-        [](Utf8Char c) { return ISALPHA(c) || ISNUM(c) || c == '_' || c == '$'; },
+        [](Utf8Char c, StringView const&) { return ISALPHA(c) || ISNUM(c) || c == '_' || c == '$'; },
         [](String const&) { return true;},
         neo::GenericLexerTokenType::Identifier};
     
@@ -125,7 +125,7 @@ int main()
         500,
         [](Utf8Char c) { return c >= '0' && c <= '9'; },
         neo::GenericLexer::LexingRuleAction::Read,
-        [](Utf8Char c) { return c >= '0' && c <= '9'; },
+        [](Utf8Char c, StringView const&) { return c >= '0' && c <= '9'; },
         [](String const&) { return true;},
         neo::GenericLexerTokenType::Literal};
     

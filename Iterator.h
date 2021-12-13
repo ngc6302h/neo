@@ -5,12 +5,12 @@
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
- 
+
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- 
+
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
@@ -22,28 +22,29 @@ namespace neo
 {
     template<typename T, typename U>
     class Iterator;
-    
+
     template<typename TContainer>
     class DefaultIteratorImplementation
     {
         friend Iterator<TContainer, DefaultIteratorImplementation>;
-        
+
         constexpr DefaultIteratorImplementation(TContainer& other) :
-                m_container(other),
-                m_index(0)
+            m_container(other),
+            m_index(0)
         {
         }
-    
+
         constexpr DefaultIteratorImplementation(TContainer& other, size_t index) :
-                m_container(other),
-                m_index(index)
+            m_container(other),
+            m_index(index)
         {
         }
-        
-        constexpr DefaultIteratorImplementation(DefaultIteratorImplementation const& other) : m_container(other.m_container), m_index(other.m_index)
+
+        constexpr DefaultIteratorImplementation(DefaultIteratorImplementation const& other) :
+            m_container(other.m_container), m_index(other.m_index)
         {
         }
-    
+
         constexpr DefaultIteratorImplementation& operator=(DefaultIteratorImplementation const& other)
         {
             m_index = other.m_index;
@@ -86,18 +87,18 @@ namespace neo
             VERIFY(!is_end());
             return m_container[m_index];
         }
-        
+
         constexpr decltype(auto) get()
         {
             VERIFY(!is_end());
             return m_container[m_index];
         }
-        
+
         constexpr size_t index() const
         {
             return m_index;
         }
-        
+
         constexpr bool is_end() const
         {
             return m_index >= m_container.size();
@@ -112,7 +113,7 @@ namespace neo
         {
             return m_index != other.m_index;
         }
-    
+
         TContainer& m_container;
         size_t m_index;
     };
@@ -122,16 +123,19 @@ namespace neo
     {
     public:
         Iterator() {};
-        
-        constexpr Iterator(TContainer const& container) : m_impl(const_cast<TContainer&>(container))
+
+        constexpr Iterator(TContainer const& container) :
+            m_impl(const_cast<TContainer&>(container))
         {
         }
-    
-        constexpr Iterator(TContainer const& container, size_t index) : m_impl(const_cast<TContainer&>(container), index)
+
+        constexpr Iterator(TContainer const& container, size_t index) :
+            m_impl(const_cast<TContainer&>(container), index)
         {
         }
-        
-        constexpr Iterator(Iterator const& other) : m_impl(other.m_impl)
+
+        constexpr Iterator(Iterator const& other) :
+            m_impl(other.m_impl)
         {
         }
 
@@ -145,7 +149,7 @@ namespace neo
         {
             return this->m_impl != other.m_impl;
         }
-    
+
         constexpr bool operator==(Iterator const& other) const
         {
             return this->m_impl == other.m_impl;
@@ -160,18 +164,18 @@ namespace neo
         {
             return *this->m_impl;
         }
-    
+
         constexpr decltype(auto) operator->()
         {
             return &*this->m_impl;
         }
-    
+
         constexpr decltype(auto) operator->() const
         {
             return &*this->m_impl;
         }
 
-        //To be implemented by the class using iterators
+        // To be implemented by the class using iterators
         constexpr Iterator& operator++()
         {
             ++this->m_impl;
@@ -194,12 +198,12 @@ namespace neo
             this->m_impl--;
             return prev;
         }
-    
+
         constexpr size_t index() const
         {
             return m_impl.index();
         }
-    
+
         constexpr bool is_end() const
         {
             return m_impl.is_end();

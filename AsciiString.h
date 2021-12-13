@@ -5,12 +5,12 @@
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
- 
+
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- 
+
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
@@ -35,9 +35,10 @@ namespace neo
     class AsciiString
     {
         friend String;
+
     public:
         using StringIterator = Iterator<AsciiString>;
-    
+
         constexpr ~AsciiString()
         {
             delete m_buffer;
@@ -137,21 +138,21 @@ namespace neo
             other.m_length = 0;
         }
 
-        [[nodiscard]]  constexpr StringIterator begin() const
+        [[nodiscard]] constexpr StringIterator begin() const
         {
-            return {*this };
+            return { *this };
         }
 
         [[nodiscard]] constexpr StringIterator end() const
         {
-            return {*this, m_length};
+            return { *this, m_length };
         }
 
         [[nodiscard]] constexpr size_t length() const
         {
             return m_length;
         }
-    
+
         [[nodiscard]] constexpr size_t size() const
         {
 #pragma GCC diagnostic push
@@ -184,8 +185,8 @@ namespace neo
         [[nodiscard]] constexpr AsciiString substring(StringIterator const& start) const
         {
             VERIFY(!start.is_end());
-            
-            return  AsciiString { &m_buffer[start.index()], m_length - start.index() };
+
+            return AsciiString { &m_buffer[start.index()], m_length - start.index() };
         }
 
         [[nodiscard]] constexpr AsciiString substring(size_t start) const
@@ -258,7 +259,7 @@ namespace neo
         {
             if (!length() || !other.length() || other.length() > length())
                 return false;
-    
+
             return __builtin_memcmp(m_buffer, other.m_buffer, other.m_length) == 0;
         }
 
@@ -266,7 +267,7 @@ namespace neo
         {
             if (!length() || !other.length() || other.length() > length())
                 return false;
-    
+
             return __builtin_memcmp(m_length - other.m_length + m_buffer, other.m_buffer, other.m_length) == 0;
         }
 
@@ -274,18 +275,18 @@ namespace neo
         {
             if (!length() || !other.length() || length() < other.length())
                 return end();
-            
+
             char* hit = __builtin_strstr(m_buffer, other.m_buffer);
             if (!hit)
                 return end();
             return { m_buffer, size_t(hit - m_buffer) };
         }
-    
+
         [[nodiscard]] constexpr bool contains(const AsciiString& other)
         {
             return find(other) != end();
         }
-    
+
         [[nodiscard]] constexpr AsciiString trim_whitespace(TrimMode from_where) const
         {
             size_t length = m_length;

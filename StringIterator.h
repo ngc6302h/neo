@@ -5,12 +5,12 @@
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
- 
+
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- 
+
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
@@ -22,21 +22,21 @@
 namespace neo
 {
     using Utf8Char = u32;
-    
+
     class StringIteratorContainer
     {
     public:
         explicit constexpr StringIteratorContainer(const char* base, const char* end, const char* current) :
-                m_base(base),
-                m_end(end),
-                m_current(current)
+            m_base(base),
+            m_end(end),
+            m_current(current)
         {
         }
 
         constexpr Utf8Char operator*() const
         {
             VERIFY(!is_end());
-            //TODO: Research how to make this branchless
+            // TODO: Research how to make this branchless
             int codepoint_size;
             const char* ptr = m_current;
             if (((*ptr >> 7) & 1) == 0)
@@ -84,7 +84,7 @@ namespace neo
             else if (((*ptr >> 3) & 0x1F) == 0x1E)
                 ptr += 4;
             else
-                ptr++; //TODO: Verify this is correct behavior
+                ptr++; // TODO: Verify this is correct behavior
             m_current = ptr;
             return *this;
         }
@@ -103,7 +103,7 @@ namespace neo
             else if (((*ptr >> 3) & 0x1F) == 0x1E)
                 ptr += 4;
             else
-                ptr++; //TODO: verify this is correct behavior
+                ptr++; // TODO: verify this is correct behavior
             m_current = ptr;
             return prev;
         }
@@ -126,12 +126,12 @@ namespace neo
             while ((((*m_current) >> 6) & 3) == 2);
             return prev;
         }
-    
+
         constexpr bool is_end() const
         {
             return *m_current == 0 || m_current == m_end;
         }
-        
+
         constexpr const char* ptr() const
         {
             return m_current;
