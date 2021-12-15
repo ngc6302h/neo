@@ -42,7 +42,7 @@ namespace neo
             if constexpr (Pointer<T>)
             {
                 T v = reinterpret_cast<T>(__builtin_assume_aligned(m_value, Alignment));
-                __builtin_assume(v % Alignment == 0);
+                __builtin_assume(reinterpret_cast<size_t>(v) % Alignment == 0);
                 return v;
             }
             else
@@ -57,7 +57,7 @@ namespace neo
             if constexpr (Pointer<T>)
             {
                 T v = reinterpret_cast<T>(__builtin_assume_aligned(m_value, Alignment));
-                __builtin_assume(v % Alignment == 0);
+                __builtin_assume(reinterpret_cast<size_t>(v) % Alignment == 0);
                 return v;
             }
             else
