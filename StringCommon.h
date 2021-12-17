@@ -128,15 +128,13 @@ namespace neo
 
         [[nodiscard]] constexpr T substring(TIterator start, size_t codepoint_length) const
         {
-            auto& o = static_cast<T const&>(*this);
-
-            VERIFY(codepoint_length < o.byte_size());
+            VERIFY(codepoint_length <= length());
             VERIFY(codepoint_length != 0);
             auto last = start;
             auto _end = end();
+            VERIFY(start != _end);
             while (codepoint_length-- && last++ != _end)
                 ;
-            VERIFY(last != _end);
 
             return T { start.ptr(), static_cast<size_t>(last.ptr() - start.ptr()) };
         }
