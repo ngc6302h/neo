@@ -32,7 +32,7 @@ namespace neo
     class String : public IString<String, StringIterator>
     {
     public:
-        using character_type = Utf8Char;
+        using character_type = Utf32Char;
         using storage_type = char;
         using iterator = StringIterator;
 
