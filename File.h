@@ -64,17 +64,17 @@ namespace neo
             return *this;
         }
 
-        [[nodiscard]] static Optional<Error> remove(const StringView& path)
+        [[nodiscard]] static Optional<Error> remove(const String& path)
         {
-            auto result = ::remove(path.non_null_terminated_buffer());
+            auto result = ::remove(path.null_terminated_characters());
             if (result != 0)
                 return (Error)errno;
             return {};
         }
 
-        [[nodiscard]] static bool rename(const StringView& path, const StringView& new_path)
+        [[nodiscard]] static bool rename(const StringView& path, const String& new_path)
         {
-            return ::rename(path.non_null_terminated_buffer(), new_path.non_null_terminated_buffer()) == 0;
+            return ::rename(path.non_null_terminated_buffer(), new_path.null_terminated_characters()) == 0;
         }
 
         [[nodiscard]] static Optional<Error> exists(const StringView& path)
@@ -89,21 +89,21 @@ namespace neo
                 return (Error)errno;
         }
 
-        [[nodiscard]] static ResultOrError<File, Error> open(const StringView& path, const char* posix_open_mode)
+        [[nodiscard]] static ResultOrError<File, Error> open(const String& path, const char* posix_open_mode)
         {
             VERIFY(!path.is_empty());
 
-            FILE* file = fopen(path.non_null_terminated_buffer(), posix_open_mode);
+            FILE* file = fopen(path.null_terminated_characters(), posix_open_mode);
             if (file == nullptr)
                 return (Error)errno;
             return File(file);
         }
 
-        [[nodiscard]] static ResultOrError<Vector<u8>, Error> read_to_buffer(const StringView& path, size_t max_bytes_to_read)
+        [[nodiscard]] static ResultOrError<Vector<u8>, Error> read_to_buffer(const String& path, size_t max_bytes_to_read)
         {
             VERIFY(!path.is_empty());
 
-            Vector<u8> buffer(max_bytes_to_read);
+            Vector<u8> buffer((size_t)max_bytes_to_read, true);
 
             auto file_or_error = open(path, "r");
             if (file_or_error.has_error())
@@ -120,7 +120,7 @@ namespace neo
             return buffer;
         }
 
-        [[nodiscard]] static ResultOrError<Vector<u8>, Error> read_all(const StringView& path)
+        [[nodiscard]] static ResultOrError<Vector<u8>, Error> read_all(const String& path)
         {
             auto file_or_error = open(path, "r");
             if (file_or_error.has_error())
@@ -208,9 +208,9 @@ namespace neo
             return ferror(m_handle);
         }
 
-        [[nodiscard]] static ResultOrError<long, Error> size(const StringView& path)
+        [[nodiscard]] static ResultOrError<long, Error> size(const String& path)
         {
-            auto* handle = fopen(path.non_null_terminated_buffer(), "r");
+            auto* handle = fopen(path.null_terminated_characters(), "r");
             auto result = fseek(handle, 0, SEEK_END);
             if (result == -1)
             {
