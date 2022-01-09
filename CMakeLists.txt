@@ -1,16 +1,17 @@
 cmake_minimum_required(VERSION 3.18)
-project(neo CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
-include_directories(${CMAKE_SOURCE_DIR})
-
-set(DCMAKE_CXX_FLAGS_RELEASE "-O3 -flto -DNDEBUG -Wall -Wextra -Werror")
-set(DCMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -flto -DNDEBUG -Wall -Wextra -Werror")
-set(DCMAKE_CXX_FLAGS_DEBUG "-Og -g -DDEBUG -fsanitize=address -fsanitize=undefined -Wall -Wextra -Werror")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -flto -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -flto -DNDEBUG")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -DDEBUG -fsanitize=address -fsanitize=undefined")
 add_compile_options(-fno-exceptions -Wall -Wextra -fdiagnostics-color -Werror -pthread)
+
+project(neo CXX)
+
+include_directories(${CMAKE_SOURCE_DIR})
 
 option(ENABLE_DEBUG_ASSERTS "Defines #DEBUG" ON)
 option(VERBOSE_ASSERTS "Print backtraces when an assertion fails" ON)
