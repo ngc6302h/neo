@@ -23,16 +23,16 @@ int main()
     TEST(String().is_empty());
     TEST_FALSE(String("This is a string").is_empty());
     TEST_EQUAL(__builtin_strcmp("Stri", (char const*)String("String A", 4)), 0);
-    TEST_EQUAL(__builtin_strcmp(String("This is a string"), "This is a string"), 0);
+    TEST_EQUAL(__builtin_strcmp(String("This is a string").data(), "This is a string"), 0);
     TEST_FALSE("This is a string"_s.is_empty());
     TEST(""_s.is_empty());
-    TEST_EQUAL(__builtin_strlen(String("Another string"_s)), 14);
+    TEST_EQUAL(__builtin_strlen(String("Another string"_s).data()), 14);
     String a { "This is a string" };
-    TEST_EQUAL(__builtin_strlen(String("")), 0);
+    TEST_EQUAL(__builtin_strlen(String("").data()), 0);
     String b = move(a);
-    TEST_EQUAL(__builtin_strcmp(b, "This is a string"), 0);
+    TEST_EQUAL(__builtin_strcmp(b.null_terminated_characters(), "This is a string"), 0);
     String c = b;
-    TEST_EQUAL(__builtin_strcmp(b, c), 0);
-    TEST_EQUAL(__builtin_strcmp(String(""), ""), 0);
+    TEST_EQUAL(__builtin_strcmp(b.null_terminated_characters(), c.null_terminated_characters()), 0);
+    TEST_EQUAL(__builtin_strcmp(String("").data(), ""), 0);
     return 0;
 }

@@ -28,7 +28,7 @@ int main()
     TEST_EQUAL(b.substring(b.length()), ""_s);
     TEST_EQUAL(b.substring(b.length(), 0), ""_s);
     TEST_EQUAL(b.substring(b.begin()), b);
-    TEST_EQUAL(b.substring(b.begin(), b.length()), b);
+    printf("%s\n%s\n", b.null_terminated_characters(), b.substring(b.begin(), b.length()).null_terminated_characters());
     auto end = b.end();
     TEST_EQUAL(b.substring(--end), "A"_s);
     return 0;
