@@ -18,12 +18,12 @@
 #include "Test.h"
 #include <File.h>
 
-int main()
+int main(int, char** argv)
 {
     printf("%s\n", get_current_dir_name());
-    auto maybe_error = File::exists("file");
+    auto maybe_error = File::exists(argv[0]);
     TEST_FALSE(maybe_error.has_value());
-    auto file_or_error = File::open("file", "rb");
+    auto file_or_error = File::open(argv[0], "rb");
     TEST(file_or_error.has_result());
     File f = move(file_or_error.result());
     File file(move(f));
@@ -41,7 +41,7 @@ int main()
     auto filesize_or_error = file.size();
     TEST(filesize_or_error.has_result());
     maybe_error = file.seek(SeekMode::Start, 0);
-    Vector<u8> buf(file.size().result(), true);
+    Vector<u8> buf((size_t)file.size().result(), true);
     auto bytes_read_or_error = file.read(buf.span(), buf.size());
     TEST_FALSE(bytes_read_or_error.has_error());
     TEST_EQUAL(bytes_read_or_error.result(), (size_t)filesize_or_error.result());
@@ -55,7 +55,7 @@ int main()
     auto bytes_read_or_error2 = copy.read(buf2.span(), bytes_written_or_error.result());
     TEST_EQUAL(__builtin_memcmp(buf.data(), buf2.data(), bytes_read_or_error2.result()), 0);
 
-    auto file_or_error2 = File::open("idonotexist", "r");
+    auto file_or_error2 = File::open("__idonotexist__", "r");
     TEST(file_or_error2.has_error());
     TEST_EQUAL(file_or_error2.error(), neo::Error::NoSuchEntity);
     return 0;
