@@ -115,12 +115,12 @@ namespace neo
 
         [[nodiscard]] constexpr Span<T> span()
         {
-            return { &m_storage, Size };
+            return { m_storage, Size };
         }
 
         [[nodiscard]] constexpr Span<const T> span() const
         {
-            return { &m_storage, Size };
+            return { m_storage, Size };
         }
 
         [[nodiscard]] constexpr ArrayIterator begin()
