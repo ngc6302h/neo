@@ -41,7 +41,7 @@ namespace neo
 
         constexpr ~AsciiString()
         {
-            delete m_buffer;
+            delete[] m_buffer;
             m_buffer = nullptr;
         }
 
