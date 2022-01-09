@@ -21,7 +21,7 @@
 
 namespace neo
 {
-    using Utf8Char = u32;
+    using Utf32Char = u32;
 
     class StringIteratorContainer
     {
@@ -33,12 +33,12 @@ namespace neo
         {
         }
 
-        constexpr Utf8Char operator*() const
+        constexpr Utf32Char operator*() const
         {
             VERIFY(!is_end());
             const char* ptr = m_current;
             int codepoint_size = ((*ptr & 128) == 0) ? 1 : __builtin_clz(~(*ptr & 0xf0) << 24);
-            Utf8Char codepoint = 0;
+            Utf32Char codepoint = 0;
             switch (codepoint_size)
             {
                 [[likely]] case 1 : codepoint = ptr[0];
@@ -121,4 +121,4 @@ namespace neo
 }
 using neo::StringIterator;
 using neo::StringViewIterator;
-using neo::Utf8Char;
+using neo::Utf32Char;

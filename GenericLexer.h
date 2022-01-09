@@ -75,7 +75,7 @@ namespace neo
                 return v;
             }
 
-            Utf8Char operator*() const
+            Utf32Char operator*() const
             {
                 return *it;
             }
@@ -96,9 +96,9 @@ namespace neo
         struct LexingRule
         {
             i64 priority;
-            bool (*when)(Utf8Char);
+            bool (*when)(Utf32Char);
             LexingRuleAction do_;
-            bool (*while_)(Utf8Char, StringView const&);
+            bool (*while_)(Utf32Char, StringView const&);
             bool (*save_if)(String const&);
             GenericLexerTokenType save_as;
         };

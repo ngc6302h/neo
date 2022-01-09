@@ -47,12 +47,12 @@ namespace neo
         [[nodiscard]] static constexpr T substring(TIterator const& start, TIterator const& end);
         [[nodiscard]] constexpr T substring(TIterator start, size_t codepoint_length) const;
         [[nodiscard]] constexpr T substring(size_t codepoint_start, size_t codepoint_length) const;
-        [[nodiscard]] Vector<T> split(Utf8Char by) const;
+        [[nodiscard]] Vector<T> split(Utf32Char by) const;
         [[nodiscard]] Vector<T> split(StringView const& by) const;
         [[nodiscard]] constexpr bool starts_with(StringView const& other) const;
         [[nodiscard]] constexpr bool ends_with(StringView const& other) const;
         [[nodiscard]] constexpr TIterator find(StringView const& other) const;
-        [[nodiscard]] constexpr bool contains(Utf8Char c) const;
+        [[nodiscard]] constexpr bool contains(Utf32Char c) const;
         [[nodiscard]] constexpr bool contains(StringView const& other) const;
         [[nodiscard]] constexpr T trim_whitespace(TrimMode from_where) const;
     };

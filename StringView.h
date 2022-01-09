@@ -30,7 +30,7 @@ namespace neo
     class StringView : public IString<StringView, StringViewIterator>
     {
     public:
-        using character_type = Utf8Char;
+        using character_type = Utf32Char;
         using storage_type = char;
         using iterator = StringViewIterator;
 
@@ -230,7 +230,7 @@ namespace neo
     }
 
     template<typename T, typename TIterator>
-    Vector<T> IString<T, TIterator>::split(Utf8Char by) const
+    Vector<T> IString<T, TIterator>::split(Utf32Char by) const
     {
         Vector<T> strings;
         auto _begin = begin();
@@ -316,7 +316,7 @@ namespace neo
     }
 
     template<typename T, typename TIterator>
-    constexpr bool IString<T, TIterator>::contains(Utf8Char c) const
+    constexpr bool IString<T, TIterator>::contains(Utf32Char c) const
     {
         auto& o = static_cast<T const&>(*this);
 
