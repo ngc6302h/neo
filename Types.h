@@ -19,6 +19,9 @@
 #include "Preprocessor.h"
 #include "Util.h"
 
+template<typename T>
+using Aliasing __attribute__((__may_alias__)) = T;
+
 #ifndef NEO_BASIC_TYPES
     #define NEO_BASIC_TYPES
 
