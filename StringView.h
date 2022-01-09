@@ -134,7 +134,7 @@ namespace neo
         else if (o.byte_size() > other.byte_size())
             return 1;
 
-        return clamp(-1, 1, __builtin_memcmp(o.data(), other.data(), min(o.byte_size(), other.byte_size()) + 1));
+        return clamp(-1, 1, __builtin_memcmp(o.data(), other.data(), min(o.byte_size(), other.byte_size())));
     }
 
     template<typename T, typename TIterator>
@@ -242,7 +242,7 @@ namespace neo
             if (*current == by)
             {
                 strings.construct(_begin.ptr(), static_cast<size_t>(current.ptr() - _begin.ptr()));
-                while (*current == by)
+                while (current != _end && *current == by)
                     ++current;
                 _begin = current;
             }
