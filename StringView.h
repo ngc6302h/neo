@@ -122,7 +122,7 @@ namespace neo
         auto& o = static_cast<T const&>(*this);
         if (o.byte_size() != other.byte_size())
             return false;
-        return __builtin_memcmp(o.data(), other.data(), min(o.byte_size(), other.byte_size()) + 1) == 0;
+        return __builtin_memcmp(o.data(), other.data(), min(o.byte_size(), other.byte_size())) == 0;
     }
 
     template<typename T, typename TIterator>
