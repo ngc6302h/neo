@@ -215,9 +215,7 @@ namespace neo
     template<typename T, typename TIterator>
     constexpr T IString<T, TIterator>::substring(size_t codepoint_start, size_t codepoint_length) const
     {
-        auto& o = static_cast<T const&>(*this);
-
-        VERIFY(codepoint_length <= o.byte_size());
+        VERIFY(codepoint_length <= static_cast<T const&>(*this).byte_size());
         auto start = begin();
         auto _end = end();
 
