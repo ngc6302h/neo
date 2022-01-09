@@ -19,19 +19,18 @@
 #include "Assert.h"
 #include "Concepts.h"
 #include "Iterator.h"
-#include "TypeTraits.h"
-#include "Types.h"
+#include "IterableUtil.h"
 
 namespace neo
 {
     template<typename T>
-    class Span
+    class Span : IterableExtensions<Span<T>, RemoveReferenceWrapper<T>>
     {
     public:
         using SpanIterator = Iterator<Span>;
         using ConstantSpanIterator = Iterator<const Span>;
 
-        constexpr Span() = default;
+        constexpr Span() = delete;
 
         constexpr Span(T* data, size_t size) :
             m_data(data), m_size(size)
@@ -120,14 +119,8 @@ namespace neo
             return true;
         }
 
-        template<typename>
-        [[nodiscard]] constexpr bool operator!=(const Span other) const requires InequalityComparable<T>
-        {
-            return !(*this == other);
-        }
-
-    private : T* m_data;
-        size_t m_size;
+    private : T* m_data { nullptr };
+        size_t m_size {};
     };
 }
 using neo::Span;
