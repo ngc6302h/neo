@@ -29,110 +29,110 @@ namespace neo
         Realtime,
         Monotonic
     };
-    
+
     class Time
     {
     public:
-        constexpr Time(u64 seconds, u64 nanoseconds) : m_seconds(seconds), m_nanoseconds(nanoseconds) {}
+        constexpr Time(u64 seconds, u64 nanoseconds) :
+            m_seconds(seconds), m_nanoseconds(nanoseconds) { }
         constexpr Time() = default;
-        
+
         constexpr Optional<Time> add(Time const& other)
         {
             Checked<u64> secs(m_seconds);
             Checked<u64> nanosecs(m_nanoseconds);
-            
-            secs+=other.m_seconds+(other.m_nanoseconds>=1000000000 ? 1 : 0);
-            nanosecs+=other.m_nanoseconds>=1000000000 ? other.m_nanoseconds%1000000000 : other.m_nanoseconds;
+
+            secs += other.m_seconds + (other.m_nanoseconds >= 1000000000 ? 1 : 0);
+            nanosecs += other.m_nanoseconds >= 1000000000 ? other.m_nanoseconds % 1000000000 : other.m_nanoseconds;
             if (secs.has_overflow() || nanosecs.has_overflow())
                 return {};
-            return Time{secs.value(), nanosecs.value()};
+            return Time { secs.value(), nanosecs.value() };
         }
-    
+
         constexpr Optional<Time> sub(Time const& other)
         {
             Checked<u64> secs(m_seconds);
             Checked<u64> nanosecs(m_nanoseconds);
-        
-            secs-=other.m_seconds-(other.m_nanoseconds>=1000000000 ? 1 : 0);
-            nanosecs-=other.m_nanoseconds>=1000000000 ? other.m_nanoseconds%1000000000 : other.m_nanoseconds;
+
+            secs -= other.m_seconds - (other.m_nanoseconds >= 1000000000 ? 1 : 0);
+            nanosecs -= other.m_nanoseconds >= 1000000000 ? other.m_nanoseconds % 1000000000 : other.m_nanoseconds;
             if (secs.has_overflow() || nanosecs.has_overflow())
                 return {};
-            return Time{secs.value(), nanosecs.value()};
+            return Time { secs.value(), nanosecs.value() };
         }
-        
+
         constexpr bool operator<(Time const& other)
         {
             if (m_seconds < other.m_seconds || (m_seconds == other.m_seconds && m_nanoseconds < other.m_nanoseconds))
                 return true;
             return false;
         }
-    
+
         constexpr bool operator>(Time const& other)
         {
             if (m_seconds > other.m_seconds || (m_seconds == other.m_seconds && m_nanoseconds > other.m_nanoseconds))
                 return true;
             return false;
         }
-        
+
         constexpr bool operator==(Time const& other)
         {
             return m_seconds == other.m_seconds && m_nanoseconds == other.m_nanoseconds;
         }
-        
+
         constexpr Time& operator+=(Time const& other)
         {
             this->m_seconds += other.m_seconds;
             this->m_nanoseconds += other.m_nanoseconds;
-            
+
             return *this;
         }
-    
+
         constexpr Time& operator-=(Time const& other)
         {
             this->m_seconds -= other.m_seconds;
             this->m_nanoseconds -= other.m_nanoseconds;
-        
+
             return *this;
         }
-        
+
     private:
-        
         u64 m_seconds {};
         u64 m_nanoseconds {};
     };
-    
+
     struct Timer
     {
         static Time now()
         {
             timespec time;
             clock_gettime(CLOCK_MONOTONIC_RAW, &time);
-            return Time{static_cast<u64>(time.tv_sec), static_cast<u64>(time.tv_nsec)};
+            return Time { static_cast<u64>(time.tv_sec), static_cast<u64>(time.tv_nsec) };
         }
-        
+
         static Time resolution()
         {
             timespec res;
             clock_getres(CLOCK_MONOTONIC_RAW, &res);
-            return Time{static_cast<u64>(res.tv_sec), static_cast<u64>(res.tv_nsec)};
+            return Time { static_cast<u64>(res.tv_sec), static_cast<u64>(res.tv_nsec) };
         }
     };
-    
+
     struct Clock
     {
         static Time now()
         {
             timespec time;
             clock_gettime(CLOCK_REALTIME, &time);
-            return Time{static_cast<u64>(time.tv_sec), static_cast<u64>(time.tv_nsec)};
+            return Time { static_cast<u64>(time.tv_sec), static_cast<u64>(time.tv_nsec) };
         }
-    
+
         static Time resolution()
         {
             timespec res;
             clock_getres(CLOCK_REALTIME, &res);
-            return Time{static_cast<u64>(res.tv_sec), static_cast<u64>(res.tv_nsec)};
+            return Time { static_cast<u64>(res.tv_sec), static_cast<u64>(res.tv_nsec) };
         }
     };
-    
+
 }
