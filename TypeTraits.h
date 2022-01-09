@@ -514,6 +514,15 @@ namespace neo
             to[i] = move(from[i]);
     }
 
+    template<typename TFrom, typename TTo>
+    requires(IsTriviallyConstructible<TTo>&& IsTriviallyCopyable<TFrom> && sizeof(TFrom) == sizeof(TTo))
+    constexpr TTo bit_cast(TFrom const& value)
+    {
+        TTo dest;
+        __builtin_memcpy(&dest, &value, sizeof(TFrom));
+        return dest;
+    }
+
 }
 using ssize_t = neo::MakeSigned<size_t>;
 
@@ -522,6 +531,7 @@ using neo::Copy;
 using neo::DecayArray;
 using neo::EnableIf;
 using neo::FirstType;
+using neo::IdentityType;
 using neo::IndexOfType;
 using neo::IsBoolean;
 using neo::IsCharacter;
@@ -557,6 +567,7 @@ using neo::TypeOfIndex;
 using neo::UntypedCopy;
 using neo::ValueConditional;
 
+using neo::bit_cast;
 using neo::declval;
 using neo::forward;
 using neo::make_signed;
