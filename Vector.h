@@ -157,6 +157,12 @@ namespace neo
             m_size += items.size();
         }
 
+        constexpr void resize(size_t new_size)
+        {
+            ensure_capacity(new_size);
+            m_size = new_size;
+        }
+
         constexpr void remove_at(size_t index)
         {
             VERIFY(index < m_size);
