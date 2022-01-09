@@ -37,7 +37,7 @@ namespace neo
         {
             VERIFY(!is_end());
             const char* ptr = m_current;
-            int codepoint_size = __builtin_expect(((*ptr & 128) == 0), 1) ? 1 : __builtin_clz(~(*ptr & 0xf0) << 24);
+            int codepoint_size = ((*ptr & 128) == 0) ? 1 : __builtin_clz(~(*ptr & 0xf0) << 24);
             Utf8Char codepoint = 0;
             switch (codepoint_size)
             {
@@ -61,7 +61,7 @@ namespace neo
         {
             VERIFY(!is_end());
             const char* ptr = m_current;
-            int codepoint_size = __builtin_expect(((*ptr & 128) == 0), 1) ? 1 : __builtin_clz(~(*ptr & 0xf0) << 24);
+            int codepoint_size = ((*ptr & 128) == 0) ? 1 : __builtin_clz(~(*ptr & 0xf0) << 24);
             ptr += codepoint_size;
             m_current = ptr;
             return *this;
