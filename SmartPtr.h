@@ -26,6 +26,7 @@ namespace neo
     {
     public:
         OwnPtr& operator=(const OwnPtr&) = delete;
+        OwnPtr(OwnPtr const&) = delete;
 
         constexpr explicit OwnPtr(T* obj) :
             m_data(obj)
@@ -47,8 +48,13 @@ namespace neo
 
         constexpr OwnPtr& operator=(OwnPtr&& other)
         {
-            m_data = other.m_data;
-            other.m_data = nullptr;
+            if (this == &other)
+                return *this;
+
+            ~OwnPtr();
+            new (this) OwnPtr(move(other));
+
+            return *this;
         }
 
         constexpr ~OwnPtr()
@@ -151,37 +157,36 @@ namespace neo
 
         constexpr RefPtr& operator=(const RefPtr& other)
         {
+            if (this == &other)
+                return *this;
+
             VERIFY(*other.m_reference_counter != 0);
 
-            destroy();
+            ~RefPtr();
+            new (this) RefPtr(other);
 
-            m_data = other.m_data;
-            m_control = other.m_control;
-            if constexpr (SharedBetweenThreads)
-                __atomic_add_fetch(&m_control->reference_count, 1, __ATOMIC_ACQ_REL);
-            else
-                m_control->reference_count++;
+            return *this;
         }
 
         constexpr RefPtr& operator=(const T*& other)
         {
-            destroy();
+            if (this == &other)
+                return *this;
 
-            m_data = const_cast<T*>(other);
-            m_control = new ControlBlock { 1, 0 };
-            if constexpr (SharedBetweenThreads)
-                __atomic_add_fetch(&m_control->reference_count, 1, __ATOMIC_ACQ_REL);
-            else
-                m_control->reference_count++;
+            ~RefPtr();
+            new (this) RefPtr(other);
+
+            return *this;
         }
 
         constexpr RefPtr& operator=(RefPtr&& other)
         {
             VERIFY(*other.m_reference_counter != 0);
 
-            m_data = other.m_data;
-            m_control = other.m_control;
-            other.m_data = nullptr;
+            ~RefPtr();
+            new (this) RefPtr(move(other));
+
+            return *this;
         }
 
         constexpr void destroy()
@@ -269,35 +274,47 @@ namespace neo
                 m_control->weak_reference_count++;
         }
 
-        constexpr WeakPtr(WeakPtr&& other) :
+        constexpr WeakPtr(WeakPtr const& other) :
             m_data(other.m_data), m_control(other.m_control)
         {
-            other.m_data = nullptr;
-        }
-
-        constexpr WeakPtr& operator=(const WeakPtr& other)
-        {
-            VERIFY(other.is_valid());
-
-            m_data = other.m_data;
-            m_control = other.m_control;
             if constexpr (SharedBetweenThreads)
                 __atomic_add_fetch(&m_control->weak_reference_count, 1, __ATOMIC_ACQ_REL);
             else
                 m_control->weak_reference_count++;
         }
 
+        constexpr WeakPtr(WeakPtr&& other) :
+            m_data(other.m_data), m_control(other.m_control)
+        {
+            other.m_data = nullptr;
+            other.m_control = nullptr;
+        }
+
+        constexpr WeakPtr& operator=(const WeakPtr& other)
+        {
+            VERIFY(other.is_valid());
+
+            ~WeakPtr();
+            new (this) WeakPtr(other);
+
+            return *this;
+        }
+
         constexpr WeakPtr& operator=(WeakPtr&& other)
         {
             VERIFY(other.is_valid());
 
-            m_data = other.m_data;
-            m_control = other.m_control;
-            other.m_data = nullptr;
+            ~WeakPtr();
+            new (this) WeakPtr(move(other));
+
+            return *this;
         }
 
         constexpr ~WeakPtr()
         {
+            if (m_control == nullptr)
+                return;
+
             if constexpr (SharedBetweenThreads)
                 __atomic_sub_fetch(&m_control->weak_reference_count, 1, __ATOMIC_ACQ_REL);
             else
