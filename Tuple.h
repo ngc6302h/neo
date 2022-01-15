@@ -45,7 +45,8 @@ namespace neo
         }
 
         template<typename U>
-        [[nodiscard]] constexpr U& get() requires TypeContains<U, T, Ts...> && UniqueType<U, T, Ts...>
+        requires TypeContains<U, T, Ts...> && UniqueType<U, T, Ts...>
+        [[nodiscard]] constexpr U& get()
         {
             if constexpr (IsSame<T, U>)
                 return m_item;
@@ -54,7 +55,8 @@ namespace neo
         }
 
         template<typename U>
-        [[nodiscard]] constexpr const U& get() const requires TypeContains<U, T, Ts...> && UniqueType<U, T, Ts...>
+        requires TypeContains<U, T, Ts...> && UniqueType<U, T, Ts...>
+        [[nodiscard]] constexpr const U& get() const
         {
             if constexpr (IsSame<T, U>)
                 return m_item;
@@ -63,7 +65,8 @@ namespace neo
         }
 
         template<size_t Index>
-        [[nodiscard]] constexpr TypeOfElementAtIndex<Index> get()
+        requires(Index < 1 + sizeof...(Ts))
+            [[nodiscard]] constexpr TypeOfElementAtIndex<Index> get()
         {
             if constexpr (Index == 0)
                 return m_item;
@@ -72,7 +75,8 @@ namespace neo
         }
 
         template<size_t Index>
-        [[nodiscard]] constexpr const TypeOfElementAtIndex<Index> get() const
+        requires(Index < 1 + sizeof...(Ts))
+            [[nodiscard]] constexpr TypeOfElementAtIndex<Index> get() const
         {
             if constexpr (Index == 0)
                 return m_item;
@@ -85,7 +89,8 @@ namespace neo
             return 1 + sizeof...(Ts);
         }
 
-        template<typename U, typename = EnableIf<IsSame<Tuple, U> && InequalityComparable<T>, Tuple>>
+        template<typename U>
+        requires Same<Tuple, U> && InequalityComparable<T>
         [[nodiscard]] constexpr bool operator==(const U& other) const
         {
             if (get<0>() != other.template get<0>())
@@ -147,7 +152,8 @@ namespace neo
             return 1;
         }
 
-        template<typename U, typename = EnableIf<IsSame<Tuple, U> && InequalityComparable<T>, Tuple>>
+        template<typename U>
+        requires IsSame<Tuple, U> && InequalityComparable<T>
         [[nodiscard]] constexpr bool operator==(const U& other) const
         {
             if (get<0>() != other.template get<0>())
