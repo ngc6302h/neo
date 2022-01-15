@@ -16,6 +16,8 @@
  */
 
 #pragma once
+
+#include "Util.h"
 #include "Assert.h"
 #include "IterableUtil.h"
 #include "Iterator.h"
@@ -24,7 +26,6 @@
 #include "TypeTraits.h"
 #include "Types.h"
 #include "Concepts.h"
-#include <malloc.h>
 
 namespace neo
 {
@@ -106,10 +107,9 @@ namespace neo
             if (&other == this)
                 return *this;
 
-            clean();
-            ensure_capacity(max(1UL, other.size()));
-            Copy(other.size(), other.data(), m_data);
-            m_size = other.size();
+            ~Vector();
+            new (this) Vector(other);
+
             return *this;
         }
 
@@ -118,42 +118,29 @@ namespace neo
             if (&other == this)
                 return *this;
 
-            clean();
-            deallocate();
-            m_size = other.size();
-            m_capacity = other.capacity();
-            m_data = other.m_data;
-            other.m_size = 0;
-            other.m_capacity = 0;
-            other.m_data = nullptr;
+            ~Vector();
+            new (this) Vector(move(other));
+
             return *this;
         }
 
-        template<typename>
-        requires MoveAssignable<T>
-        constexpr void append(RemoveReferenceWrapper<T>&& e)
+        template<typename TT = T>
+        requires Same<Naked<TT>, T>
+        constexpr void append(TT&& e)
         {
             ensure_capacity(m_size + 1);
-            m_data[m_size++] = move(e);
+            new (&m_data[m_size++]) T { forward<TT>(e) };
         }
 
-        constexpr void append(const RemoveReferenceWrapper<T>& e)
-        {
-            ensure_capacity(m_size + 1);
-            m_data[m_size++] = e;
-        }
-
-        constexpr void append(Span<RemoveReferenceWrapper<T>> const& items)
+        template<typename TT = Span<T>>
+        requires Same<Naked<TT>, Span<T>>
+        constexpr void append(TT&& items)
         {
             ensure_capacity(m_size + items.size());
-            Copy(items.size(), items.data(), m_data + m_size);
-            m_size += items.size();
-        }
-
-        constexpr void append(Span<RemoveReferenceWrapper<T>>&& items)
-        {
-            ensure_capacity(m_size + items.size());
-            TypedMove(items.size(), items.data(), m_data + m_size);
+            if constexpr (IsRvalueReference<TT>)
+                MoveOrCopy<T>(items.size(), items.data(), m_data + m_size);
+            else
+                Copy<T>(items.size(), items.data(), m_data + m_size);
             m_size += items.size();
         }
 
@@ -171,7 +158,7 @@ namespace neo
                 if constexpr (IsTrivial<T>)
                     OverlappingUntypedCopy(m_size - index, m_data + index + 1, m_data + index);
                 else
-                    TypedMove(m_size - index - 1, m_data + index + 1, m_data + index);
+                    MoveOrCopy(m_size - index - 1, m_data + index + 1, m_data + index);
             }
             m_size--;
         }
@@ -194,15 +181,17 @@ namespace neo
             return m_capacity;
         }
 
+        [[nodiscard]] constexpr bool is_empty() const
+        {
+            return m_size == 0;
+        }
+
         constexpr void change_capacity(size_t new_capacity)
         {
             VERIFY(new_capacity > 0);
 
-            T* new_buf = (T*)calloc(new_capacity, sizeof(T));
-            if constexpr (IsTriviallyCopyable<T>)
-                UntypedCopy(m_size, m_data, new_buf);
-            else
-                TypedMove(m_size, m_data, new_buf);
+            T* new_buf = (T*)__builtin_calloc(new_capacity, sizeof(T));
+            MoveOrCopy(m_size, m_data, new_buf);
             clean();
             deallocate();
             m_data = new_buf;
@@ -220,20 +209,14 @@ namespace neo
 
         [[nodiscard]] constexpr T& at(size_t index)
         {
-            //#pragma GCC diagnostic push
-            //#pragma GCC diagnostic ignored "-Waggressive-loop-optimizations"
 
             VERIFY(index < m_size);
             return m_data[index];
-            //#pragma GCC diagnostic pop
         }
         [[nodiscard]] constexpr const T& at(size_t index) const
         {
-            //#pragma GCC diagnostic push
-            //#pragma GCC diagnostic ignored "-Waggressive-loop-optimizations"
             VERIFY(index < m_size);
             return m_data[index];
-            //#pragma GCC diagnostic pop
         }
 
         [[nodiscard]] constexpr const T& first() const
@@ -337,7 +320,7 @@ namespace neo
     private:
         constexpr void clean()
         {
-            if constexpr (!IsTrivial<T>)
+            if constexpr (!IsTriviallyDestructible<T>)
             {
                 for (size_t i = 0; i < m_size; i++)
                     m_data[i].~T();
@@ -347,12 +330,12 @@ namespace neo
         // size is number of T elements
         constexpr void allocate(size_t size)
         {
-            m_data = (T*)calloc(size, sizeof(T));
+            m_data = (T*)__builtin_calloc(size, sizeof(T));
         }
 
         constexpr void deallocate()
         {
-            free(m_data);
+            __builtin_free(m_data);
             m_data = nullptr;
         }
 
