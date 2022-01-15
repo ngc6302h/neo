@@ -188,7 +188,7 @@ namespace neo
     };
 
     template<typename T, typename U>
-    concept SameAs = IsSame<T, U>;
+    concept Same = IsSame<T, U>;
 
     template<typename TBase, typename TDerived>
     concept BaseOf = requires(TDerived* d)
@@ -207,7 +207,7 @@ namespace neo
     {
         {
             f(forward<Args>(args)...)
-            } -> SameAs<TReturn>;
+            } -> Same<TReturn>;
     };
 
     template<typename T>
@@ -264,7 +264,7 @@ using neo::MoveConstructable;
 using neo::Multiplicable;
 using neo::NullPtr;
 using neo::Pointer;
-using neo::SameAs;
+using neo::Same;
 using neo::Scalar;
 using neo::Signed;
 using neo::Subtractable;
