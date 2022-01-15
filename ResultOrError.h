@@ -17,6 +17,7 @@
 
 #pragma once
 #include "Assert.h"
+#include "Util.h"
 #include "New.h"
 #include "TypeTraits.h"
 
@@ -30,43 +31,50 @@ namespace neo
 
         ~ResultOrError()
         {
-            if constexpr (IsTrivial<TResult> && IsTrivial<TError>)
-            {
-                if (m_has_error)
-                    ((TError*)&m_storage)->~TError();
-                else
-                    ((TResult*)&m_storage)->~TResult();
-            }
+            if (m_has_error)
+                ((TError*)m_storage)->~TError();
+            else
+                ((TResult*)m_storage)->~TResult();
         }
 
-        ResultOrError& operator=(ResultOrError&& other) = delete;
-
-        constexpr ResultOrError& operator=(const ResultOrError& other)
+        constexpr ResultOrError(ResultOrError const& other) :
+            m_has_error(other.m_has_error)
         {
-            if (this == &other)
-                return *this;
-
-            if constexpr (IsTriviallyCopyable<TResult> && IsTriviallyCopyable<TError>)
-            {
-                __builtin_memcpy(m_storage, other.m_storage, sizeof(m_storage));
-            }
+            if (other.m_has_error)
+                Copy(1, (TError*)other.m_storage, (TError*)m_storage);
             else
-            {
-                if (other.m_has_error)
-                    *reinterpret_cast<TError*>(&m_storage) = *reinterpret_cast<TError*>(&other.m_storage);
-                else
-                    *reinterpret_cast<TResult*>(&m_storage) = *reinterpret_cast<TResult*>(&other.m_storage);
-            }
-            m_has_error = other.m_has_error;
+                Copy(1, (TResult*)other.m_storage, (TResult*)m_storage);
         }
 
         constexpr ResultOrError(ResultOrError&& other) :
             m_has_error(other.m_has_error)
         {
             if (other.m_has_error)
-                *reinterpret_cast<TError*>(&m_storage) = move(*reinterpret_cast<TError*>(&other.m_storage));
+                MoveOrCopy(1, (TError*)other.m_storage, (TError*)m_storage);
             else
-                *reinterpret_cast<TResult*>(&m_storage) = move(*reinterpret_cast<TResult*>(&other.m_storage));
+                MoveOrCopy(1, (TResult*)other.m_storage, (TResult*)m_storage);
+        }
+
+        constexpr ResultOrError& operator=(const ResultOrError& other)
+        {
+            if (this == &other)
+                return *this;
+
+            ~ResultOrError();
+            new (this) ResultOrError(other);
+
+            return *this;
+        }
+
+        constexpr ResultOrError& operator=(ResultOrError&& other)
+        {
+            if (this == &other)
+                return *this;
+
+            ~ResultOrError();
+            new (this) ResultOrError(move(other));
+
+            return *this;
         }
 
         constexpr ResultOrError(const TResult& other) :
@@ -142,30 +150,39 @@ namespace neo
             }
         }
 
-        ResultOrError& operator=(ResultOrError&& other) = delete;
+        ResultOrError(ResultOrError const& other) :
+            m_has_error(other.m_has_error)
+        {
+            Copy(1, (TError*)other.m_storage, (TError*)m_storage);
+        }
+
+        ResultOrError(ResultOrError&& other) :
+            m_has_error(other.m_has_error)
+        {
+            MoveOrCopy(1, (TError*)other.m_storage, (TError*)m_storage);
+            __builtin_memset(other.m_storage, 0, sizeof(other.m_storage));
+        }
 
         constexpr ResultOrError& operator=(const ResultOrError& other)
         {
             if (this == &other)
                 return *this;
 
-            if constexpr (IsTriviallyCopyable<TError>)
-            {
-                __builtin_memcpy(m_storage, other.m_storage, sizeof(m_storage));
-            }
-            else
-            {
-                if (other.m_has_error)
-                    *reinterpret_cast<TError*>(&m_storage) = *reinterpret_cast<TError*>(&other.m_storage);
-            }
-            m_has_error = other.m_has_error;
+            ~ResultOrError();
+            new (this) ResultOrError(other);
+
+            return *this;
         }
 
-        constexpr ResultOrError(ResultOrError&& other) :
-            m_has_error(other.m_has_error)
+        constexpr ResultOrError& operator=(ResultOrError&& other)
         {
-            if (other.m_has_error)
-                *reinterpret_cast<TError*>(&m_storage) = move(*reinterpret_cast<TError*>(&other.m_storage));
+            if (this == &other)
+                return *this;
+
+            ~ResultOrError();
+            new (this) ResultOrError(move(other));
+
+            return *this;
         }
 
         constexpr ResultOrError(const TError& other) :
