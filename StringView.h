@@ -56,17 +56,7 @@ namespace neo
         }
 
         constexpr StringView& operator=(StringView const& other) = default;
-        constexpr StringView& operator=(StringView&& other)
-        {
-            if (this == &other)
-                return *this;
-
-            m_view = other.m_view;
-            m_byte_length = other.m_byte_length;
-            other.m_view = nullptr;
-            other.m_byte_length = 0;
-            return *this;
-        }
+        constexpr StringView& operator=(StringView&& other) = default;
 
         [[nodiscard]] constexpr size_t byte_size() const
         {
