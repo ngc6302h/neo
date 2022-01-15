@@ -16,6 +16,7 @@
  */
 
 #pragma once
+#include "Types.h"
 #define this_is_constexpr() __builtin_is_constant_evaluated()
 
 template<typename T>
