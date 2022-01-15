@@ -480,6 +480,9 @@ namespace neo
     using ReturnType = decltype(declval<F>()(forward<Args>(declval<Args>())...));
 
     template<typename T>
+    using Naked = RemoveCV<RemoveReferenceWrapper<RemoveCV<RemoveReference<T>>>>;
+
+    template<typename T>
     static constexpr void TypedCopy(size_t num, T const* from, T* to)
     {
         for (size_t i = 0; i < num; ++i)
@@ -501,7 +504,7 @@ namespace neo
     template<typename T>
     static constexpr void Copy(size_t num, T const* from, T* to)
     {
-        if constexpr (IsTrivial<T>)
+        if constexpr (IsTriviallyCopyable<T>)
             UntypedCopy(num, from, to);
         else
             TypedCopy(num, from, to);
@@ -514,9 +517,17 @@ namespace neo
             to[i] = move(from[i]);
     }
 
+    template<typename T>
+    static constexpr void MoveOrCopy(size_t num, T const* from, T* to)
+    {
+        if constexpr (IsTriviallyCopyable<T>)
+            Copy(num, from, to);
+        else
+            TypedMove(num, from, to);
+    }
+
     template<typename TFrom, typename TTo>
-    requires(IsTriviallyConstructible<TTo>&& IsTriviallyCopyable<TFrom> && sizeof(TFrom) == sizeof(TTo))
-    constexpr TTo bit_cast(TFrom const& value)
+    requires(IsTriviallyConstructible<TTo>&& IsTriviallyCopyable<TFrom> && sizeof(TFrom) == sizeof(TTo)) constexpr TTo bit_cast(TFrom const& value)
     {
         TTo dest;
         __builtin_memcpy(&dest, &value, sizeof(TFrom));
@@ -552,6 +563,7 @@ using neo::IsTriviallyCopyable;
 using neo::IsTriviallyDestructible;
 using neo::IsUnsigned;
 using neo::MakeSigned;
+using neo::Naked;
 using neo::OverlappingUntypedCopy;
 using neo::PackContains;
 using neo::RemovePointer;
