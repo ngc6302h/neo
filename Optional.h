@@ -33,28 +33,28 @@ namespace neo
         constexpr ~Optional()
         {
             if (m_has_value)
-                ((T*)(&m_storage))->~T();
+                ((T*)(m_storage))->~T();
         }
 
         constexpr Optional(const T& other) :
             m_has_value(true)
         {
-            new (&m_storage) T(other);
+            new (m_storage) T(other);
         }
 
-        constexpr Optional(const Optional& other) :
+        constexpr Optional(Optional const& other) :
             m_has_value(other.m_has_value)
         {
             if (other.has_value())
             {
-                new (&m_storage) Optional(other.value());
+                new (this) Optional(other.value());
             }
         }
 
         constexpr Optional(T&& other) :
             m_has_value(true)
         {
-            new (&m_storage) T(move(other));
+            new (m_storage) T(move(other));
         }
 
         constexpr Optional(Optional&& other) :
@@ -62,37 +62,30 @@ namespace neo
         {
             if (other.has_value())
             {
-                new (&m_storage) Optional(other.release_value());
+                new (this) Optional(other.release_value());
                 other.m_has_value = false;
             }
         }
 
         constexpr Optional& operator=(const Optional& other)
         {
-            if (this != &other)
-            {
-                clear();
-                m_has_value = other.m_has_value;
-                if (other.has_value())
-                {
-                    new (&m_storage) T(other.release_value());
-                }
-            }
+            if (this == &other)
+                return *this;
+
+            ~Optional();
+            new (this) Optional(other);
+
             return *this;
         }
 
         constexpr Optional& operator=(Optional&& other)
         {
-            if (this != &other)
-            {
-                clear();
-                m_has_value = other.m_has_value;
-                if (other.has_value())
-                {
-                    new (&m_storage) T(other.release_value());
-                    other.m_has_value = false;
-                }
-            }
+            if (this == &other)
+                return *this;
+
+            this->~Optional();
+            new (this) Optional(move(other));
+
             return *this;
         }
 
@@ -141,15 +134,6 @@ namespace neo
             if (m_has_value)
                 return value();
             return fallback;
-        }
-
-        void clear()
-        {
-            if (m_has_value)
-            {
-                value().~T();
-                m_has_value = false;
-            }
         }
 
     private:
