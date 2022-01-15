@@ -16,9 +16,12 @@
  */
 
 #pragma once
-#include "Optional.h"
 #include "Types.h"
+#include "Optional.h"
 #include "Vector.h"
+#include "Bitset.h"
+#include "Buffer.h"
+#include "Tuple.h"
 
 namespace neo
 {
@@ -27,125 +30,362 @@ namespace neo
     {
         static constexpr size_t hash(const T& value)
         {
-            u8* data = (u8*)&value;
+            u8* data = reinterpret_cast<u8*>(&value);
             size_t size = sizeof(T);
             size_t result = data[size - 1];
-            while (size--)
-                result += result ^ data[size] ^ (~(result * result + 3241));
+            for (size_t i = 0; i < size; ++i)
+                result += result ^ (data[i] & ((result * 3241) >> 3));
             return result;
         }
     };
 
-    template<typename TKey, typename TValue>
-    struct KeyValuePair
+    template<Integral T>
+    struct DefaultHasher<T>
     {
-        TKey key;
-        TValue value;
-
-        KeyValuePair& operator=(const KeyValuePair&) = default;
-        KeyValuePair& operator=(KeyValuePair&&) = default;
+        static constexpr size_t hash(T value)
+        {
+            return value;
+        }
     };
 
     template<typename TKey, typename TValue, typename Hasher = DefaultHasher<TKey>>
-    class Hashmap
+    class Hashmap;
+
+    template<typename TKey, typename TValue>
+    class HashmapRecord
     {
+        template<typename, typename, typename>
+        friend class Hashmap;
+        template<typename, typename, typename>
+        friend class HashmapIteratorContainer;
+
     public:
-        static constexpr size_t DEFAULT_BUCKET_COUNT = 31; // nearest prime to 32
-        static constexpr size_t DEFAULT_BUCKET_CAPACITY = 8;
-
-        constexpr explicit Hashmap(size_t bucket_count = DEFAULT_BUCKET_COUNT, size_t bucket_capacity = DEFAULT_BUCKET_CAPACITY) :
-            m_buckets(bucket_count), m_bucket_capacity(bucket_capacity), m_bucket_count(bucket_count)
+        constexpr HashmapRecord(TKey const& key, TValue const& value, HashmapRecord* next) :
+            m_key(key), m_value(value), m_next(next)
         {
-            for (size_t i = 0; i < bucket_count; i++)
-                m_buckets.construct(bucket_capacity, false);
         }
 
-        constexpr Hashmap& operator=(const Hasher& other)
+        constexpr HashmapRecord(TKey const& key, TValue&& value, HashmapRecord* next) :
+            m_key(key), m_value(forward<TValue>(value)), m_next(next)
         {
-            if (this == &other)
-                return *this;
-
-            m_buckets = other.m_buckets;
-            m_bucket_count = other.m_bucket_count;
-            m_bucket_capacity = other.m_bucket_capcity;
-            return *this;
         }
 
-        constexpr Hashmap& operator=(Hasher&& other)
+        constexpr TValue& value()
         {
-            if (this == &other)
-                return *this;
-
-            m_buckets = move(other.m_buckets);
-            m_bucket_count = other.m_bucket_count;
-            m_bucket_capacity = other.m_bucket_capacity;
-            other.m_bucket_count = 0;
-            other.m_bucket_capacity = 0;
-            return *this;
+            return m_value;
         }
 
-        constexpr void insert(const TKey& key, const TValue& value)
+        constexpr TValue const& value() const
         {
-            size_t index = Hasher::hash(key) % m_bucket_count;
-            if (m_buckets[index].size() > DEFAULT_BUCKET_CAPACITY)
-                rehash();
-            m_buckets[Hasher::hash(key) % m_bucket_count].append({ key, value });
+            return m_value;
         }
 
-        [[nodiscard]] constexpr const Optional<ReferenceWrapper<TValue>> get_ref(const TKey& key) const
+        constexpr TKey const& key() const
         {
-            size_t index = Hasher::hash(key) % m_bucket_count;
-            auto it = m_buckets[index].begin();
-            auto end = m_buckets[index].end();
-            while ((*it).key != key && it != end)
-                it++;
-            return it != end ? Optional<ReferenceWrapper<TValue>>(ref((*it).value)) : Optional<ReferenceWrapper<TValue>>();
-        }
-
-        [[nodiscard]] constexpr Optional<ReferenceWrapper<TValue>> get_ref(const TKey& key)
-        {
-            size_t index = Hasher::hash(key) % m_bucket_count;
-            auto it = m_buckets[index].begin();
-            auto end = m_buckets[index].end();
-            while ((*it).key != key && it != end)
-                it++;
-            return it != end ? Optional<ReferenceWrapper<TValue>>(ref((*it).value)) : Optional<ReferenceWrapper<TValue>>();
-        }
-
-        [[nodiscard]] constexpr Optional<TValue> get(const TKey& key) const
-        {
-            size_t index = Hasher::hash(key) % m_bucket_count;
-            auto it = m_buckets[index].begin();
-            auto end = m_buckets[index].end();
-            while ((*it).key != key && it != end)
-                it++;
-            return it != end ? (*it).value : Optional<TValue>();
-        }
-
-        [[nodiscard]] constexpr bool contains(const TKey& key) const
-        {
-            return get_ref(key).has_value();
+            return m_key;
         }
 
     private:
-        constexpr void rehash()
+        TKey m_key;
+        TValue m_value;
+        HashmapRecord* m_next;
+    };
+
+    template<typename THashmap, typename TKey, typename TValue>
+    class HashmapIteratorContainer
+    {
+    public:
+        constexpr HashmapIteratorContainer(THashmap& hashmap, bool end) :
+            m_hashmap(hashmap),
+            m_bucket(end ? hashmap.m_buckets.size() : 0),
+            m_element_offset(end ? hashmap.m_buckets[0].size() : 0),
+            m_next(nullptr)
         {
-            m_bucket_count *= 2;
-            Vector<Vector<KeyValuePair<TKey, TValue>>> new_buckets(m_bucket_count);
-            for (size_t i = 0; i < m_bucket_count; i++)
-                new_buckets.construct(m_bucket_capacity);
-            for (auto& bucket : m_buckets)
+        }
+
+        constexpr HashmapIteratorContainer(HashmapIteratorContainer const& other) :
+            m_hashmap(other.m_hashmap),
+            m_bucket(other.m_bucket),
+            m_element_offset(other.m_element_offset),
+            m_next(other.m_next)
+        {
+        }
+
+        constexpr HashmapIteratorContainer(HashmapIteratorContainer&& other) :
+            m_hashmap(other.m_hashmap),
+            m_bucket(other.m_bucket),
+            m_element_offset(other.m_element_offset),
+            m_next(other.m_next)
+        {
+            other.m_next = nullptr;
+            other.m_element_offset = 0;
+            other.m_bucket = 0;
+        }
+
+        constexpr HashmapIteratorContainer& operator=(HashmapIteratorContainer const& other)
+        {
+            if (this == &other)
+                return *this;
+
+            new (this) HashmapIteratorContainer { other };
+            return *this;
+        }
+
+        constexpr HashmapIteratorContainer& operator=(HashmapIteratorContainer&& other)
+        {
+            if (this == &other)
+                return *this;
+
+            new (this) HashmapIteratorContainer { move(other) };
+            return *this;
+        }
+
+        constexpr HashmapIteratorContainer operator++()
+        {
+            auto prev = *this;
+            ++*this;
+            return prev;
+        }
+
+        constexpr HashmapIteratorContainer& operator++(int)
+        {
+            if (m_next != nullptr)
             {
-                for (auto& pair : bucket)
+                m_next = m_next->m_next;
+                return *this;
+            }
+
+            if (m_element_offset < m_hashmap.m_buckets[m_bucket].size())
+            {
+                do
+                    m_element_offset++;
+                while (m_hashmap.m_buckets[m_bucket][m_element_offset].m_next == nullptr);
+                return *this;
+            }
+
+            if (m_bucket < m_hashmap.m_buckets.size())
+            {
+                m_bucket++;
+                while (m_hashmap.m_buckets[m_bucket][m_element_offset].m_next == nullptr)
+                    m_element_offset = 0;
+                return *this;
+            }
+
+            VERIFY_NOT_REACHED();
+            return *this;
+        }
+
+        constexpr auto& operator*()
+        {
+            if (m_next != nullptr)
+                return *m_next;
+            else
+                return m_hashmap.m_buckets[m_bucket][m_element_offset];
+        }
+
+        constexpr auto const& operator*() const
+        {
+            if (m_next != nullptr)
+                return *m_next;
+            else
+                return m_hashmap.m_buckets[m_bucket][m_element_offset];
+        }
+
+        constexpr bool is_end() const
+        {
+            return m_bucket == m_hashmap.m_buckets.size();
+        }
+
+    private:
+        THashmap& m_hashmap;
+
+        size_t m_bucket;
+        size_t m_element_offset;
+        HashmapRecord<TKey, TValue>* m_next;
+    };
+
+    template<typename TKey, typename TValue, typename Hasher>
+    class Hashmap
+    {
+        friend HashmapIteratorContainer<Hashmap, TKey, TValue>;
+
+    public:
+        constexpr Hashmap(size_t initial_bucket_count, size_t initial_bucket_capacity) :
+            m_buckets(initial_bucket_count, false), m_colliding_key_storage((size_t)4, false)
+        {
+            for (size_t i = 0; i < initial_bucket_count; ++i)
+                m_buckets.append(Buffer<HashmapRecord<TKey, TValue>>::create_zero_initialized(initial_bucket_capacity));
+        }
+
+        constexpr Hashmap(Hashmap const& other) :
+            m_buckets(other.m_buckets.capacity(), false), m_colliding_key_storage(other.m_colliding_key_storage.capacity(), false)
+        {
+            for (auto& i : other)
+                insert(i.m_key, i.m_value);
+        }
+
+        constexpr Hashmap(Hashmap&& other) :
+            m_buckets(move(other.m_buckets)), m_colliding_key_storage(move(other.m_colliding_key_storage))
+        {
+        }
+
+        constexpr Hashmap& operator=(Hashmap const& other)
+        {
+            if (this == &other)
+                return *this;
+
+            this->~Hashmap();
+            new (this) Hashmap(other);
+
+            return *this;
+        }
+
+        constexpr Hashmap& operator=(Hashmap&& other)
+        {
+            if (this == &other)
+                return *this;
+
+            this->~Hashmap();
+            new (this) Hashmap(move(other));
+
+            return *this;
+        }
+
+        // returns true if it was inserted, or false if it was already in the table
+        template<typename TTValue>
+        requires Same<RemoveCV<RemoveReference<TTValue>>, TValue>
+        constexpr bool insert(TKey const& key, TTValue&& value)
+        {
+            size_t hash = Hasher::hash(key);
+            auto bucket = (hash >> sizeof(hash) / 2) % m_buckets.size();
+            auto index = hash % m_buckets[bucket].size();
+            auto& hit = m_buckets[bucket][index];
+
+            if (hit.m_next == nullptr)
+            {
+                new (&hit) HashmapRecord<TKey, TValue> { key, forward<TTValue>(value), (HashmapRecord<TKey, TValue>*)-1 };
+                return true;
+            }
+            else if (hit.m_next == (HashmapRecord<TKey, TValue>*)-1)
+            {
+                if (hit.m_key == key)
+                    return false;
+
+                if (m_colliding_key_storage.is_empty())
+                    m_colliding_key_storage.construct(Bitset<512> { 512, false }, Buffer<HashmapRecord<TKey, TValue>>::create_zero_initialized(512));
+
+                for (auto& p : m_colliding_key_storage)
                 {
-                    new_buckets[Hasher::hash(pair.key) % m_bucket_count].append({ move(pair.key), move(pair.value) });
+                    auto& b = p.template get<Bitset<512>>();
+                    auto maybe_index = b.find_first_not_set();
+                    if (maybe_index.has_value())
+                    {
+                        new (&p.template get<Buffer<HashmapRecord<TKey, TValue>>>()[maybe_index.value()]) HashmapRecord<TKey, TValue> { key, value, nullptr };
+                        b.set(maybe_index.value(), true);
+                        return true;
+                    }
                 }
+                // at this point, all spill buffers are full. let's create one more
+                m_colliding_key_storage.construct(Bitset<512> { 512, false }, Buffer<HashmapRecord<TKey, TValue>>::create_zero_initialized(512));
+                m_colliding_key_storage.last().template get<Bitset<512>>().set(0, true);
+                new (&m_colliding_key_storage.last().template get<Buffer<HashmapRecord<TKey, TValue>>>()[0]) HashmapRecord<TKey, TValue> { key, value, nullptr };
+                return true;
+            }
+            else
+            {
+                auto* next = &hit;
+                while (next->m_next != nullptr)
+                {
+                    if (next->m_key == key)
+                        return false;
+
+                    next = next->m_next;
+                }
+
+                for (auto& p : m_colliding_key_storage)
+                {
+                    auto& b = p.template get<Bitset<512>>();
+                    auto maybe_index = b.find_first_not_set();
+                    if (maybe_index.has_value())
+                    {
+                        new (&p.template get<Buffer<HashmapRecord<TKey, TValue>>>()[maybe_index.value()]) HashmapRecord<TKey, TValue> { key, value, nullptr };
+                        next->m_next = &p.template get<Buffer<HashmapRecord<TKey, TValue>>>()[maybe_index.value()];
+                        b.set(maybe_index.value(), true);
+                        return true;
+                    }
+                }
+                // at this point, all spill buffers are full. let's create one more
+                m_colliding_key_storage.construct(Bitset<512> { 512, false }, Buffer<HashmapRecord<TKey, TValue>>::create_zero_initialized(512));
+                m_colliding_key_storage.last().template get<Bitset<512>>().set(0, true);
+                new (&m_colliding_key_storage.last().template get<Buffer<HashmapRecord<TKey, TValue>>>()[0]) HashmapRecord<TKey, TValue> { key, value, nullptr };
+                next->m_next = &m_colliding_key_storage.last().template get<Buffer<HashmapRecord<TKey, TValue>>>()[0];
+                return true;
             }
         }
 
-        Vector<Vector<KeyValuePair<TKey, TValue>>> m_buckets;
-        size_t m_bucket_capacity;
-        size_t m_bucket_count;
+        constexpr Optional<ReferenceWrapper<TValue>> get(TKey const& key)
+        {
+            size_t hash = Hasher::hash(key);
+            auto bucket = (hash >> sizeof(hash) / 2) % m_buckets.size();
+            auto index = hash % m_buckets[bucket].size();
+            auto& hit = m_buckets[bucket][index];
+
+            if (hit.m_next == nullptr)
+                return {};
+            else
+            {
+                if (hit.m_key == key)
+                    return ReferenceWrapper<TValue>(hit.m_value);
+                else if (hit.m_next != (HashmapRecord<TKey, TValue>*)-1)
+                {
+                    auto* next = hit.m_next;
+                    while (next != nullptr)
+                    {
+                        if (next->m_key == key)
+                            return ReferenceWrapper<TValue>(next->m_value);
+                        else
+                            next = next->m_next;
+                    }
+                    return {};
+                }
+            }
+
+            return {};
+        }
+
+        constexpr Optional<ReferenceWrapper<const TValue>> get(TKey const& key) const
+        {
+            size_t hash = Hasher::hash(key);
+            auto bucket = (hash >> sizeof(hash) / 2) % m_buckets.size();
+            auto index = hash % m_buckets[bucket].size();
+            auto& hit = m_buckets[bucket][index];
+
+            if (hit.m_next == nullptr)
+                return {};
+            else
+            {
+                if (hit.m_key == key)
+                    return ReferenceWrapper<const TValue>(hit.m_value);
+                else if (hit.m_next != (HashmapRecord<TKey, TValue>*)-1)
+                {
+                    auto* next = hit.m_next;
+                    while (next != nullptr)
+                    {
+                        if (next->m_key == key)
+                            return ReferenceWrapper<const TValue>(next->m_value);
+                        else
+                            next = next->m_next;
+                    }
+                    return {};
+                }
+            }
+
+            return {};
+        }
+
+    private:
+        Vector<Buffer<HashmapRecord<TKey, TValue>>> m_buckets;
+        Vector<Pair<Bitset<512>, Buffer<HashmapRecord<TKey, TValue>>>> m_colliding_key_storage;
     };
 }
 using neo::Hashmap;
