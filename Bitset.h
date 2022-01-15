@@ -63,35 +63,26 @@ namespace neo
             if constexpr (sizeof(other.m_inline_storage) != 0)
                 __builtin_memcpy(m_inline_storage, other.m_inline_storage, sizeof(other.m_inline_storage));
         }
-        
+
         constexpr Bitset operator=(Bitset const& other)
         {
             if (this == &other) [[unlikely]]
                 return *this;
-            
-            m_size = other.m_size;
-            if constexpr (sizeof(other.m_inline_storage) != 0)
-                __builtin_memcpy(m_inline_storage, other.m_inline_storage, sizeof(other.m_inline_storage));
-            if (other.m_size > sizeof(other.m_inline_storage))
-            {
-                m_storage = new u8[other.m_size - sizeof(other.m_inline_storage)];
-                __builtin_memcpy(m_storage, other.m_storage, other.m_size - sizeof(other.m_inline_storage));
-            }
+
+            this->~Bitset();
+            new (this) Bitset(other);
+
+            return *this;
         }
-        
+
         constexpr Bitset operator=(Bitset&& other)
         {
             if (this == &other) [[unlikely]]
                 return *this;
-            
-            m_storage = other.m_storage;
-            m_size = other.m_size;
-            if constexpr (sizeof(other.m_inline_storage) != 0)
-                __builtin_memcpy(m_inline_storage, other.m_inline_storage, sizeof(other.m_inline_storage));
-            
-            other.m_storage = nullptr;
-            other.m_size = 0;
-            
+
+            this->~Bitset();
+            new (this) Bitset(move(other));
+
             return *this;
         }
 
@@ -187,7 +178,7 @@ namespace neo
                         index += 8;
                 }
             }
-            if constexpr (InlineStorage < m_size)
+            if (InlineStorage < m_size)
             {
                 for (size_t i = 0; i < m_size - sizeof(m_inline_storage); ++i)
                 {
@@ -201,9 +192,11 @@ namespace neo
                         index += 8;
                 }
             }
+
+            return {};
         }
 
-        [[nodiscard]] constexpr size_t find_first_not_set() const
+        [[nodiscard]] constexpr Optional<size_t> find_first_not_set() const
         {
             size_t index = 0;
             if constexpr (InlineStorage != 0)
@@ -220,7 +213,7 @@ namespace neo
                         index += 8;
                 }
             }
-            if constexpr (InlineStorage < m_size)
+            if (InlineStorage < m_size)
             {
                 for (size_t i = 0; i < m_size - sizeof(m_inline_storage); ++i)
                 {
@@ -234,6 +227,8 @@ namespace neo
                         index += 8;
                 }
             }
+
+            return {};
         }
 
     private:
