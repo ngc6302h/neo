@@ -120,11 +120,9 @@ namespace neo
             if (&other == this)
                 return *this;
 
-            delete[] m_buffer;
-            m_buffer = new char[other.m_byte_length + 1];
-            m_buffer[other.m_byte_length] = 0;
-            m_byte_length = other.m_byte_length;
-            __builtin_memcpy(m_buffer, other.m_buffer, other.m_byte_length);
+            this->~String();
+            new (this) String(other);
+
             return *this;
         }
 
@@ -133,11 +131,9 @@ namespace neo
             if (&other == this)
                 return *this;
 
-            delete[] m_buffer;
-            m_buffer = other.m_buffer;
-            other.m_buffer = nullptr;
-            m_byte_length = other.m_byte_length;
-            other.m_byte_length = 0;
+            this->~String();
+            new (this) String(move(other));
+
             return *this;
         }
 
