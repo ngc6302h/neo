@@ -17,7 +17,7 @@
 
 #pragma once
 #include "execinfo.h"
-#include "stdio.h"
+
 extern "C"
 {
     [[noreturn]] extern void __assert_fail(const char* __assertion, const char* __file, unsigned int __line, const char* __function) noexcept(true);
@@ -26,11 +26,11 @@ extern "C"
 static char __backtrace_buffer[sizeof(void*) * 256];
 [[maybe_unused]] [[noreturn]] static void print_backtrace_and_fail(const char* __assertion, const char* __file, unsigned int __line, const char* __function)
 {
-    fprintf(stdout, "Backtrace for failed thread:\n");
+    __builtin_printf("Backtrace for failed thread:\n");
     auto num_addresses = backtrace(reinterpret_cast<void**>(__backtrace_buffer), 256);
     char** resolved_symbols = backtrace_symbols(reinterpret_cast<void* const*>(__backtrace_buffer), num_addresses);
     for (int i = 0; i < num_addresses; ++i)
-        fprintf(stderr, "%s\n", resolved_symbols[i]);
+        __builtin_printf("%s\n", resolved_symbols[i]);
     __builtin_free(resolved_symbols);
     __assert_fail(__assertion, __file, __line, __function);
 }
