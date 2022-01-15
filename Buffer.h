@@ -25,7 +25,7 @@
 namespace neo
 {
     template<typename T>
-    class Buffer
+    class alignas(T) Buffer
     {
     public:
         using iterator = Iterator<Buffer>;
@@ -48,12 +48,17 @@ namespace neo
         static constexpr Buffer create_zero_initialized(size_t size)
         {
             Buffer mem(size);
-            __builtin_memset(mem.m_data, 0, size);
+            __builtin_memset((char*)mem.m_data, 0, size * sizeof(T));
             return mem;
         }
 
         constexpr ~Buffer()
         {
+            if constexpr (!IsTriviallyDestructible<T>)
+            {
+                for (size_t i = 0; i < m_size; ++i)
+                    m_data[i].~T();
+            }
             __builtin_free(m_data);
         }
 
@@ -78,24 +83,21 @@ namespace neo
             if (this == &other)
                 return *this;
 
-            if (other.m_size != m_size)
-            {
-                __builtin_free(m_data);
-                auto ptr = (T*)__builtin_malloc(sizeof(T) * other.m_size);
-                VERIFY(ptr != nullptr);
-                m_data = ptr;
-            }
+            this->~Buffer();
+            new (this) Buffer(other);
 
-            Copy(other.m_size, other.m_data, m_data);
             return *this;
         }
 
         constexpr Buffer& operator=(Buffer&& other)
         {
-            m_data = other.m_data;
-            m_size = other.m_size;
-            other.m_data = nullptr;
-            other.m_size = 0;
+            if (this == &other)
+                return *this;
+
+            this->~Buffer();
+            new (this) Buffer(move(other));
+
+            return *this;
         }
 
         constexpr T& operator[](size_t index)
@@ -109,7 +111,7 @@ namespace neo
             VERIFY(index < m_size);
             return m_data[index];
         }
-        
+
         constexpr size_t size() const
         {
             return m_size;
