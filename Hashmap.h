@@ -190,6 +190,11 @@ namespace neo
             else
                 return m_hashmap.m_buckets[m_bucket][m_element_offset];
         }
+        
+        constexpr bool operator==(HashmapIteratorContainer const& other) const
+        {
+            return &m_hashmap == &other.m_hashmap && m_bucket == other.m_bucket && m_element_offset == other.m_element_offset && m_next == other.m_next;
+        }
 
         constexpr bool is_end() const
         {
@@ -210,22 +215,27 @@ namespace neo
         friend HashmapIteratorContainer<Hashmap, TKey, TValue>;
 
     public:
+        using iterator = HashmapIteratorContainer<Hashmap, TKey, TValue>;
+        using const_iterator = const HashmapIteratorContainer<Hashmap, TKey, TValue>;
+        
+        Hashmap() = delete;
+        
         constexpr Hashmap(size_t initial_bucket_count, size_t initial_bucket_capacity) :
-            m_buckets(initial_bucket_count, false), m_colliding_key_storage((size_t)4, false)
+            m_buckets(initial_bucket_count, false), m_colliding_key_storage((size_t)4, false), m_size(0)
         {
             for (size_t i = 0; i < initial_bucket_count; ++i)
                 m_buckets.append(Buffer<HashmapRecord<TKey, TValue>>::create_zero_initialized(initial_bucket_capacity));
         }
 
         constexpr Hashmap(Hashmap const& other) :
-            m_buckets(other.m_buckets.capacity(), false), m_colliding_key_storage(other.m_colliding_key_storage.capacity(), false)
+            m_buckets(other.m_buckets.capacity(), false), m_colliding_key_storage(other.m_colliding_key_storage.capacity(), false), m_size(other.m_size)
         {
             for (auto& i : other)
                 insert(i.m_key, i.m_value);
         }
 
         constexpr Hashmap(Hashmap&& other) :
-            m_buckets(move(other.m_buckets)), m_colliding_key_storage(move(other.m_colliding_key_storage))
+            m_buckets(move(other.m_buckets)), m_colliding_key_storage(move(other.m_colliding_key_storage)), m_size(other.m_size)
         {
         }
 
@@ -250,20 +260,53 @@ namespace neo
 
             return *this;
         }
+        
+        constexpr iterator begin()
+        {
+            return {*this, false};
+        }
+    
+        constexpr const_iterator begin() const
+        {
+            return {*this, false};
+        }
+    
+        constexpr iterator end()
+        {
+            return {*this, true};
+        }
+    
+        constexpr const_iterator end() const
+        {
+            return {*this, true};
+        }
 
         // returns true if it was inserted, or false if it was already in the table
         template<typename TTValue>
         requires Same<RemoveCV<RemoveReference<TTValue>>, TValue>
         constexpr bool insert(TKey const& key, TTValue&& value)
         {
+            if (m_size > m_buckets.size()*m_buckets[0].size()*0.75)
+            {
+                __builtin_printf("Hashmap size reached %ld, resizing...", m_size);
+                
+                Hashmap larger_hashmap(m_buckets.size()*4, m_buckets.first().size());
+    
+                for (auto& i : *this)
+                    larger_hashmap.insert(i.m_key, move(i.m_value));
+                
+                *this = move(larger_hashmap);
+            }
+            
             size_t hash = Hasher::hash(key);
-            auto bucket = (hash >> sizeof(hash) / 2) % m_buckets.size();
+            auto bucket = (hash >> (sizeof(hash)*8 / 2)) % m_buckets.size();
             auto index = hash % m_buckets[bucket].size();
             auto& hit = m_buckets[bucket][index];
 
             if (hit.m_next == nullptr)
             {
                 new (&hit) HashmapRecord<TKey, TValue> { key, forward<TTValue>(value), (HashmapRecord<TKey, TValue>*)-1 };
+                m_size++;
                 return true;
             }
             else if (hit.m_next == (HashmapRecord<TKey, TValue>*)-1)
@@ -282,6 +325,7 @@ namespace neo
                     {
                         new (&p.template get<Buffer<HashmapRecord<TKey, TValue>>>()[maybe_index.value()]) HashmapRecord<TKey, TValue> { key, value, nullptr };
                         b.set(maybe_index.value(), true);
+                        m_size++;
                         return true;
                     }
                 }
@@ -289,6 +333,7 @@ namespace neo
                 m_colliding_key_storage.construct(Bitset<512> { 512, false }, Buffer<HashmapRecord<TKey, TValue>>::create_zero_initialized(512));
                 m_colliding_key_storage.last().template get<Bitset<512>>().set(0, true);
                 new (&m_colliding_key_storage.last().template get<Buffer<HashmapRecord<TKey, TValue>>>()[0]) HashmapRecord<TKey, TValue> { key, value, nullptr };
+                m_size++;
                 return true;
             }
             else
@@ -311,6 +356,7 @@ namespace neo
                         new (&p.template get<Buffer<HashmapRecord<TKey, TValue>>>()[maybe_index.value()]) HashmapRecord<TKey, TValue> { key, value, nullptr };
                         next->m_next = &p.template get<Buffer<HashmapRecord<TKey, TValue>>>()[maybe_index.value()];
                         b.set(maybe_index.value(), true);
+                        m_size++;
                         return true;
                     }
                 }
@@ -319,14 +365,64 @@ namespace neo
                 m_colliding_key_storage.last().template get<Bitset<512>>().set(0, true);
                 new (&m_colliding_key_storage.last().template get<Buffer<HashmapRecord<TKey, TValue>>>()[0]) HashmapRecord<TKey, TValue> { key, value, nullptr };
                 next->m_next = &m_colliding_key_storage.last().template get<Buffer<HashmapRecord<TKey, TValue>>>()[0];
+                m_size++;
                 return true;
             }
+        }
+        
+        constexpr bool remove(TKey const& key)
+        {
+            size_t hash = Hasher::hash(key);
+            auto bucket = (hash >> (sizeof(hash)*8 / 2)) % m_buckets.size();
+            auto index = hash % m_buckets[bucket].size();
+            auto& hit = m_buckets[bucket][index];
+            
+            if (hit.m_next == nullptr)
+            {
+                return false;
+            }
+            else if (hit.m_next == (HashmapRecord<TKey, TValue>*)-1 && hit.m_key == key)
+            {
+                hit.~HashmapRecord<TKey, TValue>();
+                hit.m_next = nullptr;
+                return true;
+            }
+            else
+            {
+                auto* next = hit.m_next;
+                auto* prev = &hit;
+                while (next != nullptr)
+                {
+                    if (next->m_key == key)
+                    {
+                        prev->m_next = next->m_next;
+                        next->~HashmapRecord<TKey, TValue>();
+                        next->m_next = nullptr;
+                        for (size_t i = 0; i < m_colliding_key_storage.size(); ++i)
+                        {
+                            auto distance = ((size_t)next - (size_t)m_colliding_key_storage[i].template get<Buffer<HashmapRecord<TKey, TValue>>>().data())/sizeof(HashmapRecord<TKey, TValue>);
+                            if (distance < 512)
+                            {
+                                m_colliding_key_storage[i].template get<Bitset<512>>().set(distance, false);
+                                return true;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        prev = next;
+                        next = next->m_next;
+                    }
+                    
+                }
+            }
+            VERIFY_NOT_REACHED();
         }
 
         constexpr Optional<ReferenceWrapper<TValue>> get(TKey const& key)
         {
             size_t hash = Hasher::hash(key);
-            auto bucket = (hash >> sizeof(hash) / 2) % m_buckets.size();
+            auto bucket = (hash >> (sizeof(hash)*8 / 2)) % m_buckets.size();
             auto index = hash % m_buckets[bucket].size();
             auto& hit = m_buckets[bucket][index];
 
@@ -356,7 +452,7 @@ namespace neo
         constexpr Optional<ReferenceWrapper<const TValue>> get(TKey const& key) const
         {
             size_t hash = Hasher::hash(key);
-            auto bucket = (hash >> sizeof(hash) / 2) % m_buckets.size();
+            auto bucket = (hash >> (sizeof(hash)*8 / 2)) % m_buckets.size();
             auto index = hash % m_buckets[bucket].size();
             auto& hit = m_buckets[bucket][index];
 
@@ -386,6 +482,7 @@ namespace neo
     private:
         Vector<Buffer<HashmapRecord<TKey, TValue>>> m_buckets;
         Vector<Pair<Bitset<512>, Buffer<HashmapRecord<TKey, TValue>>>> m_colliding_key_storage;
+        size_t m_size;
     };
 }
 using neo::Hashmap;
