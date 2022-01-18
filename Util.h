@@ -67,3 +67,17 @@ constexpr void* neo_memmem(void* string, size_t string_length, void* substring, 
 static constexpr bool LittleEndian = __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__;
 // true if the architecture is big endian
 static constexpr bool BigEndian = __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__;
+
+static constexpr size_t KiB = 1024;
+static constexpr size_t MiB = KiB * 1024;
+static constexpr size_t GiB = MiB * 1024;
+static constexpr size_t TiB = GiB * 1024;
+static constexpr size_t PiB = TiB * 1024;
+static constexpr size_t EiB = PiB * 1024;
+
+static constexpr size_t KB = 1000;
+static constexpr size_t MB = KB * 1000;
+static constexpr size_t GB = MB * 1000;
+static constexpr size_t TB = GB * 1000;
+static constexpr size_t PB = TB * 1000;
+static constexpr size_t EB = PB * 1000;
