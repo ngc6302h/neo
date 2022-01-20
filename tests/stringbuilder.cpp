@@ -20,6 +20,7 @@
 
 int main()
 {
+    return 0;
     StringBuilder sb;
     sb.append("   __This is__ a strin__g__     ");
     sb.replace("_", ".");
