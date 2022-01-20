@@ -57,10 +57,11 @@ namespace neo
 
         File& operator=(File&& other)
         {
-            m_handle = other.m_handle;
-            m_is_open = other.m_is_open;
-            other.m_handle = nullptr;
-            other.m_is_open = false;
+            if (this == &other)
+                return *this;
+            
+            new (this) File(move(other));
+            
             return *this;
         }
 
