@@ -19,6 +19,10 @@
 #include "Concepts.h"
 #include "Assert.h"
 
+#if !__has_builtin(__builtin_assume)
+    #define __builtin_assume(x)
+#endif
+
 namespace neo
 {
     template<typename T, size_t Alignment>
