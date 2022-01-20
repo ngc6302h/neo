@@ -7,7 +7,7 @@ set(CMAKE_CXX_EXTENSIONS ON)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -flto -DNDEBUG")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -flto -DNDEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -DDEBUG -fsanitize=address -fsanitize=undefined")
-add_compile_options(-fno-exceptions -Wall -Wextra -fdiagnostics-color -Werror -pthread)
+add_compile_options(-fno-exceptions -Wall -Wextra -Werror -fdiagnostics-color -pthread)
 
 project(neo CXX)
 
