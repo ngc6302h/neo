@@ -233,6 +233,13 @@ namespace neo
         make_tuple<T>(u);
         typename T<TExample>::template template_type<TExample>;
     };
+
+    template<typename T>
+    concept MutexLike = requires(T t)
+    {
+        t.lock();
+        t.unlock();
+    };
 }
 using neo::Addable;
 using neo::Arithmetic;
