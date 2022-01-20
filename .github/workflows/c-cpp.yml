@@ -1,0 +1,37 @@
+name: Tests
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test-debug:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: install g++
+      run: sudo apt update && sudo apt install g++-11
+    - name: makedir
+      run: mkdir debug
+    - name: cmake generate
+      run: cd debug && cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=g++-11
+    - name: make
+      run: cd debug && make
+    - name: run tests
+      run: cd debug && ctest
+  test-release:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: install g++
+      run: sudo apt update && sudo apt install g++-11
+    - name: makedir
+      run: mkdir release
+    - name: cmake generate
+      run: cd release && cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++-11
+    - name: make
+      run: cd release && make
+    - name: run tests
+      run: cd release && ctest
