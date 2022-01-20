@@ -13,7 +13,7 @@ project(neo CXX)
 
 include_directories(${CMAKE_SOURCE_DIR})
 
-option(ENABLE_DEBUG_ASSERTS "Defines #DEBUG" ON)
+option(ENABLE_DEBUG_ASSERTS "Defines #DEBUG_ASSERTS" ON)
 option(VERBOSE_ASSERTS "Print backtraces when an assertion fails" ON)
 
 if(ENABLE_DEBUG_ASSERTS)
