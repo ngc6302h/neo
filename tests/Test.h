@@ -25,3 +25,38 @@
 #define TEST_EQUAL(expr1, expr2) VERIFY(expr1 == expr2)
 #define TEST_NOT_EQUAL(expr1, expr2) VERIFY(expr1 != expr2)
 #define TEST_UNREACHABLE() VERIFY_NOT_REACHED()
+
+struct LifetimeLogger
+{
+    LifetimeLogger()
+    {
+        __builtin_printf("Object constructed\n");
+    }
+    
+    ~LifetimeLogger()
+    {
+        __builtin_printf("Object destroyed\n");
+    }
+    
+    LifetimeLogger(LifetimeLogger const&)
+    {
+        __builtin_printf("Object copied\n");
+    }
+    
+    LifetimeLogger(LifetimeLogger&&)
+    {
+        __builtin_printf("Object moved\n");
+    }
+    
+    LifetimeLogger& operator=(LifetimeLogger const&)
+    {
+        __builtin_printf("Object copy assigned\n");
+        return *this;
+    }
+    
+    LifetimeLogger& operator=(LifetimeLogger&&)
+    {
+        __builtin_printf("Object move assigned\n");
+        return *this;
+    }
+};
