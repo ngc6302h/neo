@@ -54,7 +54,7 @@ namespace neo
             __atomic_store_n(&m_value, value, order);
         }
         
-        constexpr T load(MemoryOrder order)
+        constexpr T load(MemoryOrder order) const
         {
             return __atomic_load_n(&m_value, order);
         }
