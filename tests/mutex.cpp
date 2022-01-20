@@ -16,20 +16,10 @@
  */
 
 #include "Test.h"
-#include <String.h>
+//#include <Mutex.h>
 
 int main()
 {
-    String a { "String A" };
-    String b = a.substring(0);
-    TEST_EQUAL(a, b);
-    TEST_EQUAL("tring A"_s, a.substring(1));
-    __builtin_printf("%d|\n", "tring A"_s == a.substring(1));
-    TEST_EQUAL(b.substring(b.length()), ""_s);
-    TEST_EQUAL(b.substring(b.length(), 0), ""_s);
-    TEST_EQUAL(b.substring(b.begin()), b);
-    __builtin_printf("%s\n%s\n", b.null_terminated_characters(), b.substring(b.begin(), b.length()).null_terminated_characters());
-    auto end = b.end();
-    TEST_EQUAL(b.substring(--end), "A"_s);
-    return 0;
+    // TODO!
+    return  0;
 }

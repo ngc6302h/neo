@@ -134,10 +134,10 @@ int main()
     GenericLexer lexer({separator_lex_rule, keyword_lex_rule, operator_lex_rule, identifier_lex_rule, numeric_lex_rule});
     auto tokens = lexer.tokenize(sample);
     for (const auto& t : tokens)
-        printf("At: L%zuP%zu Type: %s Value: %s\n",t.linepos.line, t.linepos.pos, dynamic_nameof(t.type).non_null_terminated_buffer(), t.value.null_terminated_characters());
+        __builtin_printf("At: L%zuP%zu Type: %s Value: %s\n",t.linepos.line, t.linepos.pos, dynamic_nameof(t.type).non_null_terminated_buffer(), t.value.null_terminated_characters());
     for (const auto& t : tokens)
-        printf("%s", t.value.null_terminated_characters());
-    printf("\n%zu\n", tokens.size());
+        __builtin_printf("%s", t.value.null_terminated_characters());
+    __builtin_printf("\n%zu\n", tokens.size());
     TEST_EQUAL(tokens.size(), 550);
     return 0;
 }

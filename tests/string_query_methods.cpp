@@ -38,7 +38,7 @@ int main()
     TEST_NOT_EQUAL(a, "other string"_sv);
     TEST_EQUAL(a, String(a));
     String b = "こんにちわ"_s;
-    printf("%s\n", b.null_terminated_characters());
+    __builtin_printf("%s\n", b.null_terminated_characters());
     __builtin_printf("%zu\n", b.byte_size());
     __builtin_printf("%zu\n", b.length());
     TEST_EQUAL(b.length(), 5);

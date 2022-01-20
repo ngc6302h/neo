@@ -7,23 +7,10 @@
 #include <String.h>
 #include <TypeExtras.h>
 
-struct LifetimeLogger
-{
-    LifetimeLogger()
-    {
-        printf("Object constructed\n");
-    }
-    
-    ~LifetimeLogger()
-    {
-        printf("Object destroyed\n");
-    }
-};
-
 int main()
 {
     Variant<int, String, LifetimeLogger, bool> variant {LifetimeLogger() };
-    printf("%s\n", nameof<decltype(variant)>.non_null_terminated_buffer());
+    __builtin_printf("%s\n", nameof<decltype(variant)>.non_null_terminated_buffer());
     TEST_EQUAL(nameof<decltype(variant)>, "neo::Variant<int, neo::String, LifetimeLogger, bool>");
     variant = "Hello world"_s;
     TEST(variant.check_type_active<String>());
