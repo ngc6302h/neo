@@ -18,6 +18,7 @@
 #pragma once
 #include "Atomic.h"
 #include "Optional.h"
+#include <Concepts.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 
@@ -29,52 +30,53 @@ namespace neo
         constexpr Mutex() = default;
         constexpr Mutex& operator=(Mutex&) = delete;
         constexpr Mutex& operator=(Mutex&&) = delete;
-        
+
         constexpr ~Mutex()
         {
             VERIFY(m_control.load(Relaxed) == 0);
         }
-        
+
         constexpr void lock()
         {
             size_t expected = 0;
-            while (!m_control.compare_exchange_strong(expected, 1, AcquireRelease, Acquire));
+            while (!m_control.compare_exchange_strong(expected, 1, AcquireRelease, Acquire))
+                ;
         }
-        
+
         constexpr bool try_lock()
         {
             size_t expected = 0;
             return m_control.compare_exchange_strong(expected, 1, AcquireRelease, Acquire);
         }
-    
+
         constexpr bool unlock()
         {
             size_t expected = 1;
             bool result = m_control.compare_exchange_strong(expected, 0, AcquireRelease, Acquire);
             return result;
         }
-        
+
         constexpr bool is_locked() const
         {
             return m_control.load(Acquire) == 1;
         }
-        
+
     private:
-        Atomic<size_t> m_control {0};
+        Atomic<size_t> m_control { 0 };
     };
-    
+
     class RecursiveMutex
     {
     public:
         RecursiveMutex() = default;
         RecursiveMutex& operator=(RecursiveMutex const&) = delete;
-        RecursiveMutex& operator=(RecursiveMutex &&) = delete;
-        
+        RecursiveMutex& operator=(RecursiveMutex&&) = delete;
+
         ~RecursiveMutex()
         {
             VERIFY(m_control.load(Relaxed) == 0);
         }
-        
+
         size_t lock()
         {
             auto tid = syscall(__NR_gettid);
@@ -89,13 +91,12 @@ namespace neo
                 {
                     expected = 0;
                     m_control.compare_exchange_weak(expected, 1, AcquireRelease, Acquire);
-                }
-                while (expected != 0);
+                } while (expected != 0);
                 m_tid = tid;
                 return 1;
             }
         }
-        
+
         bool try_lock()
         {
             auto tid = syscall(__NR_gettid);
@@ -113,7 +114,7 @@ namespace neo
                 return success;
             }
         }
-        
+
         void unlock()
         {
             auto tid = syscall(__NR_gettid);
@@ -125,14 +126,40 @@ namespace neo
                 m_control.sub_fetch(1, AcquireRelease);
             }
         }
-        
+
         bool is_locked() const
         {
             return m_control.load(Acquire) != 0;
         }
 
     private:
-        Atomic<size_t> m_control {0};
-        long m_tid {0};
+        Atomic<size_t> m_control { 0 };
+        long m_tid { 0 };
+    };
+
+    template<MutexLike T>
+    class ScopedLock
+    {
+    public:
+        ScopedLock() = delete;
+        ScopedLock& operator=(ScopedLock const&) = delete;
+        ScopedLock& operator=(ScopedLock&&) = delete;
+
+        constexpr ScopedLock(T& mutex) :
+            m_mutex(mutex)
+        {
+            mutex.lock();
+        }
+
+        constexpr ~ScopedLock()
+        {
+            m_mutex.unlock();
+        }
+
+    private:
+        T& m_mutex;
     };
 }
+using neo::Mutex;
+using neo::RecursiveMutex;
+using neo::ScopedLock;
