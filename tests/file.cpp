@@ -18,8 +18,9 @@
 #include "Test.h"
 #include <File.h>
 
-int main(int, char** argv)
+int main(int, [[maybe_unused]] char** argv)
 {
+#ifndef DEBUG_ASSERTS
     printf("%s\n", get_current_dir_name());
     auto maybe_error = File::exists(argv[0]);
     TEST_FALSE(maybe_error.has_value());
@@ -58,5 +59,6 @@ int main(int, char** argv)
     auto file_or_error2 = File::open("__idonotexist__", "r");
     TEST(file_or_error2.has_error());
     TEST_EQUAL(file_or_error2.error(), neo::Error::NoSuchEntity);
+#endif
     return 0;
 }
