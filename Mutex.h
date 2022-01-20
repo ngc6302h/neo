@@ -30,6 +30,11 @@ namespace neo
         constexpr Mutex& operator=(Mutex&) = delete;
         constexpr Mutex& operator=(Mutex&&) = delete;
         
+        constexpr ~Mutex()
+        {
+            VERIFY(m_control.load(Relaxed) == 0);
+        }
+        
         constexpr void lock()
         {
             size_t expected = 0;
@@ -64,6 +69,11 @@ namespace neo
         RecursiveMutex() = default;
         RecursiveMutex& operator=(RecursiveMutex const&) = delete;
         RecursiveMutex& operator=(RecursiveMutex &&) = delete;
+        
+        ~RecursiveMutex()
+        {
+            VERIFY(m_control.load(Relaxed) == 0);
+        }
         
         size_t lock()
         {
