@@ -68,12 +68,12 @@ namespace neo
         {
             ref = nullptr;
         }
-        
+
         constexpr T& unwrapped()
         {
             return *ref;
         }
-        
+
         constexpr T const& unwrapped() const
         {
             return *ref;

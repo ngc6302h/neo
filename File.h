@@ -59,9 +59,9 @@ namespace neo
         {
             if (this == &other)
                 return *this;
-            
+
             new (this) File(move(other));
-            
+
             return *this;
         }
 
@@ -81,7 +81,7 @@ namespace neo
         [[nodiscard]] static Optional<Error> exists(const StringView& path)
         {
 #ifdef _WIN32
-    #pragma warning(suppress : 4996)
+    #pragma warning(suppress:4996)
 #endif
             auto success = access(path.non_null_terminated_buffer(), F_OK);
             if (success == 0)
