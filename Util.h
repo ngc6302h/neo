@@ -46,8 +46,8 @@ constexpr T min(T x, T y, Rest... values)
 template<typename T>
 constexpr T clamp(T minval, T maxval, T value)
 {
-    return value > maxval ? maxval : value < minval ? minval
-                                                    : value;
+    return value > maxval ? maxval : value < minval ? minval :
+                                                      value;
 }
 
 constexpr void* neo_memmem(void* string, size_t string_length, void* substring, size_t substring_length)

@@ -240,6 +240,9 @@ namespace neo
         t.lock();
         t.unlock();
     };
+
+    template<typename T>
+    concept POD = IsTrivial<T>;
 }
 using neo::Addable;
 using neo::Arithmetic;

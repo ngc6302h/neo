@@ -16,6 +16,7 @@
  */
 
 #pragma once
+#include "Util.h"
 #include "String.h"
 #include "StringCommon.h"
 #include "Text.h"

@@ -135,8 +135,9 @@ namespace neo
         return detail::_zip<TTupleA::size(), TTupleA, TTupleB>::zip(a, b);
     }
 
-    template<typename TTupleA, typename TTupleB, typename... TTuples> requires((TTupleA::size() == TTuples::size())&&...)
-    [[nodiscard]] constexpr decltype(auto) zip(const TTupleA& first, const TTupleB& second, const TTuples&... tuples)
+    template<typename TTupleA, typename TTupleB, typename... TTuples>
+    requires((TTupleA::size() == TTuples::size()) && ...)
+        [[nodiscard]] constexpr decltype(auto) zip(const TTupleA& first, const TTupleB& second, const TTuples&... tuples)
     {
         return zip(zip(first, second), tuples...);
     }

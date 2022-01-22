@@ -17,6 +17,7 @@
 
 #pragma once
 #include "Types.h"
+#include "Util.h"
 #include "TypeExtras.h"
 #include "Concepts.h"
 #include "Vector.h"
