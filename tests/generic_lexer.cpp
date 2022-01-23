@@ -89,12 +89,12 @@ int main()
     auto separator_lex_rule = neo::GenericLexer::LexingRule {
         90,
         [](Utf32Char c)
-        { static Vector<Utf32Char> separators = {'(', ')', ';', ':', '{', '}', ',', '\'', '"'}; return separators.contains(c); },
+        { static Vector<Utf32Char> separators {'(', ')', ';', ':', '{', '}', ',', '\'', '"'}; return separators.contains(c); },
         neo::GenericLexer::LexingRuleAction::Read,
         [](Utf32Char c, StringView const&)
-        { static Vector<Utf32Char> separators = {'(', ')', ';', ':', '{', '}', ',', '\'', '"'}; return !separators.contains(c) && !isspace(c) && !ISALPHA(c) && !ISNUM(c); },
+        { static Vector<Utf32Char> separators {'(', ')', ';', ':', '{', '}', ',', '\'', '"'}; return !separators.contains(c) && !isspace(c) && !ISALPHA(c) && !ISNUM(c); },
         [](String const& word)
-        { static Vector<String> separators = {"(", ")", ";", ":", "{", "}", ",", "'", "\""}; return separators.contains(word); },
+        { static Vector<String> separators {"(", ")", ";", ":", "{", "}", ",", "'", "\""}; return separators.contains(word); },
         neo::GenericLexerTokenType::Separator
     };
 
@@ -106,19 +106,19 @@ int main()
         [](Utf32Char c, StringView const&)
         { return ISALPHA(c); },
         [](String const& word)
-        { static Vector<String> keywords = {"void", "struct", "static", "inline", "int", "unsigned", "short", "char", "long", "signed", "const", "if", "for", "do", "while", "goto", "return"}; return keywords.contains(word); },
+        { static Vector<String> keywords {"void", "struct", "static", "inline", "int", "unsigned", "short", "char", "long", "signed", "const", "if", "for", "do", "while", "goto", "return"}; return keywords.contains(word); },
         neo::GenericLexerTokenType::Keyword
     };
 
     auto operator_lex_rule = neo::GenericLexer::LexingRule {
         200,
         [](Utf32Char c)
-        { static Vector<String> operators = {"+", "-", "*", "/", "=", "==", "!=", "<", ">", "!", "%"}; return contains(operators, c, string_contains_char); },
+        { static Vector<String> operators {"+", "-", "*", "/", "=", "==", "!=", "<", ">", "!", "%"}; return contains(operators, c, string_contains_char); },
         neo::GenericLexer::LexingRuleAction::Read,
         [](Utf32Char c, StringView const&)
-        { static Vector<String> operators = {"+", "-", "*", "/", "=", "==", "!=", "<", ">", "!", "%"}; return contains(operators, c, string_contains_char); },
+        { static Vector<String> operators {"+", "-", "*", "/", "=", "==", "!=", "<", ">", "!", "%"}; return contains(operators, c, string_contains_char); },
         [](String const& word)
-        { static Vector<String> operators = {"+", "-", "*", "/", "=", "==", "!=", "<", ">", "!", "%"}; return operators.contains(word); },
+        { static Vector<String> operators {"+", "-", "*", "/", "=", "==", "!=", "<", ">", "!", "%"}; return operators.contains(word); },
         neo::GenericLexerTokenType::Operator
     };
 
@@ -146,9 +146,7 @@ int main()
         neo::GenericLexerTokenType::Literal
     };
 
-    neo::Vector<GenericLexer::LexingRule> lexing_rules;
-
-    GenericLexer lexer({ separator_lex_rule, keyword_lex_rule, operator_lex_rule, identifier_lex_rule, numeric_lex_rule });
+    GenericLexer lexer(Vector<GenericLexer::LexingRule> { separator_lex_rule, keyword_lex_rule, operator_lex_rule, identifier_lex_rule, numeric_lex_rule });
     auto tokens = lexer.tokenize(sample);
     for (const auto& t : tokens)
         __builtin_printf("At: L%zuP%zu Type: %s Value: %s\n", t.linepos.line, t.linepos.pos, dynamic_nameof(t.type).non_null_terminated_buffer(), t.value.null_terminated_characters());

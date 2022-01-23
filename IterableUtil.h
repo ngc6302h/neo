@@ -24,7 +24,7 @@
 
 namespace neo
 {
-    template<typename T>
+    template<typename T, size_t InlineStorage = 0>
     class Vector;
 
     template<IterableContainer TContainer, typename T, typename TComparerFunc>
