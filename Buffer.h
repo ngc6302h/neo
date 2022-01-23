@@ -25,7 +25,7 @@
 namespace neo
 {
     template<typename T>
-    class alignas(T) Buffer
+    class Buffer
     {
     public:
         using iterator = Iterator<Buffer>;
