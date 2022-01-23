@@ -214,10 +214,24 @@ namespace neo
     concept Container = requires(T t)
     {
         typename T::type;
+        {
+            t.size()
+            } -> Same<size_t>;
     };
 
     template<typename T>
     concept IterableContainer = Iterable<T> && Container<T>;
+
+    template<typename T>
+    concept ContiguousContainer = Container<T> && requires(T t)
+    {
+        {
+            t.data()
+            } -> Pointer;
+    };
+
+    template<typename T>
+    concept ContiguousIterableContainer = Iterable<T> && ContiguousContainer<T>;
 
     template<typename T>
     concept FixedContainer = requires(T t)
@@ -250,6 +264,8 @@ using neo::BaseOf;
 using neo::Callable;
 using neo::CallableWithReturnType;
 using neo::Container;
+using neo::ContiguousContainer;
+using neo::ContiguousIterableContainer;
 using neo::CopyAssignable;
 using neo::CopyConstructable;
 using neo::Decrementable;
