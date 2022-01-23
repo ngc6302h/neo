@@ -316,7 +316,6 @@ namespace neo
         }
 
         template<typename TT = Span<T>>
-        requires Same<Naked<TT>, Span<T>>
         constexpr void append(TT&& items)
         {
             ensure_capacity(m_size + items.size());

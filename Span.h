@@ -29,6 +29,7 @@ namespace neo
     public:
         using SpanIterator = Iterator<Span>;
         using ConstantSpanIterator = Iterator<const Span>;
+        using type = T;
 
         constexpr Span() = delete;
 

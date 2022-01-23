@@ -146,7 +146,7 @@ int main()
         neo::GenericLexerTokenType::Literal
     };
 
-    GenericLexer lexer(Vector<GenericLexer::LexingRule> { separator_lex_rule, keyword_lex_rule, operator_lex_rule, identifier_lex_rule, numeric_lex_rule });
+    GenericLexer lexer(Vector<GenericLexer::LexingRule, 10> { separator_lex_rule, keyword_lex_rule, operator_lex_rule, identifier_lex_rule, numeric_lex_rule });
     auto tokens = lexer.tokenize(sample);
     for (const auto& t : tokens)
         __builtin_printf("At: L%zuP%zu Type: %s Value: %s\n", t.linepos.line, t.linepos.pos, dynamic_nameof(t.type).non_null_terminated_buffer(), t.value.null_terminated_characters());
