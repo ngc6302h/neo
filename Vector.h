@@ -29,14 +29,18 @@
 
 namespace neo
 {
-    template<typename T /*, typename Allocator = neo::DefaultAllocator */>
+    template<typename T, size_t InlineStorage /*, typename Allocator = neo::DefaultAllocator */>
     class Vector : public IContainer<Vector, T>, public IterableExtensions<Vector<T>, RemoveReferenceWrapper<T>>
     {
-        static constexpr size_t DEFAULT_SIZE { 16 };
+        template<typename, size_t>
+        friend class Vector;
 
     public:
         using VectorIterator = Iterator<Vector>;
         using VectorConstantIterator = Iterator<const Vector>;
+        static constexpr size_t DEFAULT_SIZE { 16 };
+        static constexpr size_t InlineStorageSize = InlineStorage;
+
         constexpr Vector() :
             m_capacity(DEFAULT_SIZE)
         {
@@ -56,12 +60,171 @@ namespace neo
             allocate(initial_capacity);
         }
 
-        constexpr Vector(const Vector& other)
+        template<size_t OtherInlineSize>
+        constexpr Vector(Vector<T, OtherInlineSize> const& other)
         {
             clean();
             ensure_capacity(max(1UL, other.size()));
-            Copy(other.size(), other.data(), m_data);
+
+            if constexpr (InlineStorage != 0)
+            {
+                if (other.size() < InlineStorage)
+                {
+                    if constexpr (other.InlineStorageSize != 0)
+                    {
+                        Copy(other.size(), other.m_inline_storage, m_inline_storage);
+                        if (other.size() > other.InlineStorageSize)
+                            Copy(other.size() - other.InlineStorageSize, other.m_data, m_inline_storage + other.InlineStorageSize);
+                    }
+                    else
+                    {
+                        Copy(other.size(), other.m_data, m_inline_storage);
+                    }
+                }
+                else
+                {
+                    if constexpr (other.InlineStorageSize != 0)
+                    {
+                        if constexpr (InlineStorage > other.InlineStorageSize)
+                        {
+                            Copy(other.InlineStorageSize, other.m_inline_storage, m_inline_storage);
+                            if (other.m_size < InlineStorage)
+                                Copy(other.m_size - other.InlineStorageSize, other.m_data, m_inline_storage + other.InlineStorageSize);
+                            else
+                            {
+                                Copy(InlineStorage - other.InlineStorageSize, other.m_data, m_inline_storage + other.InlineStorageSize);
+                                Copy(other.m_size - InlineStorage, other.m_data + InlineStorage - other.InlineStorageSize, m_data);
+                            }
+                        }
+                        else
+                        {
+                            Copy(InlineStorage, other.m_inline_storage, m_inline_storage);
+                            if (other.m_size > other.InlineStorageSize)
+                            {
+                                Copy(other.InlineStorageSize - InlineStorage, other.m_inline_storage + InlineStorage, m_data);
+                                Copy(other.m_size - other.m_inline_storage, other.m_data, m_data + other.InlineStorageSize);
+                            }
+                            else
+                            {
+                                Copy(other.m_size - InlineStorage, other.m_inline_storage + InlineStorage, m_data);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Copy(InlineStorage, other.m_data, m_inline_storage);
+                        if (InlineStorage < other.m_size)
+                            Copy(other.m_size - InlineStorage, other.m_data + InlineStorage, m_data + InlineStorage);
+                    }
+                }
+            }
+            else
+            {
+                if constexpr (other.InlineStorageSize != 0)
+                {
+                    Copy(other.InlineStorageSize, m_inline_storage, m_data);
+                    if (other.m_size > other.InlineStorageSize)
+                        Copy(other.m_size - other.InlineStorageSize, other.m_data, m_data + other.InlineStorageSize);
+                }
+                else
+                {
+                    Copy(other.m_size, other.m_data, m_data);
+                }
+            }
             m_size = other.m_size;
+        }
+
+        template<size_t OtherInlineSize>
+        constexpr Vector(Vector<T, OtherInlineSize>&& other)
+        {
+            clean();
+            ensure_capacity(max(1UL, other.size()));
+
+            if constexpr (InlineStorage != 0)
+            {
+                if (other.size() < InlineStorage)
+                {
+                    if constexpr (other.InlineStorageSize != 0)
+                    {
+                        MoveOrCopy(other.size(), other.m_inline_storage, m_inline_storage);
+                        if (other.size() > other.InlineStorageSize)
+                            MoveOrCopy(other.size() - other.InlineStorageSize, other.m_data, m_inline_storage + other.InlineStorageSize);
+                    }
+                    else
+                    {
+                        MoveOrCopy(other.size(), other.m_data, m_inline_storage);
+                    }
+                }
+                else
+                {
+                    if constexpr (other.InlineStorageSize != 0)
+                    {
+                        if constexpr (InlineStorage > other.InlineStorageSize)
+                        {
+                            MoveOrCopy(other.InlineStorageSize, other.m_inline_storage, m_inline_storage);
+                            if (other.m_size < InlineStorage)
+                                MoveOrCopy(other.m_size - other.InlineStorageSize, other.m_data, m_inline_storage + other.InlineStorageSize);
+                            else
+                            {
+                                MoveOrCopy(InlineStorage - other.InlineStorageSize, other.m_data, m_inline_storage + other.InlineStorageSize);
+                                MoveOrCopy(other.m_size - InlineStorage, other.m_data + InlineStorage - other.InlineStorageSize, m_data);
+                            }
+                        }
+                        else
+                        {
+                            MoveOrCopy(InlineStorage, other.m_inline_storage, m_inline_storage);
+                            if (other.m_size > other.InlineStorageSize)
+                            {
+                                MoveOrCopy(other.InlineStorageSize - InlineStorage, other.m_inline_storage + InlineStorage, m_data);
+                                MoveOrCopy(other.m_size - other.m_inline_storage, other.m_data, m_data + other.InlineStorageSize);
+                            }
+                            else
+                            {
+                                MoveOrCopy(other.m_size - InlineStorage, other.m_inline_storage + InlineStorage, m_data);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        MoveOrCopy(InlineStorage, other.m_data, m_inline_storage);
+                        if (InlineStorage < other.m_size)
+                            MoveOrCopy(other.m_size - InlineStorage, other.m_data + InlineStorage, m_data + InlineStorage);
+                    }
+                }
+            }
+            else
+            {
+                if constexpr (other.InlineStorageSize != 0)
+                {
+                    MoveOrCopy(other.InlineStorageSize, other.m_inline_storage, m_data);
+                    if (other.m_size > other.InlineStorageSize)
+                        MoveOrCopy(other.m_size - other.InlineStorageSize, other.m_data, m_data + other.InlineStorageSize);
+                }
+                else
+                {
+                    MoveOrCopy(other.m_size, other.m_data, m_data);
+                }
+            }
+            m_size = other.m_size;
+            other.m_data = nullptr;
+            other.m_size = 0;
+            other.m_capacity = 0;
+        }
+
+        constexpr Vector(Vector const& other)
+        {
+            ensure_capacity(other.m_size);
+            m_size = other.m_size;
+            if constexpr (InlineStorage != 0)
+            {
+                Copy(other.m_size, other.m_inline_storage, m_inline_storage);
+                if (other.m_size > InlineStorage)
+                    Copy(other.m_size - InlineStorage, other.m_data, m_data);
+            }
+            else
+            {
+                Copy(other.m_size, other.m_data, m_data);
+            }
         }
 
         constexpr Vector(Vector&& other) :
@@ -72,7 +235,7 @@ namespace neo
             other.m_data = nullptr;
         }
 
-        explicit constexpr Vector(const Span<T>& other) :
+        explicit constexpr Vector(Span<T> const& other) :
             m_capacity(other.size()), m_size(other.size())
         {
             clean();
@@ -83,26 +246,35 @@ namespace neo
 
     private:
         template<size_t ItemsLeft, typename TFirst, typename... TRest>
-        constexpr void initializer_list_copy_helper(size_t index, TFirst const& first, TRest const&... rest)
+        constexpr void initializer_list_copy_helper(size_t index, TFirst&& first, TRest&&... rest)
         {
             if constexpr (ItemsLeft != 0)
             {
-                m_data[index] = first;
+                if constexpr (InlineStorage != 0)
+                {
+                    if (index < InlineStorage)
+                        new (m_inline_storage + index) T(first);
+                    else
+                        new (m_data + index - InlineStorage) T(first);
+                }
+                else
+                    new (m_data + index) T(first);
                 if constexpr (ItemsLeft - 1 != 0)
-                    initializer_list_copy_helper<ItemsLeft - 1, TRest...>(index + 1, rest...);
+                    initializer_list_copy_helper<ItemsLeft - 1, TRest...>(index + 1, forward<TRest>(rest)...);
             }
         }
 
     public:
         template<typename... Ts>
-        constexpr Vector(Ts const&... items) :
+        explicit constexpr Vector(Ts&&... items) :
             m_capacity(sizeof...(Ts)), m_size(sizeof...(Ts))
         {
             allocate(sizeof...(items));
-            initializer_list_copy_helper<sizeof...(Ts), Ts...>(0, items...);
+            initializer_list_copy_helper<sizeof...(Ts), Ts...>(0, forward<Ts>(items)...);
         }
 
-        constexpr Vector& operator=(const Vector& other)
+        template<size_t OtherInlineSize>
+        constexpr Vector& operator=(Vector<T, OtherInlineSize> const& other)
         {
             if (&other == this)
                 return *this;
@@ -113,7 +285,8 @@ namespace neo
             return *this;
         }
 
-        constexpr Vector& operator=(Vector&& other)
+        template<size_t OtherInlineSize>
+        constexpr Vector& operator=(Vector<T, OtherInlineSize>&& other)
         {
             if (&other == this)
                 return *this;
@@ -129,7 +302,17 @@ namespace neo
         constexpr void append(TT&& e)
         {
             ensure_capacity(m_size + 1);
-            new (&m_data[m_size++]) T { forward<TT>(e) };
+            if constexpr (InlineStorage != 0)
+            {
+                if (m_size < InlineStorage)
+                    new (&m_inline_storage[m_size++]) T { forward<TT>(e) };
+                else
+                    new (&m_data[m_size++ - InlineStorage]) T { forward<TT>(e) };
+            }
+            else
+            {
+                new (&m_data[m_size++]) T { forward<TT>(e) };
+            }
         }
 
         template<typename TT = Span<T>>
@@ -137,10 +320,36 @@ namespace neo
         constexpr void append(TT&& items)
         {
             ensure_capacity(m_size + items.size());
-            if constexpr (IsRvalueReference<TT>)
-                MoveOrCopy<T>(items.size(), items.data(), m_data + m_size);
+
+            if constexpr (InlineStorage != 0)
+            {
+                if (m_size < InlineStorage)
+                {
+                    if constexpr (IsRvalueReference<TT>)
+                        MoveOrCopy<T>(InlineStorage - m_size, items.data(), m_inline_storage + m_size);
+                    else
+                        Copy<T>(InlineStorage - m_size, items.data(), m_inline_storage + m_size);
+
+                    if constexpr (IsRvalueReference<TT>)
+                        MoveOrCopy<T>(items.size() - (InlineStorage - m_size), items.data() + InlineStorage - m_size, m_data + m_size);
+                    else
+                        Copy<T>(items.size() - (InlineStorage - m_size), items.data() + InlineStorage - m_size, m_data + m_size);
+                }
+                else
+                {
+                    if constexpr (IsRvalueReference<TT>)
+                        MoveOrCopy<T>(items.size(), items.data(), m_data + m_size - InlineStorage);
+                    else
+                        Copy<T>(items.size(), items.data(), m_data + m_size - InlineStorage);
+                }
+            }
             else
-                Copy<T>(items.size(), items.data(), m_data + m_size);
+            {
+                if constexpr (IsRvalueReference<TT>)
+                    MoveOrCopy<T>(items.size(), items.data(), m_data + m_size);
+                else
+                    Copy<T>(items.size(), items.data(), m_data + m_size);
+            }
             m_size += items.size();
         }
 
@@ -155,8 +364,19 @@ namespace neo
             VERIFY(index < m_size);
             if (index != m_size - 1)
             {
-                if constexpr (IsTrivial<T>)
-                    OverlappingUntypedCopy(m_size - index, m_data + index + 1, m_data + index);
+                if constexpr (InlineStorage != 0)
+                {
+                    if (index < InlineStorage)
+                    {
+                        MoveOrCopy(InlineStorage - index - 1, m_inline_storage + index + 1, m_inline_storage + index);
+                        m_inline_storage[InlineStorage - 1] = m_data[0];
+                        MoveOrCopy(m_size - InlineStorage, m_data + 1, m_data);
+                    }
+                    else
+                    {
+                        MoveOrCopy(m_size - InlineStorage - 1, m_data + index - InlineStorage + 1, m_data + index - InlineStorage);
+                    }
+                }
                 else
                     MoveOrCopy(m_size - index - 1, m_data + index + 1, m_data + index);
             }
@@ -167,7 +387,26 @@ namespace neo
         constexpr T& construct(Args... args)
         {
             ensure_capacity(m_size + 1);
-            m_data[m_size] = T { forward<Args>(args)... };
+            if (InlineStorage != 0)
+            {
+                if (m_size < InlineStorage)
+                {
+                    m_inline_storage[m_size] = T { forward<Args>(args)... };
+                }
+                else
+                {
+                    m_data[m_size - InlineStorage] = T { forward<Args>(args)... };
+                }
+            }
+            else
+            {
+                m_data[m_size] = T { forward<Args>(args)... };
+            }
+            if (InlineStorage != 0)
+            {
+                if (m_size < InlineStorage)
+                    return m_inline_storage[m_size++];
+            }
             return m_data[m_size++];
         }
 
@@ -190,8 +429,19 @@ namespace neo
         {
             VERIFY(new_capacity > 0);
 
-            T* new_buf = (T*)__builtin_calloc(new_capacity, sizeof(T));
-            MoveOrCopy(m_size, m_data, new_buf);
+            if constexpr (InlineStorage != 0)
+            {
+                if (new_capacity < InlineStorage)
+                    return;
+            }
+
+            T* new_buf = (T*)__builtin_calloc(new_capacity - InlineStorage, sizeof(T));
+            if constexpr (InlineStorage != 0)
+            {
+                if (m_size < InlineStorage)
+                    return;
+            }
+            MoveOrCopy(m_size - InlineStorage, m_data, new_buf);
             clean();
             deallocate();
             m_data = new_buf;
@@ -201,6 +451,11 @@ namespace neo
         constexpr void ensure_capacity(size_t needed_capacity)
         {
             VERIFY(needed_capacity > 0);
+            if constexpr (InlineStorage != 0)
+            {
+                if (needed_capacity < InlineStorage)
+                    return;
+            }
             if (m_capacity < needed_capacity)
             {
                 change_capacity(needed_capacity * 2);
@@ -209,14 +464,24 @@ namespace neo
 
         [[nodiscard]] constexpr T& at(size_t index)
         {
-
             VERIFY(index < m_size);
-            return m_data[index];
+            if constexpr (InlineStorage != 0)
+            {
+                if (index < InlineStorage)
+                    return m_inline_storage[index];
+            }
+            return m_data[index - InlineStorage];
         }
+
         [[nodiscard]] constexpr const T& at(size_t index) const
         {
             VERIFY(index < m_size);
-            return m_data[index];
+            if constexpr (InlineStorage != 0)
+            {
+                if (index < InlineStorage)
+                    return m_inline_storage[index];
+            }
+            return m_data[index - InlineStorage];
         }
 
         [[nodiscard]] constexpr const T& first() const
@@ -243,7 +508,23 @@ namespace neo
         {
             T value = move(first());
             m_size--;
-            TypedMove(m_size, m_data + 1, m_data);
+            if constexpr (InlineStorage == 0)
+            {
+                if (m_size < InlineStorage)
+                {
+                    MoveOrCopy(m_size, m_inline_storage + 1, m_inline_storage);
+                }
+                else
+                {
+                    MoveOrCopy(InlineStorage - 1, m_inline_storage + 1, m_inline_storage);
+                    m_inline_storage[InlineStorage - 1] = m_data[0];
+                    MoveOrCopy(m_size - InlineStorage, m_data + 1, m_data);
+                }
+            }
+            else
+            {
+                MoveOrCopy(m_size, m_data + 1, m_data);
+            }
             return value;
         }
 
@@ -265,12 +546,12 @@ namespace neo
             return at(index);
         }
 
-        [[nodiscard]] constexpr T* data()
+        [[nodiscard]] constexpr T* data() requires(InlineStorage == 0)
         {
             return m_data;
         }
 
-        [[nodiscard]] constexpr const T* data() const
+        [[nodiscard]] constexpr const T* data() const requires(InlineStorage == 0)
         {
             return m_data;
         }
@@ -287,12 +568,12 @@ namespace neo
             m_size = 0;
         }
 
-        [[nodiscard]] constexpr Span<T> span()
+        [[nodiscard]] constexpr Span<T> span() requires(InlineStorage == 0)
         {
             return { m_data, m_size };
         }
 
-        [[nodiscard]] constexpr Span<const T> span() const
+        [[nodiscard]] constexpr Span<const T> span() const requires(InlineStorage == 0)
         {
             return { m_data, m_size };
         }
@@ -322,7 +603,14 @@ namespace neo
         {
             if constexpr (!IsTriviallyDestructible<T>)
             {
-                for (size_t i = 0; i < m_size; i++)
+                if constexpr (InlineStorage != 0)
+                {
+                    for (size_t i = 0; i < m_size < InlineStorage ? m_size : InlineStorage; ++i)
+                    {
+                        m_inline_storage[i].~T();
+                    }
+                }
+                for (size_t i = 0; i < m_size - InlineStorage; ++i)
                     m_data[i].~T();
             }
         }
@@ -330,7 +618,9 @@ namespace neo
         // size is number of T elements
         constexpr void allocate(size_t size)
         {
-            m_data = (T*)__builtin_calloc(size, sizeof(T));
+            if (size <= InlineStorage)
+                return;
+            m_data = (T*)__builtin_calloc(size - InlineStorage, sizeof(T));
         }
 
         constexpr void deallocate()
@@ -340,6 +630,7 @@ namespace neo
         }
 
         T* m_data { nullptr };
+        T m_inline_storage[InlineStorage] {};
         size_t m_capacity { 0 };
         size_t m_size { 0 };
     };
