@@ -529,9 +529,23 @@ namespace neo
     template<typename TFrom, typename TTo>
     requires(IsTriviallyConstructible<TTo>&& IsTriviallyCopyable<TFrom> && sizeof(TFrom) == sizeof(TTo)) constexpr TTo bit_cast(TFrom const& value)
     {
+#if __has_builtin(__builtin_bit_cast)
+        return __builtin_bit_cast(TTo, value);
+#else
         TTo dest;
         __builtin_memcpy(&dest, &value, sizeof(TFrom));
         return dest;
+#endif
+    }
+
+    template<typename TTo, typename TFrom>
+    requires(!IsLvalueReference<TFrom> && !IsRvalueReference<TFrom>) constexpr TTo virtual_cast(TFrom& from)
+    {
+#ifdef DEBUG_ASSERTS
+        return dynamic_cast<TTo>(from);
+#else
+        return static_cast<TTo>(from);
+#endif
     }
 
 }
@@ -584,3 +598,4 @@ using neo::declval;
 using neo::forward;
 using neo::make_signed;
 using neo::swap;
+using neo::virtual_cast;
