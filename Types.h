@@ -18,6 +18,12 @@
 #pragma once
 #include "Preprocessor.h"
 
+#if (__SIZEOF_POINTER__ == 4)
+    #define PTR_TYPE u32
+#else
+    #define PTR_TYPE u64
+#endif
+
 template<typename T>
 using Aliasing __attribute__((__may_alias__)) = T;
 
@@ -46,6 +52,7 @@ using int64_t = i64;
 using uint64_t = u64;
 
 using size_t = __SIZE_TYPE__;
+using ptr_t = PTR_TYPE;
 #endif
 
 namespace neo
