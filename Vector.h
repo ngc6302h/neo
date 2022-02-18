@@ -26,6 +26,7 @@
 #include "TypeTraits.h"
 #include "Types.h"
 #include "Concepts.h"
+#include "New.h"
 
 namespace neo
 {
@@ -70,61 +71,61 @@ namespace neo
             {
                 if (other.size() < InlineStorage)
                 {
-                    if constexpr (other.InlineStorageSize != 0)
+                    if constexpr (OtherInlineSize != 0)
                     {
-                        Copy(other.size(), other.m_inline_storage, m_inline_storage);
-                        if (other.size() > other.InlineStorageSize)
-                            Copy(other.size() - other.InlineStorageSize, other.m_data, m_inline_storage + other.InlineStorageSize);
+                        Copy(other.size(), other.inline_storage(), inline_storage());
+                        if (other.size() > OtherInlineSize)
+                            Copy(other.size() - OtherInlineSize, other.m_data, inline_storage() + OtherInlineSize);
                     }
                     else
                     {
-                        Copy(other.size(), other.m_data, m_inline_storage);
+                        Copy(other.size(), other.m_data, inline_storage());
                     }
                 }
                 else
                 {
-                    if constexpr (other.InlineStorageSize != 0)
+                    if constexpr (OtherInlineSize != 0)
                     {
-                        if constexpr (InlineStorage > other.InlineStorageSize)
+                        if constexpr (InlineStorage > OtherInlineSize)
                         {
-                            Copy(other.InlineStorageSize, other.m_inline_storage, m_inline_storage);
+                            Copy(OtherInlineSize, other.inline_storage(), inline_storage());
                             if (other.m_size < InlineStorage)
-                                Copy(other.m_size - other.InlineStorageSize, other.m_data, m_inline_storage + other.InlineStorageSize);
+                                Copy(other.m_size - OtherInlineSize, other.m_data, inline_storage() + OtherInlineSize);
                             else
                             {
-                                Copy(InlineStorage - other.InlineStorageSize, other.m_data, m_inline_storage + other.InlineStorageSize);
-                                Copy(other.m_size - InlineStorage, other.m_data + InlineStorage - other.InlineStorageSize, m_data);
+                                Copy(InlineStorage - OtherInlineSize, other.m_data, inline_storage() + OtherInlineSize);
+                                Copy(other.m_size - InlineStorage, other.m_data + InlineStorage - OtherInlineSize, m_data);
                             }
                         }
                         else
                         {
-                            Copy(InlineStorage, other.m_inline_storage, m_inline_storage);
-                            if (other.m_size > other.InlineStorageSize)
+                            Copy(InlineStorage, other.inline_storage(), inline_storage());
+                            if (other.m_size > OtherInlineSize)
                             {
-                                Copy(other.InlineStorageSize - InlineStorage, other.m_inline_storage + InlineStorage, m_data);
-                                Copy(other.m_size - other.m_inline_storage, other.m_data, m_data + other.InlineStorageSize);
+                                Copy(OtherInlineSize - InlineStorage, other.inline_storage() + InlineStorage, m_data);
+                                Copy(other.m_size - OtherInlineSize, other.m_data, m_data + OtherInlineSize);
                             }
                             else
                             {
-                                Copy(other.m_size - InlineStorage, other.m_inline_storage + InlineStorage, m_data);
+                                Copy(other.m_size - InlineStorage, other.inline_storage() + InlineStorage, m_data);
                             }
                         }
                     }
                     else
                     {
-                        Copy(InlineStorage, other.m_data, m_inline_storage);
+                        Copy(InlineStorage, other.m_data, inline_storage());
                         if (InlineStorage < other.m_size)
-                            Copy(other.m_size - InlineStorage, other.m_data + InlineStorage, m_data + InlineStorage);
+                            Copy(other.m_size - InlineStorage, other.m_data + InlineStorage, m_data);
                     }
                 }
             }
             else
             {
-                if constexpr (other.InlineStorageSize != 0)
+                if constexpr (OtherInlineSize != 0)
                 {
-                    Copy(other.InlineStorageSize, m_inline_storage, m_data);
-                    if (other.m_size > other.InlineStorageSize)
-                        Copy(other.m_size - other.InlineStorageSize, other.m_data, m_data + other.InlineStorageSize);
+                    Copy(min(other.m_size, OtherInlineSize), other.inline_storage(), m_data);
+                    if (other.m_size > OtherInlineSize)
+                        Copy(other.m_size - OtherInlineSize, other.m_data, m_data + OtherInlineSize);
                 }
                 else
                 {
@@ -140,69 +141,79 @@ namespace neo
             clean();
             ensure_capacity(max(1UL, other.size()));
 
-            if constexpr (InlineStorage != 0)
+            if (m_size != 0)
             {
-                if (other.size() < InlineStorage)
+                if constexpr (InlineStorage != 0)
                 {
-                    if constexpr (other.InlineStorageSize != 0)
+                    if (other.size() < InlineStorage)
                     {
-                        MoveOrCopy(other.size(), other.m_inline_storage, m_inline_storage);
-                        if (other.size() > other.InlineStorageSize)
-                            MoveOrCopy(other.size() - other.InlineStorageSize, other.m_data, m_inline_storage + other.InlineStorageSize);
+                        if constexpr (OtherInlineSize != 0)
+                        {
+                            MoveOrCopy(other.size(), other.inline_storage(), inline_storage());
+                            if (other.size() > OtherInlineSize)
+                                MoveOrCopy(other.size() - OtherInlineSize, other.m_data,
+                                    inline_storage() + OtherInlineSize);
+                        }
+                        else
+                        {
+                            MoveOrCopy(other.size(), other.m_data, inline_storage());
+                        }
                     }
                     else
                     {
-                        MoveOrCopy(other.size(), other.m_data, m_inline_storage);
-                    }
-                }
-                else
-                {
-                    if constexpr (other.InlineStorageSize != 0)
-                    {
-                        if constexpr (InlineStorage > other.InlineStorageSize)
+                        if constexpr (OtherInlineSize != 0)
                         {
-                            MoveOrCopy(other.InlineStorageSize, other.m_inline_storage, m_inline_storage);
-                            if (other.m_size < InlineStorage)
-                                MoveOrCopy(other.m_size - other.InlineStorageSize, other.m_data, m_inline_storage + other.InlineStorageSize);
+                            if constexpr (InlineStorage > OtherInlineSize)
+                            {
+                                MoveOrCopy(OtherInlineSize, other.inline_storage(), inline_storage());
+                                if (other.m_size < InlineStorage)
+                                    MoveOrCopy(other.m_size - OtherInlineSize, other.m_data,
+                                        inline_storage() + OtherInlineSize);
+                                else
+                                {
+                                    MoveOrCopy(InlineStorage - OtherInlineSize, other.m_data,
+                                        inline_storage() + OtherInlineSize);
+                                    MoveOrCopy(other.m_size - InlineStorage,
+                                        other.m_data + InlineStorage - OtherInlineSize, m_data);
+                                }
+                            }
                             else
                             {
-                                MoveOrCopy(InlineStorage - other.InlineStorageSize, other.m_data, m_inline_storage + other.InlineStorageSize);
-                                MoveOrCopy(other.m_size - InlineStorage, other.m_data + InlineStorage - other.InlineStorageSize, m_data);
+                                MoveOrCopy(InlineStorage, other.inline_storage(), inline_storage());
+                                if (other.m_size > OtherInlineSize)
+                                {
+                                    MoveOrCopy(OtherInlineSize - InlineStorage, other.inline_storage() + InlineStorage,
+                                        m_data);
+                                    MoveOrCopy(other.m_size - OtherInlineSize, other.m_data, m_data + OtherInlineSize);
+                                }
+                                else
+                                {
+                                    MoveOrCopy(other.m_size - InlineStorage, other.inline_storage() + InlineStorage,
+                                        m_data);
+                                }
                             }
                         }
                         else
                         {
-                            MoveOrCopy(InlineStorage, other.m_inline_storage, m_inline_storage);
-                            if (other.m_size > other.InlineStorageSize)
-                            {
-                                MoveOrCopy(other.InlineStorageSize - InlineStorage, other.m_inline_storage + InlineStorage, m_data);
-                                MoveOrCopy(other.m_size - other.m_inline_storage, other.m_data, m_data + other.InlineStorageSize);
-                            }
-                            else
-                            {
-                                MoveOrCopy(other.m_size - InlineStorage, other.m_inline_storage + InlineStorage, m_data);
-                            }
+                            MoveOrCopy(InlineStorage, other.m_data, inline_storage());
+                            if (InlineStorage < other.m_size)
+                                MoveOrCopy(other.m_size - InlineStorage, other.m_data + InlineStorage,
+                                    m_data + InlineStorage);
                         }
                     }
-                    else
-                    {
-                        MoveOrCopy(InlineStorage, other.m_data, m_inline_storage);
-                        if (InlineStorage < other.m_size)
-                            MoveOrCopy(other.m_size - InlineStorage, other.m_data + InlineStorage, m_data + InlineStorage);
-                    }
-                }
-            }
-            else
-            {
-                if constexpr (other.InlineStorageSize != 0)
-                {
-                    MoveOrCopy(other.InlineStorageSize, other.m_inline_storage, m_data);
-                    if (other.m_size > other.InlineStorageSize)
-                        MoveOrCopy(other.m_size - other.InlineStorageSize, other.m_data, m_data + other.InlineStorageSize);
                 }
                 else
                 {
-                    MoveOrCopy(other.m_size, other.m_data, m_data);
+                    if constexpr (OtherInlineSize != 0)
+                    {
+                        MoveOrCopy(min(OtherInlineSize, other.m_size), other.inline_storage(), m_data);
+                        if (other.m_size > OtherInlineSize)
+                            MoveOrCopy(other.m_size - OtherInlineSize, other.m_data, m_data + OtherInlineSize);
+                    }
+                    else
+                    {
+                        MoveOrCopy(other.m_size, other.m_data, m_data);
+                    }
                 }
             }
             m_size = other.m_size;
@@ -211,9 +222,10 @@ namespace neo
             other.m_capacity = 0;
         }
 
+        /*
         constexpr Vector(Vector const& other)
         {
-            ensure_capacity(other.m_size);
+            ensure_capacity(max(1UL, other.m_size));
             m_size = other.m_size;
             if constexpr (InlineStorage != 0)
             {
@@ -234,6 +246,7 @@ namespace neo
             other.m_size = 0;
             other.m_data = nullptr;
         }
+         */
 
         explicit constexpr Vector(Span<T> const& other) :
             m_capacity(other.size()), m_size(other.size())
@@ -253,7 +266,7 @@ namespace neo
                 if constexpr (InlineStorage != 0)
                 {
                     if (index < InlineStorage)
-                        new (m_inline_storage + index) T(first);
+                        new (inline_storage() + index) T(first);
                     else
                         new (m_data + index - InlineStorage) T(first);
                 }
@@ -276,22 +289,22 @@ namespace neo
         template<size_t OtherInlineSize>
         constexpr Vector& operator=(Vector<T, OtherInlineSize> const& other)
         {
-            if (&other == this)
+            if ((ptr_t)&other == (ptr_t)this)
                 return *this;
 
-            ~Vector();
+            this->~Vector();
             new (this) Vector(other);
 
             return *this;
         }
 
-        template<size_t OtherInlineSize>
+        template<size_t OtherInlineSize = 0>
         constexpr Vector& operator=(Vector<T, OtherInlineSize>&& other)
         {
-            if (&other == this)
+            if ((ptr_t)&other == (ptr_t)this)
                 return *this;
 
-            ~Vector();
+            this->~Vector();
             new (this) Vector(move(other));
 
             return *this;
@@ -305,7 +318,7 @@ namespace neo
             if constexpr (InlineStorage != 0)
             {
                 if (m_size < InlineStorage)
-                    new (&m_inline_storage[m_size++]) T { forward<TT>(e) };
+                    new (&inline_storage()[m_size++]) T { forward<TT>(e) };
                 else
                     new (&m_data[m_size++ - InlineStorage]) T { forward<TT>(e) };
             }
@@ -325,9 +338,9 @@ namespace neo
                 if (m_size < InlineStorage)
                 {
                     if constexpr (IsRvalueReference<TT>)
-                        MoveOrCopy<T>(InlineStorage - m_size, items.data(), m_inline_storage + m_size);
+                        MoveOrCopy<T>(InlineStorage - m_size, items.data(), inline_storage() + m_size);
                     else
-                        Copy<T>(InlineStorage - m_size, items.data(), m_inline_storage + m_size);
+                        Copy<T>(InlineStorage - m_size, items.data(), inline_storage() + m_size);
 
                     if constexpr (IsRvalueReference<TT>)
                         MoveOrCopy<T>(items.size() - (InlineStorage - m_size), items.data() + InlineStorage - m_size, m_data + m_size);
@@ -367,8 +380,8 @@ namespace neo
                 {
                     if (index < InlineStorage)
                     {
-                        MoveOrCopy(InlineStorage - index - 1, m_inline_storage + index + 1, m_inline_storage + index);
-                        m_inline_storage[InlineStorage - 1] = m_data[0];
+                        MoveOrCopy(InlineStorage - index - 1, inline_storage() + index + 1, inline_storage() + index);
+                        inline_storage()[InlineStorage - 1] = m_data[0];
                         MoveOrCopy(m_size - InlineStorage, m_data + 1, m_data);
                     }
                     else
@@ -390,7 +403,7 @@ namespace neo
             {
                 if (m_size < InlineStorage)
                 {
-                    m_inline_storage[m_size] = T { forward<Args>(args)... };
+                    inline_storage()[m_size] = T { forward<Args>(args)... };
                 }
                 else
                 {
@@ -404,7 +417,7 @@ namespace neo
             if (InlineStorage != 0)
             {
                 if (m_size < InlineStorage)
-                    return m_inline_storage[m_size++];
+                    return inline_storage()[m_size++];
             }
             return m_data[m_size++];
         }
@@ -435,14 +448,13 @@ namespace neo
             }
 
             T* new_buf = (T*)__builtin_calloc(new_capacity - InlineStorage, sizeof(T));
-            if constexpr (InlineStorage != 0)
+
+            if (m_data != nullptr)
             {
-                if (m_size < InlineStorage)
-                    return;
+                MoveOrCopy(m_size - InlineStorage, m_data, new_buf);
+                clean();
+                deallocate();
             }
-            MoveOrCopy(m_size - InlineStorage, m_data, new_buf);
-            clean();
-            deallocate();
             m_data = new_buf;
             m_capacity = new_capacity;
         }
@@ -467,7 +479,7 @@ namespace neo
             if constexpr (InlineStorage != 0)
             {
                 if (index < InlineStorage)
-                    return m_inline_storage[index];
+                    return inline_storage()[index];
             }
             return m_data[index - InlineStorage];
         }
@@ -478,7 +490,7 @@ namespace neo
             if constexpr (InlineStorage != 0)
             {
                 if (index < InlineStorage)
-                    return m_inline_storage[index];
+                    return inline_storage()[index];
             }
             return m_data[index - InlineStorage];
         }
@@ -511,12 +523,12 @@ namespace neo
             {
                 if (m_size < InlineStorage)
                 {
-                    MoveOrCopy(m_size, m_inline_storage + 1, m_inline_storage);
+                    MoveOrCopy(m_size, inline_storage() + 1, inline_storage());
                 }
                 else
                 {
-                    MoveOrCopy(InlineStorage - 1, m_inline_storage + 1, m_inline_storage);
-                    m_inline_storage[InlineStorage - 1] = m_data[0];
+                    MoveOrCopy(InlineStorage - 1, inline_storage() + 1, inline_storage());
+                    inline_storage()[InlineStorage - 1] = m_data[0];
                     MoveOrCopy(m_size - InlineStorage, m_data + 1, m_data);
                 }
             }
@@ -543,6 +555,29 @@ namespace neo
         [[nodiscard]] constexpr const T& operator[](size_t index) const
         {
             return at(index);
+        }
+
+        template<typename TOtherVector>
+        [[nodiscard]] constexpr bool operator==(TOtherVector const& other)
+        {
+            if (size() != other.size())
+                return false;
+
+            if (size() == 0 && other.size() == 0)
+                return true;
+
+            if ((ptr_t)this == (ptr_t)&other)
+                return true;
+
+            auto this_begin = begin();
+            auto other_begin = other.begin();
+            while (*this_begin++ == *other_begin++)
+            {
+                if (this_begin.is_end())
+                    return true;
+            }
+
+            return false;
         }
 
         [[nodiscard]] constexpr T* data() requires(InlineStorage == 0)
@@ -604,13 +639,22 @@ namespace neo
             {
                 if constexpr (InlineStorage != 0)
                 {
-                    for (size_t i = 0; i < m_size < InlineStorage ? m_size : InlineStorage; ++i)
+                    for (size_t i = 0; i < (m_size < InlineStorage ? m_size : InlineStorage); ++i)
                     {
-                        m_inline_storage[i].~T();
+                        inline_storage()[i].~T();
+                    }
+
+                    if (m_size > InlineStorage)
+                    {
+                        for (size_t i = 0; i < m_size - InlineStorage; ++i)
+                            m_data[i].~T();
                     }
                 }
-                for (size_t i = 0; i < m_size - InlineStorage; ++i)
-                    m_data[i].~T();
+                else
+                {
+                    for (size_t i = 0; i < m_size; ++i)
+                        m_data[i].~T();
+                }
             }
         }
 
@@ -628,10 +672,22 @@ namespace neo
             m_data = nullptr;
         }
 
+        T* inline_storage()
+        {
+            return reinterpret_cast<T*>(m_untyped_inline_storage);
+        }
+
+        T const* inline_storage() const
+        {
+            return reinterpret_cast<T const*>(m_untyped_inline_storage);
+        }
+
         T* m_data { nullptr };
-        T m_inline_storage[InlineStorage] {};
+        u8 m_untyped_inline_storage[InlineStorage * sizeof(T)];
+
         size_t m_capacity { 0 };
         size_t m_size { 0 };
     };
+
 }
 using neo::Vector;
