@@ -37,6 +37,7 @@ namespace neo
         friend String;
 
     public:
+        using type = char;
         using StringIterator = Iterator<AsciiString>;
 
         constexpr ~AsciiString()
