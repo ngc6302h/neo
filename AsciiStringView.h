@@ -29,6 +29,7 @@ namespace neo
     class AsciiStringView
     {
     public:
+        using type = const char;
         using AsciiStringIterator = Iterator<AsciiStringView>;
 
         constexpr AsciiStringView() = default;
