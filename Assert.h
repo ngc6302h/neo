@@ -35,13 +35,13 @@ static char __backtrace_buffer[sizeof(void*) * 256];
     __assert_fail(__assertion, __file, __line, __function);
 }
 
-#ifdef VERBOSE_ASSERTS
+#if VERBOSE_ASSERTS == 1
     #define __ASSERT_FAILED print_backtrace_and_fail
 #else
     #define __ASSERT_FAILED __assert_fail
 #endif
 
-#ifdef DEBUG_ASSERTS
+#if DEBUG_ASSERTS == 1
     #define VERIFY(expr)                                                     \
         if (!(expr)) [[unlikely]]                                            \
         {                                                                    \
