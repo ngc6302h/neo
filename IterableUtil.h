@@ -20,9 +20,11 @@
 #include "Concepts.h"
 #include "Tuple.h"
 #include "Iterator.h"
+#include "Optional.h"
 
 namespace neo
 {
+    //TODO: replace with a fast algorithm
     template<Iterable TContainer, CallableWithReturnType<bool, typename TContainer::type, typename TContainer::type> TComparerFunc>
     constexpr void sort(TContainer& what, TComparerFunc comparer)
     {
@@ -143,9 +145,9 @@ namespace neo
     }
 
     template<IteratorLike TIterator, CallableWithReturnType<bool, typename TIterator::type> TPredicate>
-    constexpr auto skip_while(TIterator begin, TIterator end, TPredicate&& predicate)
+    constexpr auto skip_while(TIterator begin, TIterator end, TPredicate predicate)
     {
-        while (begin != end && predicate(begin))
+        while (begin != end && predicate(*begin))
             ++begin;
 
         return begin;
@@ -160,10 +162,121 @@ namespace neo
 
         return copy;
     }
+    
+    template<IteratorLike TIterator>
+    constexpr auto first(TIterator begin, TIterator end)
+    {
+        if (begin != end)
+            return Optional<typename TIterator::type> { *begin };
+        else
+            return Optional<typename TIterator::type>{};
+    }
+    
+    template<IteratorLike TIterator, CallableWithReturnType<bool, typename TIterator::type const&> TPredicate>
+    constexpr auto first(TIterator begin, TIterator end, TPredicate predicate)
+    {
+        while (begin != end)
+        {
+            if (predicate(*begin))
+                return Optional<typename TIterator::type> { *begin };
+            ++begin;
+        }
+        return Optional<typename TIterator::type>{};
+    }
+    
+    template<IteratorLike TIterator>
+    constexpr auto last(TIterator begin, TIterator end)
+    {
+        if (begin != end)
+            return Optional<typename TIterator::type> { *--end };
+        else
+            return Optional<typename TIterator::type>{};
+    }
+    
+    template<IteratorLike TIterator, CallableWithReturnType<bool, typename TIterator::type const&> TPredicate>
+    constexpr auto last(TIterator begin, TIterator end, TPredicate predicate)
+    {
+        while (begin != end)
+        {
+            --end;
+            if (predicate(*end))
+                return Optional<typename TIterator::type> { *end };
+        }
+        return Optional<typename TIterator::type>{};
+    }
+    
+    template<IteratorLike TIteratorSrc, IteratorLike TIteratorDst>
+    constexpr void copy(TIteratorSrc source_begin, TIteratorSrc const& source_end, TIteratorDst destination_begin, TIteratorDst const& destination_end)
+    {
+        while(source_begin != source_end && destination_begin != destination_end)
+        {
+            *destination_begin++ = *source_begin++;
+        }
+    }
 
     namespace detail
     {
-        template<typename TIterator>
+        template<IteratorLike TIterator>
+        class IteratorReverseWrapper
+        {
+        public:
+            using type = typename TIterator::type;
+            using iterator_type = TIterator;
+            using underlying_container_type = typename TIterator::underlying_container_type;
+            
+            constexpr IteratorReverseWrapper(TIterator const& begin, TIterator const& end, bool at_end) : m_begin(begin), m_end(end), m_iterator(at_end ? begin : end)
+            {}
+            
+            constexpr IteratorReverseWrapper& operator++()
+            {
+                VERIFY(m_iterator != m_begin);
+                --m_iterator;
+                return *this;
+            }
+            
+            constexpr IteratorReverseWrapper operator++(int)
+            {
+                auto copy = *this;
+                return ++copy;
+            }
+            
+            constexpr IteratorReverseWrapper& operator--()
+            {
+                VERIFY(m_iterator != m_end);
+                ++m_iterator;
+                return *this;
+            }
+            
+            constexpr IteratorReverseWrapper operator--(int)
+            {
+                auto copy = *this;
+                return --copy;
+            }
+            
+            constexpr decltype(auto) operator*()
+            {
+                return *rewind(m_iterator, 1);
+            }
+            
+            constexpr bool operator==(IteratorReverseWrapper const& other) const
+            {
+                return m_iterator == other.m_iterator;
+            }
+            
+            constexpr bool is_end() const
+            {
+                return m_iterator == m_begin;
+            }
+            
+            constexpr IteratorReverseWrapper(IteratorReverseWrapper const&) = default;
+            constexpr IteratorReverseWrapper& operator=(IteratorReverseWrapper const&) = default;
+            
+        private:
+            TIterator m_begin;
+            TIterator m_end;
+            TIterator m_iterator;
+        };
+        template<IteratorLike TIterator>
         class RangeLimitedIterator
         {
         public:
@@ -171,13 +284,14 @@ namespace neo
             using iterator_type = TIterator;
             using underlying_container_type = typename TIterator::underlying_container_type;
 
-            constexpr RangeLimitedIterator(TIterator iterator, TIterator& end, size_t size, size_t index) :
+            constexpr RangeLimitedIterator(TIterator const& iterator, TIterator const& end, size_t size, size_t index) :
                 m_iterator(iterator), m_end(end), m_size(size), m_index(index)
             {
             }
 
             constexpr RangeLimitedIterator& operator++()
             {
+                VERIFY(m_iterator != m_end);
                 ++m_iterator;
                 ++m_index;
                 return *this;
@@ -191,6 +305,7 @@ namespace neo
 
             constexpr RangeLimitedIterator& operator--()
             {
+                VERIFY(m_index != 0);
                 --m_iterator;
                 --m_index;
                 return *this;
@@ -204,20 +319,23 @@ namespace neo
 
             constexpr decltype(auto) operator*()
             {
-                VERIFY(m_index < m_size);
+                VERIFY(!is_end());
                 return *m_iterator;
             }
 
-            constexpr bool operator==(TIterator const& other)
+            constexpr bool operator==(RangeLimitedIterator const& other) const
             {
                 return m_iterator == other.m_iterator;
             }
 
             constexpr bool is_end() const
             {
-                return m_iterator == m_end || m_size >= m_index;
+                return m_iterator == m_end || m_index >= m_size;
             }
 
+            constexpr RangeLimitedIterator(RangeLimitedIterator const&) = default;
+            constexpr RangeLimitedIterator& operator=(RangeLimitedIterator const& other) = default;
+            
         private:
             constexpr decltype(auto) implementation()
             {
@@ -233,16 +351,16 @@ namespace neo
         };
     }
 
-    template<IteratorLike TIterator, Callable<TIterator> TDereferenceFunc, Callable<TIterator> TIncrementFunc, Callable<TIterator> TDecrementFunc>
+    template<IteratorLike TIterator, Callable<typename TIterator::type> TDereferenceFunc, Callable<TIterator> TIncrementFunc, Callable<TIterator> TDecrementFunc>
     class LazyIteratorWrapper
     {
     public:
         using type = ReturnType<TDereferenceFunc, typename TIterator::type>;
         using iterator_type = TIterator;
         using underlying_container_type = typename TIterator::underlying_container_type;
-
-        constexpr LazyIteratorWrapper(TIterator iterator, TIterator& end, TDereferenceFunc&& dereference,
-            TIncrementFunc&& increment, TDecrementFunc&& decrement) :
+        
+        constexpr LazyIteratorWrapper(TIterator const& iterator, TIterator const& end, TDereferenceFunc dereference,
+            TIncrementFunc increment, TDecrementFunc decrement) :
             m_iterator(iterator), m_end(end), m_dereference(dereference), m_increment(increment), m_decrement(decrement)
         {
         }
@@ -256,7 +374,8 @@ namespace neo
         constexpr LazyIteratorWrapper operator++(int)
         {
             auto copy = *this;
-            return ++copy;
+            ++*this;
+            return copy;
         }
 
         constexpr LazyIteratorWrapper& operator--()
@@ -268,7 +387,8 @@ namespace neo
         constexpr LazyIteratorWrapper operator--(int)
         {
             auto copy = *this;
-            return --copy;
+            --*this;
+            return copy;
         }
 
         constexpr decltype(auto) operator*()
@@ -276,7 +396,7 @@ namespace neo
             return m_dereference(*m_iterator);
         }
 
-        constexpr bool operator==(TIterator const& other) const
+        constexpr bool operator==(LazyIteratorWrapper const& other) const
         {
             return m_iterator == other.m_iterator;
         }
@@ -285,6 +405,9 @@ namespace neo
         {
             return m_iterator == m_end;
         }
+        
+        constexpr LazyIteratorWrapper(LazyIteratorWrapper const&) = default;
+        constexpr LazyIteratorWrapper& operator=(LazyIteratorWrapper const&) = default;
 
     private:
         constexpr decltype(auto) implementation()
@@ -293,7 +416,7 @@ namespace neo
         }
 
         TIterator m_iterator;
-        TIterator& m_end;
+        TIterator m_end;
         TDereferenceFunc m_dereference;
         TIncrementFunc m_increment;
         TDecrementFunc m_decrement;
@@ -350,7 +473,7 @@ namespace neo
 
             return counter;
         }
-
+        
         template<typename T, CallableWithReturnType<bool, type, T> TComparer>
         constexpr bool contains(T const& what, TComparer equality_comparer)
         {
@@ -372,6 +495,29 @@ namespace neo
         {
             return neo::find(begin(), end(), what, DefaultEqualityComparer<type>);
         }
+    
+        template<CallableWithReturnType<bool, type const&> TPredicate>
+        constexpr auto first(TPredicate predicate)
+        {
+            return neo::first(begin(), end(), predicate);
+        }
+        
+        constexpr auto first()
+        {
+            return neo::first(begin(), end());
+        }
+        
+        template<CallableWithReturnType<bool, type const&> TPredicate>
+        constexpr auto last(TPredicate predicate)
+        {
+            return neo::last(begin(), end(), predicate);
+        }
+        
+        constexpr auto last()
+        {
+            return neo::last(begin(), end());
+        }
+        
 
         template<Callable<type> TPredicate>
         constexpr bool all(TPredicate&& predicate)
@@ -390,42 +536,58 @@ namespace neo
         {
             return neo::aggregate(begin(), end(), forward<TAggregatorFunc>(aggregator), initial_value);
         }
+        
+        constexpr auto reverse()
+        {
+            return IterableCollection<detail::IteratorReverseWrapper<TIterator>>
+            {
+                detail::IteratorReverseWrapper { m_begin, m_end, false },
+                detail::IteratorReverseWrapper { m_begin, m_end, true }
+            };
+        }
 
         template<CallableWithReturnType<bool, type> TPredicate>
-        constexpr auto filter(TPredicate&& predicate)
+        constexpr auto filter(TPredicate predicate)
         {
-            constexpr auto increment = [=](TIterator & iterator) constexpr
+            auto increment = [predicate](TIterator& iterator) constexpr
             {
-                while (iterator.is_end())
+                while (!iterator.is_end())
                 {
-                    ++iterator;
+                    if ((++iterator).is_end())
+                        return;
                     if (predicate(*iterator))
                         return;
                 }
             };
 
-            constexpr auto decrement = [=, this](TIterator & iterator) constexpr
+            auto bg = m_begin;
+            auto decrement = [predicate, bg](TIterator& iterator) constexpr
             {
-                while (iterator.is_end() && iterator != m_begin)
+                while (iterator != bg)
                 {
                     --iterator;
                     if (predicate(*iterator))
                         return;
                 }
             };
-
-            return IterableCollection<LazyIteratorWrapper<TIterator, decltype(default_dereference), decltype(increment), decltype(decrement)>> {
-                LazyIteratorWrapper { m_begin, m_end, default_dereference, increment, decrement },
+            
+            auto begin_initialized = m_begin;
+            if (!predicate(*begin_initialized))
+                increment(begin_initialized);
+            
+            
+            return IterableCollection<decltype(LazyIteratorWrapper { m_begin, m_end, default_dereference, increment, decrement })> {
+                LazyIteratorWrapper { begin_initialized, m_end, default_dereference, increment, decrement },
                 LazyIteratorWrapper { m_end, m_end, default_dereference, increment, decrement }
             };
         }
 
-        template<Callable<typename TIterator::type> TSelectorFunc>
-        constexpr auto select(TSelectorFunc&& selector)
+        template<Callable<type> TSelectorFunc>
+        constexpr auto select(TSelectorFunc selector)
         {
-            return IterableCollection<LazyIteratorWrapper<TIterator, decltype(selector), decltype(default_increment), decltype(default_decrement)>>
-            { LazyIteratorWrapper { m_begin, m_end, forward<TSelectorFunc>(selector), default_increment, default_decrement },
-                LazyIteratorWrapper { m_end, m_end, forward<TSelectorFunc>(selector), default_increment, default_decrement } };
+            return IterableCollection<decltype(LazyIteratorWrapper(m_begin, m_end, selector, default_increment, default_decrement))>
+                (LazyIteratorWrapper(m_begin, m_end, selector, default_increment, default_decrement),
+                LazyIteratorWrapper(m_end, m_end, selector, default_increment, default_decrement) );
         }
 
         template<Callable<type&> TFunction>
@@ -438,7 +600,7 @@ namespace neo
         constexpr auto take(size_t n)
         {
             return IterableCollection<detail::RangeLimitedIterator<TIterator>> {
-                detail::RangeLimitedIterator { m_begin, m_end, n, 0 },
+                detail::RangeLimitedIterator { begin(), m_end, n, 0 },
                 detail::RangeLimitedIterator { neo::skip(m_begin, n), m_end, n, n }
             };
         }
@@ -449,29 +611,35 @@ namespace neo
         }
 
         template<CallableWithReturnType<bool, type> TPredicate>
-        constexpr auto skip_while(TPredicate&& predicate)
+        constexpr auto skip_while(TPredicate predicate)
         {
-            return IterableCollection { skip_while(begin(), end(), forward<TPredicate>(predicate)), m_end };
+            return IterableCollection { neo::skip_while(begin(), end(), predicate), m_end };
         }
 
         constexpr auto skip_backwards(size_t n)
         {
-            return IterableCollection { m_begin, neo::rewind(m_end, n) };
+            return IterableCollection { begin(), neo::rewind(m_end, n) };
         }
 
         template<CallableWithReturnType<bool, type> TPredicate>
-        constexpr auto skip_backwards_while(TPredicate&& predicate)
+        constexpr auto skip_backwards_while(TPredicate predicate)
         {
             auto end = m_end;
-            while (predicate(end))
+            while (predicate(*end))
                 --end;
 
             return IterableCollection { m_begin, end };
         }
+        
+        template<IteratorLike TIteratorDst>
+        constexpr auto copy_to(TIteratorDst destination_begin, TIteratorDst const& destination_end)
+        {
+            neo::copy(begin(), end(), destination_begin, destination_end);
+        }
 
-    private:
+        private:
         static constexpr auto identity = [](auto& v) constexpr { return v; };
-        static constexpr auto default_dereference = [](auto& v) constexpr { return *v; };
+        static constexpr auto default_dereference = [](auto const& v) constexpr { return v; };
         static constexpr auto default_increment = [](auto& v) constexpr -> auto& { return ++v; };
         static constexpr auto default_decrement = [](auto& v) constexpr -> auto& { return --v; };
 
@@ -498,3 +666,6 @@ using neo::find;
 using neo::for_all;
 using neo::sort;
 using neo::zip;
+using neo::first;
+using neo::last;
+using neo::IterableCollection;
