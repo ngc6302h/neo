@@ -16,10 +16,43 @@
  */
 
 #pragma once
-#include "TypeTraits.h"
+#include "Concepts.h"
 
 namespace neo
 {
+
+    namespace detail
+    {
+        template<typename T>
+        concept IteratorImplementationHasIndexMethod = requires(T t)
+        {
+            {
+                t.index()
+                } -> Same<size_t>;
+        };
+
+        template<typename T>
+        concept IteratorImplementationHasIsEndMethod = requires(T t)
+        {
+            {
+                t.is_end()
+                } -> Same<bool>;
+        };
+
+        template<typename TImplementation, typename TContainer>
+        concept IteratorImplementationHasConstructorThatTakesAContainer = requires(TContainer t)
+        {
+            TImplementation(t);
+        };
+
+        template<typename TImplementation, typename TContainer>
+        concept IteratorImplementationHasConstructorThatTakesAContainerAndIndex = requires(TContainer t, size_t index)
+        {
+            TImplementation(t, index);
+        };
+
+    }
+
     template<typename T, typename U>
     class Iterator;
 
@@ -121,8 +154,22 @@ namespace neo
     template<typename TContainer, typename TIteratorImplementation = DefaultIteratorImplementation<TContainer>>
     class Iterator
     {
+        template<IteratorLike TIterator>
+        friend class IterableCollection;
+
     public:
+        using type = typename TContainer::type;
+        using underlying_container_type = TContainer;
+
         Iterator() {};
+
+        constexpr Iterator(TIteratorImplementation const& impl) requires detail::IteratorImplementationHasConstructorThatTakesAContainer<TIteratorImplementation, TContainer> : m_impl(impl)
+        {
+        }
+
+        constexpr Iterator(TIteratorImplementation&& impl) requires detail::IteratorImplementationHasConstructorThatTakesAContainerAndIndex<TIteratorImplementation, TContainer> : m_impl(move(impl))
+        {
+        }
 
         constexpr Iterator(TContainer const& container) :
             m_impl(const_cast<TContainer&>(container))
@@ -139,18 +186,26 @@ namespace neo
         {
         }
 
+        constexpr Iterator(Iterator&& other) :
+            m_impl(move(other.m_impl))
+        {
+        }
+
         constexpr Iterator& operator=(Iterator const& other)
         {
+            if (this == &other)
+                return *this;
+
             m_impl = other.m_impl;
             return *this;
         }
 
-        constexpr bool operator!=(Iterator const& other) const
+        constexpr bool operator!=(Iterator const& other) const requires InequalityComparable<TIteratorImplementation>
         {
             return this->m_impl != other.m_impl;
         }
 
-        constexpr bool operator==(Iterator const& other) const
+        constexpr bool operator==(Iterator const& other) const requires EqualityComparable<TIteratorImplementation>
         {
             return this->m_impl == other.m_impl;
         }
@@ -176,42 +231,64 @@ namespace neo
         }
 
         // To be implemented by the class using iterators
-        constexpr Iterator& operator++()
+        constexpr Iterator& operator++() requires PrefixIncrementable<TIteratorImplementation>
         {
             ++this->m_impl;
             return *this;
         }
-        constexpr Iterator operator++(int)
+        constexpr Iterator operator++(int) requires PrefixIncrementable<TIteratorImplementation>
         {
             auto prev = *this;
-            this->m_impl++;
+            ++this->m_impl;
             return prev;
         }
-        constexpr Iterator& operator--()
+        constexpr Iterator& operator--() requires PrefixDecrementable<TIteratorImplementation>
         {
             --this->m_impl;
             return *this;
         }
-        constexpr Iterator operator--(int)
+        constexpr Iterator operator--(int) requires PrefixDecrementable<TIteratorImplementation>
         {
             auto prev = *this;
-            this->m_impl--;
+            ++this->m_impl;
             return prev;
         }
 
-        constexpr size_t index() const
+        constexpr size_t index() const requires detail::IteratorImplementationHasIndexMethod<TIteratorImplementation>
         {
             return m_impl.index();
         }
 
-        constexpr bool is_end() const
+        constexpr bool is_end() const requires detail::IteratorImplementationHasIsEndMethod<TIteratorImplementation>
         {
             return m_impl.is_end();
         }
 
-    private:
+    private : constexpr TIteratorImplementation& implementation()
+        {
+            return m_impl;
+        }
+
         TIteratorImplementation m_impl;
     };
+
+    template<IteratorLike T>
+    constexpr auto skip(T iterator, size_t n)
+    {
+        while (n--)
+            ++iterator;
+        return iterator;
+    }
+
+    template<IteratorLike T>
+    constexpr auto rewind(T iterator, size_t n)
+    {
+        while (n--)
+            --iterator;
+        return iterator;
+    }
 }
 
 using neo::Iterator;
+using neo::rewind;
+using neo::skip;
