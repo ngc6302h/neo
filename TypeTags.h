@@ -20,7 +20,7 @@
 
 namespace neo
 {
-    template<template<typename T> typename TContainer, typename T>
+    template<template<typename T, auto...> typename TContainer, typename T>
     struct IContainer
     {
         using type = T;
