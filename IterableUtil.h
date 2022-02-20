@@ -162,7 +162,7 @@ namespace neo
 
         return copy;
     }
-    
+
     template<IteratorLike TIterator>
     constexpr auto first(TIterator begin, TIterator end)
     {
@@ -171,7 +171,7 @@ namespace neo
         else
             return Optional<typename TIterator::type>{};
     }
-    
+
     template<IteratorLike TIterator, CallableWithReturnType<bool, typename TIterator::type const&> TPredicate>
     constexpr auto first(TIterator begin, TIterator end, TPredicate predicate)
     {
@@ -183,7 +183,7 @@ namespace neo
         }
         return Optional<typename TIterator::type>{};
     }
-    
+
     template<IteratorLike TIterator>
     constexpr auto last(TIterator begin, TIterator end)
     {
@@ -192,7 +192,7 @@ namespace neo
         else
             return Optional<typename TIterator::type>{};
     }
-    
+
     template<IteratorLike TIterator, CallableWithReturnType<bool, typename TIterator::type const&> TPredicate>
     constexpr auto last(TIterator begin, TIterator end, TPredicate predicate)
     {
@@ -204,7 +204,7 @@ namespace neo
         }
         return Optional<typename TIterator::type>{};
     }
-    
+
     template<IteratorLike TIteratorSrc, IteratorLike TIteratorDst>
     constexpr void copy(TIteratorSrc source_begin, TIteratorSrc const& source_end, TIteratorDst destination_begin, TIteratorDst const& destination_end)
     {
@@ -223,54 +223,56 @@ namespace neo
             using type = typename TIterator::type;
             using iterator_type = TIterator;
             using underlying_container_type = typename TIterator::underlying_container_type;
-            
+
             constexpr IteratorReverseWrapper(TIterator const& begin, TIterator const& end, bool at_end) : m_begin(begin), m_end(end), m_iterator(at_end ? begin : end)
             {}
-            
+
             constexpr IteratorReverseWrapper& operator++()
             {
                 VERIFY(m_iterator != m_begin);
                 --m_iterator;
                 return *this;
             }
-            
+
             constexpr IteratorReverseWrapper operator++(int)
             {
                 auto copy = *this;
-                return ++copy;
+                ++*this;
+                return copy;
             }
-            
+
             constexpr IteratorReverseWrapper& operator--()
             {
                 VERIFY(m_iterator != m_end);
                 ++m_iterator;
                 return *this;
             }
-            
+
             constexpr IteratorReverseWrapper operator--(int)
             {
                 auto copy = *this;
-                return --copy;
+                --*this;
+                return copy;
             }
-            
+
             constexpr decltype(auto) operator*()
             {
                 return *rewind(m_iterator, 1);
             }
-            
+
             constexpr bool operator==(IteratorReverseWrapper const& other) const
             {
                 return m_iterator == other.m_iterator;
             }
-            
+
             constexpr bool is_end() const
             {
                 return m_iterator == m_begin;
             }
-            
+
             constexpr IteratorReverseWrapper(IteratorReverseWrapper const&) = default;
             constexpr IteratorReverseWrapper& operator=(IteratorReverseWrapper const&) = default;
-            
+
         private:
             TIterator m_begin;
             TIterator m_end;
@@ -300,7 +302,8 @@ namespace neo
             constexpr RangeLimitedIterator operator++(int)
             {
                 auto copy = *this;
-                return ++copy;
+                ++*this;
+                return copy;
             }
 
             constexpr RangeLimitedIterator& operator--()
@@ -314,7 +317,8 @@ namespace neo
             constexpr RangeLimitedIterator operator--(int)
             {
                 auto copy = *this;
-                return --copy;
+                --*this;
+                return copy;
             }
 
             constexpr decltype(auto) operator*()
@@ -335,7 +339,7 @@ namespace neo
 
             constexpr RangeLimitedIterator(RangeLimitedIterator const&) = default;
             constexpr RangeLimitedIterator& operator=(RangeLimitedIterator const& other) = default;
-            
+
         private:
             constexpr decltype(auto) implementation()
             {
@@ -358,7 +362,7 @@ namespace neo
         using type = ReturnType<TDereferenceFunc, typename TIterator::type>;
         using iterator_type = TIterator;
         using underlying_container_type = typename TIterator::underlying_container_type;
-        
+
         constexpr LazyIteratorWrapper(TIterator const& iterator, TIterator const& end, TDereferenceFunc dereference,
             TIncrementFunc increment, TDecrementFunc decrement) :
             m_iterator(iterator), m_end(end), m_dereference(dereference), m_increment(increment), m_decrement(decrement)
@@ -405,7 +409,7 @@ namespace neo
         {
             return m_iterator == m_end;
         }
-        
+
         constexpr LazyIteratorWrapper(LazyIteratorWrapper const&) = default;
         constexpr LazyIteratorWrapper& operator=(LazyIteratorWrapper const&) = default;
 
@@ -473,7 +477,7 @@ namespace neo
 
             return counter;
         }
-        
+
         template<typename T, CallableWithReturnType<bool, type, T> TComparer>
         constexpr bool contains(T const& what, TComparer equality_comparer)
         {
@@ -495,29 +499,29 @@ namespace neo
         {
             return neo::find(begin(), end(), what, DefaultEqualityComparer<type>);
         }
-    
+
         template<CallableWithReturnType<bool, type const&> TPredicate>
         constexpr auto first(TPredicate predicate)
         {
             return neo::first(begin(), end(), predicate);
         }
-        
+
         constexpr auto first()
         {
             return neo::first(begin(), end());
         }
-        
+
         template<CallableWithReturnType<bool, type const&> TPredicate>
         constexpr auto last(TPredicate predicate)
         {
             return neo::last(begin(), end(), predicate);
         }
-        
+
         constexpr auto last()
         {
             return neo::last(begin(), end());
         }
-        
+
 
         template<Callable<type> TPredicate>
         constexpr bool all(TPredicate&& predicate)
@@ -536,7 +540,7 @@ namespace neo
         {
             return neo::aggregate(begin(), end(), forward<TAggregatorFunc>(aggregator), initial_value);
         }
-        
+
         constexpr auto reverse()
         {
             return IterableCollection<detail::IteratorReverseWrapper<TIterator>>
@@ -570,12 +574,12 @@ namespace neo
                         return;
                 }
             };
-            
+
             auto begin_initialized = m_begin;
             if (!predicate(*begin_initialized))
                 increment(begin_initialized);
-            
-            
+
+
             return IterableCollection<decltype(LazyIteratorWrapper { m_begin, m_end, default_dereference, increment, decrement })> {
                 LazyIteratorWrapper { begin_initialized, m_end, default_dereference, increment, decrement },
                 LazyIteratorWrapper { m_end, m_end, default_dereference, increment, decrement }
@@ -630,7 +634,7 @@ namespace neo
 
             return IterableCollection { m_begin, end };
         }
-        
+
         template<IteratorLike TIteratorDst>
         constexpr auto copy_to(TIteratorDst destination_begin, TIteratorDst const& destination_end)
         {
