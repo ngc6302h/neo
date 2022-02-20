@@ -28,6 +28,7 @@ namespace neo
     class Buffer
     {
     public:
+        using type = T;
         using iterator = Iterator<Buffer>;
         using const_iterator = Iterator<const Buffer>;
 
@@ -145,22 +146,22 @@ namespace neo
 
         constexpr iterator begin()
         {
-            return { m_data, m_data, m_data + m_size };
+            return { *this };
         }
 
         constexpr const_iterator begin() const
         {
-            return { m_data, m_data, m_data + m_size };
+            return { *this };
         }
 
         constexpr iterator end()
         {
-            return { m_data, m_data + m_size, m_data + m_size };
+            return { *this, m_size };
         }
 
         constexpr const_iterator end() const
         {
-            return { m_data, m_data + m_size, m_data + m_size };
+            return { *this, m_size };
         }
 
     private:
