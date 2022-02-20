@@ -464,7 +464,7 @@ namespace neo
             VERIFY(needed_capacity > 0);
             if constexpr (InlineStorage != 0)
             {
-                if (needed_capacity < InlineStorage)
+                if (needed_capacity <= InlineStorage)
                     return;
             }
             if (m_capacity < needed_capacity)
