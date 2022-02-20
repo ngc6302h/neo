@@ -30,15 +30,15 @@
 
 namespace neo
 {
-    template<typename T, size_t InlineStorage /*, typename Allocator = neo::DefaultAllocator */>
-    class Vector : public IContainer<Vector, T>, public IterableExtensions<Vector<T>, RemoveReferenceWrapper<T>>
+    template<typename T, size_t InlineStorage = 0 /*, typename Allocator = neo::DefaultAllocator */>
+    class Vector : public IContainer<Vector, T>, public IterableExtensions<Vector<T, InlineStorage>, RemoveReferenceWrapper<T>>
     {
         template<typename, size_t>
         friend class Vector;
 
     public:
-        using VectorIterator = Iterator<Vector>;
-        using VectorConstantIterator = Iterator<const Vector>;
+        using iterator = Iterator<Vector>;
+        using const_iterator = Iterator<const Vector>;
         static constexpr size_t DEFAULT_SIZE { 16 };
         static constexpr size_t InlineStorageSize = InlineStorage;
 
@@ -286,7 +286,7 @@ namespace neo
             initializer_list_copy_helper<sizeof...(Ts), Ts...>(0, forward<Ts>(items)...);
         }
 
-        template<size_t OtherInlineSize>
+        template<size_t OtherInlineSize = 0>
         constexpr Vector& operator=(Vector<T, OtherInlineSize> const& other)
         {
             if ((ptr_t)&other == (ptr_t)this)
@@ -612,24 +612,24 @@ namespace neo
             return { m_data, m_size };
         }
 
-        [[nodiscard]] constexpr VectorConstantIterator begin() const
+        [[nodiscard]] constexpr const_iterator begin() const
         {
-            return VectorConstantIterator(*this);
+            return const_iterator(*this);
         }
 
-        [[nodiscard]] constexpr VectorIterator begin()
+        [[nodiscard]] constexpr iterator begin()
         {
-            return VectorIterator(*this);
+            return iterator(*this);
         }
 
-        [[nodiscard]] constexpr VectorConstantIterator end() const
+        [[nodiscard]] constexpr const_iterator end() const
         {
-            return VectorConstantIterator(*this, m_size);
+            return const_iterator(*this, m_size);
         }
 
-        [[nodiscard]] constexpr VectorIterator end()
+        [[nodiscard]] constexpr iterator end()
         {
-            return VectorIterator(*this, m_size);
+            return iterator(*this, m_size);
         }
 
     private:
