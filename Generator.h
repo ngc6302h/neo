@@ -16,22 +16,19 @@
  */
 #include "Concepts.h"
 #include "Assert.h"
+#include "NumericLimits.h"
 
 namespace neo
 {
-    namespace detail
-    {
-        struct generator_end_t
-        {
-        };
-    }
-
-    template<typename T, typename TState, typename TPump, typename TValueExtractor>
+    template<typename T, typename TState, typename TPump, typename TRewindFunc, typename TValueExtractor>
     class GeneratorIterator
     {
     public:
-        constexpr GeneratorIterator(TPump pump, TValueExtractor extractor, TState initial_state = {}, bool exhausted = false) :
-            m_pump(pump), m_value_extractor(extractor), m_state(initial_state), m_exhausted(exhausted) { }
+        using type = T;
+        using iterator_type = GeneratorIterator;
+        using underlying_container_type = GeneratorIterator;
+        constexpr GeneratorIterator(TPump pump, TRewindFunc rewind, TValueExtractor extractor, TState initial_state, bool exhausted = false) :
+            m_pump(pump), m_rewind(rewind), m_value_extractor(extractor), m_state(initial_state), m_exhausted(exhausted) { }
 
         constexpr T operator*()
         {
@@ -51,25 +48,34 @@ namespace neo
             return prev;
         }
 
+        constexpr GeneratorIterator& operator--()
+        {
+            m_rewind(m_state, m_exhausted);
+            return *this;
+        }
+
+        constexpr GeneratorIterator operator--(int)
+        {
+            auto current = *this;
+            m_rewind(m_state, m_exhausted);
+            return current;
+        }
+
         constexpr bool is_end() const
         {
             return m_exhausted;
         }
 
-        constexpr bool operator==(GeneratorIterator const& right)
+        constexpr bool operator==(GeneratorIterator const& right) const
         {
             if (m_state == right.m_state)
                 return true;
             return false;
         }
 
-        constexpr bool operator==(detail::generator_end_t const&)
-        {
-            return is_end();
-        }
-
     private:
         TPump m_pump;
+        TRewindFunc m_rewind;
         TValueExtractor m_value_extractor;
         TState m_state;
         bool m_exhausted;
@@ -78,20 +84,20 @@ namespace neo
     template<typename T, typename TState = T>
     struct GeneratorUtil;
 
-    template<typename T, typename TState, typename TPump, typename TValueExtractor>
+    template<typename T, typename TState, typename TPump, typename TRewindFunc, typename TValueExtractor>
     class Generator
     {
         friend GeneratorUtil<T, TState>;
 
     public:
-        constexpr GeneratorIterator<T, TState, TPump, TValueExtractor> begin() const
+        constexpr auto begin() const
         {
-            return GeneratorIterator<T, TState, TPump, TValueExtractor>(m_pump, m_value_extractor, m_initial_state, false);
+            return GeneratorIterator<T, TState, TPump, TRewindFunc, TValueExtractor>(m_pump, m_rewind, m_value_extractor, m_initial_state, false);
         }
 
-        constexpr detail::generator_end_t end() const
+        constexpr auto end() const
         {
-            return {};
+            return GeneratorIterator<T, TState, TPump, TRewindFunc, TValueExtractor>(m_pump, m_rewind, m_value_extractor, m_end_state, true);
         }
 
         constexpr size_t generate_into(auto range_start, auto range_end)
@@ -109,24 +115,26 @@ namespace neo
 
     private:
         explicit constexpr Generator(
-            TPump pump, TValueExtractor extractor = [](TState& s) -> T
-            { return s; },
-            TState initial_state = {}) :
-            m_pump(pump), m_value_extractor(extractor), m_initial_state(initial_state)
+            TPump pump, TRewindFunc rewind, TValueExtractor extractor,
+            TState initial_state,
+            TState end_state) :
+            m_pump(pump), m_rewind(rewind), m_value_extractor(extractor), m_initial_state(initial_state), m_end_state(end_state)
         {
         }
 
         TPump m_pump;
+        TRewindFunc m_rewind;
         TValueExtractor m_value_extractor;
         TState m_initial_state;
+        TState m_end_state;
     };
 
     template<typename T, typename TState>
     struct GeneratorUtil
     {
-        static constexpr auto create_generator(auto pump, auto extractor, TState initial_state = {})
+        static constexpr auto create_generator(auto pump, auto rewind, auto extractor, TState initial_state, TState end_state)
         {
-            return Generator<T, TState, decltype(pump), decltype(extractor)>(pump, extractor, initial_state);
+            return Generator<T, TState, decltype(pump), decltype(rewind), decltype(extractor)>(pump, rewind, extractor, initial_state, end_state);
         }
     };
 
@@ -134,12 +142,20 @@ namespace neo
 
     namespace Generators
     {
-        template<Integral T, T InitialValue = 0>
-        static constexpr auto integer_sequence = GeneratorUtil<T, T>::create_generator([](T& state, bool&)
-            { return state++; },
-            [](T& state)
-            { return state; },
-            InitialValue);
+        template<Integral T>
+        constexpr auto integer_sequence(T initial_value)
+        {
+            return GeneratorUtil<T, T>::create_generator([](T& state, bool&)
+                { return state++; },
+                [](T& state, bool&)
+                {
+                    return state--;
+                },
+                [](T& state)
+                { return state; },
+                initial_value,
+                NumericLimits<T>::max());
+        }
 
     }
 }
