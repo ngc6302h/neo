@@ -125,8 +125,10 @@ namespace neo
     };
 
     template<typename T>
-    static constexpr auto DefaultEqualityComparer = [](const T& a, const T& b) -> bool
-    { return a == b; };
+    static constexpr auto DefaultEqualityComparer = [](const T& a, const T& b) constexpr -> bool
+    {
+        return a == b;
+    };
 
     template<typename T, size_t Size>
     struct initializer_list
