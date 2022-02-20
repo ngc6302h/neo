@@ -17,12 +17,12 @@
 
 #pragma once
 
+#include "Vector.h"
 #include "Assert.h"
 #include "Span.h"
 #include "StringCommon.h"
 #include "StringIterator.h"
 #include "Text.h"
-#include "Vector.h"
 
 namespace neo
 {
@@ -30,7 +30,7 @@ namespace neo
     {
     public:
         using type = const char;
-        using AsciiStringIterator = Iterator<AsciiStringView>;
+        using iterator = Iterator<AsciiStringView>;
 
         constexpr AsciiStringView() = default;
         constexpr AsciiStringView(const AsciiStringView& other) = default;
@@ -103,17 +103,17 @@ namespace neo
             return m_length;
         }
 
-        [[nodiscard]] constexpr AsciiStringIterator begin() const
+        [[nodiscard]] constexpr iterator begin() const
         {
             return { *this };
         }
 
-        [[nodiscard]] constexpr AsciiStringIterator end() const
+        [[nodiscard]] constexpr iterator end() const
         {
             return { *this, m_length };
         }
 
-        [[nodiscard]] constexpr AsciiStringView substring_view(AsciiStringIterator const& start) const
+        [[nodiscard]] constexpr AsciiStringView substring_view(iterator const& start) const
         {
             VERIFY(!start.index());
             return substring_view(start, m_length - start.index());
@@ -125,7 +125,7 @@ namespace neo
             return { m_view + start, m_length - start };
         }
 
-        [[nodiscard]] constexpr AsciiStringView substring_view(AsciiStringIterator const& start, size_t length) const
+        [[nodiscard]] constexpr AsciiStringView substring_view(iterator const& start, size_t length) const
         {
             VERIFY(!start.is_end());
             return substring_view(start.index(), length);
@@ -224,7 +224,7 @@ namespace neo
             return !find(other).is_end();
         }
 
-        constexpr AsciiStringIterator find(const AsciiStringView& other) const
+        constexpr iterator find(const AsciiStringView& other) const
         {
             if (is_empty() || other.is_empty() || length() < other.length())
                 return end();
