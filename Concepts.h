@@ -256,6 +256,20 @@ namespace neo
     };
 
     template<typename T>
+    concept IteratorLike = requires(T t, T t2)
+    {
+        ++t;
+        t++;
+        --t;
+        t--;
+        *t;
+        t = t2;
+        t == t;
+        t != t;
+        typename T::type;
+    };
+
+    template<typename T>
     concept POD = IsTrivial<T>;
 }
 using neo::Addable;
@@ -283,16 +297,20 @@ using neo::InequalityComparable;
 using neo::Integral;
 using neo::Iterable;
 using neo::IterableContainer;
+using neo::IteratorLike;
 using neo::LessOrEqualThanComparable;
 using neo::LessThanComparable;
 using neo::MoveAssignable;
 using neo::MoveConstructable;
 using neo::Multiplicable;
+using neo::MutexLike;
 using neo::NullPtr;
+using neo::POD;
 using neo::Pointer;
 using neo::Same;
 using neo::Scalar;
 using neo::Signed;
 using neo::Subtractable;
 using neo::ThreeWayComparable;
+using neo::TupleLike;
 using neo::Unsigned;
