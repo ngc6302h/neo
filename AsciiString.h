@@ -38,7 +38,7 @@ namespace neo
 
     public:
         using type = char;
-        using StringIterator = Iterator<AsciiString>;
+        using iterator = Iterator<AsciiString>;
 
         constexpr ~AsciiString()
         {
@@ -139,12 +139,12 @@ namespace neo
             other.m_length = 0;
         }
 
-        [[nodiscard]] constexpr StringIterator begin() const
+        [[nodiscard]] constexpr iterator begin() const
         {
             return { *this };
         }
 
-        [[nodiscard]] constexpr StringIterator end() const
+        [[nodiscard]] constexpr iterator end() const
         {
             return { *this, m_length };
         }
@@ -183,7 +183,7 @@ namespace neo
             return { m_buffer, m_length };
         }
 
-        [[nodiscard]] constexpr AsciiString substring(StringIterator const& start) const
+        [[nodiscard]] constexpr AsciiString substring(iterator const& start) const
         {
             VERIFY(!start.is_end());
 
@@ -196,7 +196,7 @@ namespace neo
             return substring(start, m_length - start);
         }
 
-        [[nodiscard]] constexpr AsciiString substring(StringIterator start, size_t length) const
+        [[nodiscard]] constexpr AsciiString substring(iterator start, size_t length) const
         {
             VERIFY(!start.is_end());
             return substring(start.index(), length);
@@ -272,7 +272,7 @@ namespace neo
             return __builtin_memcmp(m_length - other.m_length + m_buffer, other.m_buffer, other.m_length) == 0;
         }
 
-        [[nodiscard]] constexpr StringIterator find(const AsciiString& other)
+        [[nodiscard]] constexpr iterator find(const AsciiString& other)
         {
             if (!length() || !other.length() || length() < other.length())
                 return end();
