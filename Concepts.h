@@ -263,7 +263,7 @@ namespace neo
         --t;
         t--;
         *t;
-        t = t2;
+        //t = t2;
         t == t;
         t != t;
         typename T::type;
