@@ -19,72 +19,11 @@
 
 #include "Concepts.h"
 #include "Tuple.h"
-#include "TypeTraits.h"
+#include "Iterator.h"
 //#include "Vector.h"
 
 namespace neo
 {
-    template<typename T, size_t InlineStorage = 0>
-    class Vector;
-
-    template<IterableContainer TContainer, typename T, typename TComparerFunc>
-    requires CallableWithReturnType<TComparerFunc, bool, const typename TContainer::type&, const T&>
-    [[nodiscard]] constexpr auto find(const TContainer& where, const T& what, TComparerFunc&& comparer)
-    {
-        auto begin = where.begin();
-        auto end = where.end();
-        while (begin != end)
-        {
-            if (comparer(*begin, what))
-                return begin;
-            else
-                ++begin;
-        }
-        return end;
-    }
-
-    template<IterableContainer TContainer, typename T>
-    [[nodiscard]] constexpr auto find(const TContainer& where, const T& what)
-    {
-        return find(where, what, DefaultEqualityComparer<T>);
-    }
-
-    template<IterableContainer TContainer, typename TPredicate>
-    requires CallableWithReturnType<TPredicate, bool, typename TContainer::type const&>
-    [[nodiscard]] constexpr auto find(TContainer const& where, TPredicate&& finder)
-    {
-        auto begin = where.begin();
-        auto end = where.end();
-        while (begin != end)
-        {
-            if (finder(*begin))
-                return begin;
-            else
-                ++begin;
-        }
-        return end;
-    }
-
-    template<IterableContainer TContainer, typename T, typename TComparerFunc>
-    requires CallableWithReturnType<TComparerFunc, bool, const typename TContainer::type&, const T&>
-    [[nodiscard]] constexpr bool contains(const TContainer& where, const T& what, TComparerFunc comparer)
-    {
-        for (const auto& x : where)
-        {
-            if (comparer(x, what))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    template<IterableContainer TContainer, typename T>
-    [[nodiscard]] constexpr bool contains(const TContainer& where, const T& what)
-    {
-        return contains(where, what, DefaultEqualityComparer<T>);
-    }
-
     template<Iterable TContainer, typename TComparerFunc>
     requires CallableWithReturnType<TComparerFunc, bool, typename TContainer::type, typename TContainer::type>
     constexpr void sort(TContainer& what, TComparerFunc comparer)
@@ -142,220 +81,420 @@ namespace neo
         return zip(zip(first, second), tuples...);
     }
 
-    template<IterableContainer TContainer, typename TFunc>
-    requires Callable<TFunc, typename TContainer::type, typename TContainer::type>
-    constexpr TContainer& for_each(TContainer& where, TFunc do_what)
+    template<IteratorLike TIterator, typename T>
+    constexpr bool contains(TIterator begin, TIterator end, T what, auto equality_comparer = DefaultEqualityComparer<typename TIterator::type>)
     {
-        for (auto& i : where)
-        {
-            do_what(i);
-        }
-        return where;
-    }
+        if (begin == end)
+            return false;
 
-    template<IterableContainer TContainer, typename TFunc>
-    requires CallableWithReturnType<TFunc, bool, typename TContainer::type>
-    [[nodiscard]] constexpr auto filter(const TContainer& where, TFunc&& selector)
-    {
-        Vector<RewrapReference<typename TContainer::type>> selected;
-        for (auto& i : where)
+        for (; begin != end; ++begin)
         {
-            if (selector(i))
-            {
-                selected.append(RewrapReference<typename TContainer::type>(i));
-            }
-        }
-        return selected;
-    }
-
-    template<IterableContainer TContainer, typename TComparerFunc>
-    requires CallableWithReturnType<TComparerFunc, bool, typename TContainer::type const&, typename TContainer::type const&>
-    [[nodiscard]] constexpr auto sorted_view(TContainer const& what, TComparerFunc&& comparer)
-    {
-        Vector<RewrapReference<typename TContainer::type>> view;
-        for (auto& i : what)
-        {
-            view.append(RewrapReference<typename TContainer::type>(i));
-        }
-        sort(view, comparer);
-        return view;
-    }
-
-    template<IterableContainer TContainer, typename TSelector>
-    requires Callable<TSelector, typename TContainer::type&> &&(!IsSame<ReturnType<TSelector, RemoveReferenceWrapper<typename TContainer::type>&>, void>)
-        [[nodiscard]] constexpr auto select(TContainer& where, TSelector&& selector)
-    {
-        using StorageT = Conditional<IsLvalueReference<ReturnType<TSelector, RemoveReferenceWrapper<typename TContainer::type>&>>,
-            ReferenceWrapper<RemoveReference<ReturnType<TSelector, RemoveReferenceWrapper<typename TContainer::type>&>>>,
-            ReturnType<TSelector, RemoveReferenceWrapper<typename TContainer::type>&>>;
-        Vector<StorageT> items;
-        for (auto& i : where)
-        {
-            items.construct(selector(i));
-        }
-        return items;
-    }
-
-    template<IterableContainer TContainer, typename TPredicate>
-    requires CallableWithReturnType<TPredicate, bool, typename TContainer::type const&>
-    [[nodiscard]] constexpr bool any(TContainer const& where, TPredicate&& predicate)
-    {
-        for (auto const& v : where)
-            if (predicate(v))
+            if (equality_comparer(*begin, what))
                 return true;
+        }
+
         return false;
     }
 
-    template<IterableContainer TContainer, typename TPredicate>
-    requires CallableWithReturnType<TPredicate, bool, typename TContainer::type const&>
-    [[nodiscard]] constexpr bool all(TContainer const& where, TPredicate&& predicate)
+    template<IteratorLike TIterator, typename T>
+    constexpr TIterator find(TIterator begin, TIterator end, T what, auto equality_comparer = DefaultEqualityComparer<typename TIterator::type>)
     {
-        for (auto const& v : where)
-            if (!predicate(v))
-                return false;
-        return true;
+        if (begin == end)
+            return end;
+
+        for (; begin != end; ++begin)
+        {
+            if (equality_comparer(*begin, what))
+                return begin;
+        }
+
+        return end;
     }
 
-    template<IterableContainer TContainer, typename TTransformer>
-    requires Callable<TTransformer, typename TContainer::type&>
-    constexpr TContainer& transform(TContainer& where, TTransformer&& how)
+    template<IteratorLike TIterator, typename TAggregate, Callable<TAggregate&, typename TIterator::type> TAggregatorFunc>
+    constexpr TAggregate aggregate(TIterator begin, TIterator end, TAggregatorFunc&& aggregator, TAggregate initial_value = {})
     {
-        for (auto& v : where)
-            how(v);
-        return where;
-    };
+        for (; begin != end; ++begin)
+            aggregator(initial_value, *begin);
 
-    template<IterableContainer TContainer, typename TAccumulation, typename TAccumulator>
-    requires Callable<TAccumulator, TAccumulation&, typename TContainer::type const&>
-    [[nodiscard]] constexpr TAccumulation accumulate(TContainer const& what, TAccumulator&& accumulator, TAccumulation initial_value = {})
-    {
-        for (auto const& v : what)
-            accumulator(initial_value, v);
         return initial_value;
     }
 
-    template<IterableContainer TContainer, typename TAccumulation>
-    [[nodiscard]] constexpr TAccumulation accumulate(TContainer const& what, TAccumulation initial_value = {})
+    template<IteratorLike TIterator, Callable<typename TIterator::type> TPredicate>
+    constexpr bool all(TIterator begin, TIterator end, TPredicate&& predicate)
     {
-        return neo::accumulate(
-            what, [](auto& acc, auto const& v)
-            { acc += v; },
-            initial_value);
+        for (; begin != end; ++begin)
+        {
+            if (!predicate(*begin))
+                return false;
+        }
+
+        return true;
     }
+
+    template<IteratorLike TIterator, Callable<typename TIterator::type> TPredicate>
+    constexpr bool any(TIterator begin, TIterator end, TPredicate&& predicate)
+    {
+        for (; begin != end; ++begin)
+        {
+            if (predicate(*begin))
+                return true;
+        }
+
+        return false;
+    }
+
+    template<IteratorLike TIterator, CallableWithReturnType<bool, typename TIterator::type> TPredicate>
+    constexpr auto skip_while(TIterator begin, TIterator end, TPredicate&& predicate)
+    {
+        while (begin != end && predicate(begin))
+            ++begin;
+
+        return begin;
+    }
+
+    template<IteratorLike TIterator, Callable<typename TIterator::type&> TFunc>
+    constexpr auto for_all(TIterator begin, TIterator end, TFunc&& func)
+    {
+        auto copy = begin;
+        for (; begin != end; ++begin)
+            func(*begin);
+
+        return copy;
+    }
+
+    namespace detail
+    {
+        template<typename TIterator>
+        class RangeLimitedIterator
+        {
+            using type = typename TIterator::type;
+            using iterator_type = TIterator;
+            using underlying_container_type = typename TIterator::underlying_container_type;
+
+            constexpr RangeLimitedIterator(TIterator iterator, TIterator& end, size_t size, size_t index) :
+                m_iterator(iterator), m_end(end), m_size(size), m_index(index)
+            {
+            }
+
+            constexpr RangeLimitedIterator& operator++()
+            {
+                ++m_iterator;
+                ++m_index;
+                return *this;
+            }
+
+            constexpr RangeLimitedIterator operator++(int)
+            {
+                auto copy = *this;
+                return ++copy;
+            }
+
+            constexpr RangeLimitedIterator& operator--()
+            {
+                --m_iterator;
+                --m_index;
+                return *this;
+            }
+
+            constexpr RangeLimitedIterator operator--(int)
+            {
+                auto copy = *this;
+                return --copy;
+            }
+
+            constexpr decltype(auto) operator*()
+            {
+                VERIFY(m_index < m_size);
+                return m_dereference(*m_iterator);
+            }
+
+            constexpr bool operator==(TIterator const& other)
+            {
+                return m_iterator == other.m_iterator;
+            }
+
+            constexpr bool is_end() const
+            {
+                return m_iterator == m_end || m_size >= m_index;
+            }
+
+        private:
+            constexpr decltype(auto) implementation()
+            {
+                return m_iterator.implementation();
+            }
+
+        private:
+
+            TIterator m_iterator;
+            TIterator& m_end;
+            size_t m_size;
+            size_t m_index;
+        };
+    }
+
+    template<IteratorLike TIterator, Callable<TIterator> TDereferenceFunc, Callable<TIterator> TIncrementFunc, Callable<TIterator> TDecrementFunc>
+    class LazyIteratorWrapper
+    {
+    public:
+        using type = ReturnType<TDereferenceFunc, typename TIterator::type>;
+        using iterator_type = TIterator;
+        using underlying_container_type = typename TIterator::underlying_container_type;
+
+        constexpr LazyIteratorWrapper(TIterator iterator, TIterator& end, TDereferenceFunc&& dereference,
+            TIncrementFunc&& increment, TDecrementFunc&& decrement) :
+            m_iterator(iterator), m_end(end), m_dereference(dereference), m_increment(increment), m_decrement(decrement)
+        {
+        }
+
+        constexpr LazyIteratorWrapper& operator++()
+        {
+            m_increment(m_iterator);
+            return *this;
+        }
+
+        constexpr LazyIteratorWrapper operator++(int)
+        {
+            auto copy = *this;
+            return ++copy;
+        }
+
+        constexpr LazyIteratorWrapper& operator--()
+        {
+            m_decrement(m_iterator);
+            return *this;
+        }
+
+        constexpr LazyIteratorWrapper operator--(int)
+        {
+            auto copy = *this;
+            return --copy;
+        }
+
+        constexpr decltype(auto) operator*()
+        {
+            return m_dereference(*m_iterator);
+        }
+
+        constexpr bool operator==(TIterator const& other) const
+        {
+            return m_iterator == other.m_iterator;
+        }
+
+        constexpr bool is_end() const
+        {
+            return m_iterator == m_end;
+        }
+
+    private:
+        constexpr decltype(auto) implementation()
+        {
+            return m_iterator.implementation();
+        }
+
+        TIterator m_iterator;
+        TIterator& m_end;
+        TDereferenceFunc m_dereference;
+        TIncrementFunc m_increment;
+        TDecrementFunc m_decrement;
+    };
+
+    template<IteratorLike TIterator>
+    class IterableCollection
+    {
+    public:
+        using type = typename TIterator::type;
+        using iterator_type = TIterator;
+        using underlying_container_type = typename TIterator::underlying_container_type;
+
+        constexpr IterableCollection() = delete;
+
+        template<IterableContainer T>
+        constexpr IterableCollection(T& container) :
+            m_begin(container.begin()), m_end(container.end())
+        {
+        }
+
+        constexpr IterableCollection(TIterator const& begin, TIterator const& end) :
+            m_begin(begin), m_end(end)
+        {
+        }
+
+        constexpr TIterator begin()
+        {
+            return m_begin;
+        }
+
+        constexpr const TIterator begin() const
+        {
+            return m_begin;
+        }
+
+        constexpr TIterator end()
+        {
+            return m_end;
+        }
+
+        constexpr const TIterator end() const
+        {
+            return m_end;
+        }
+
+        constexpr size_t size() const
+        {
+            auto begin = m_begin;
+            size_t counter = 0;
+
+            while (begin++ != m_end)
+                ++counter;
+
+            return counter;
+        }
+
+        template<typename T, CallableWithReturnType<bool, type, T> TComparer>
+        constexpr bool contains(T const& what, TComparer equality_comparer)
+        {
+            return neo::contains(begin(), end(), what, equality_comparer);
+        }
+
+        constexpr bool contains(type const& what)
+        {
+            return neo::contains(begin(), end(), what, DefaultEqualityComparer<type>);
+        }
+
+        template<typename T, CallableWithReturnType<bool, type, T> TComparer>
+        constexpr auto find(T const& what, TComparer equality_comparer = DefaultEqualityComparer<type>)
+        {
+            return neo::find(begin(), end(), what, equality_comparer);
+        }
+
+        constexpr auto find(type const& what)
+        {
+            return neo::find(begin(), end(), what, DefaultEqualityComparer<type>);
+        }
+
+        template<Callable<type> TPredicate>
+        constexpr bool all(TPredicate&& predicate)
+        {
+            return neo::all(begin(), end(), forward<TPredicate>(predicate));
+        }
+
+        template<Callable<type> TPredicate>
+        constexpr bool any(TPredicate&& predicate)
+        {
+            return neo::any(begin(), end(), forward<TPredicate>(predicate));
+        }
+
+        template<typename TAggregate, Callable<TAggregate&, type> TAggregatorFunc>
+        constexpr TAggregate aggregate(TAggregatorFunc&& aggregator, TAggregate initial_value = {})
+        {
+            return neo::aggregate(begin(), end(), forward<TAggregatorFunc>(aggregator), initial_value);
+        }
+
+        template<CallableWithReturnType<bool, type> TPredicate>
+        constexpr auto filter(TPredicate&& predicate)
+        {
+            constexpr auto increment = [](TIterator & iterator, TPredicate && pred) constexpr
+            {
+                while (iterator.is_end())
+                {
+                    ++iterator;
+                    if (pred(*iterator))
+                        return;
+                }
+            };
+
+            constexpr auto decrement = [this](TIterator & iterator, TPredicate && pred) constexpr
+            {
+                while (iterator.is_end() && iterator != m_begin)
+                {
+                    --iterator;
+                    if (pred(*iterator))
+                        return;
+                }
+            };
+
+            return IterableCollection {
+                LazyIteratorWrapper { m_begin, m_end, default_dereference, increment, decrement },
+                LazyIteratorWrapper { m_end, m_end, default_dereference, increment, decrement }
+            };
+        }
+
+        template<Callable<typename TIterator::type> TSelectorFunc>
+        constexpr auto select(TSelectorFunc&& selector)
+        {
+            return IterableCollection { LazyIteratorWrapper { m_begin, m_end, forward<TSelectorFunc>(selector), default_increment, default_decrement },
+                LazyIteratorWrapper { m_end, m_end, forward<TSelectorFunc>(selector), default_increment, default_decrement } };
+        }
+
+        template<Callable<type&> TFunction>
+        constexpr auto for_all(TFunction&& function)
+        {
+            neo::for_all(begin(), end(), forward<TFunction>(function));
+            return *this;
+        }
+
+        constexpr auto take(size_t n)
+        {
+            return IterableCollection {
+                detail::RangeLimitedIterator { m_begin, m_end, 0 },
+                detail::RangeLimitedIterator { skip(m_begin, n), m_end, n }
+            };
+        }
+
+        constexpr auto skip(size_t n)
+        {
+            return IterableCollection { skip(m_begin, n), m_end };
+        }
+
+        template<CallableWithReturnType<bool, type> TPredicate>
+        constexpr auto skip_while(TPredicate&& predicate)
+        {
+            return IterableCollection { skip_while(begin(), end(), forward<TPredicate>(predicate)), m_end };
+        }
+
+        constexpr auto skip_backwards(size_t n)
+        {
+            return IterableCollection { m_begin, rewind(m_end, n) };
+        }
+
+        template<CallableWithReturnType<bool, type> TPredicate>
+        constexpr auto skip_backwards_while(TPredicate&& predicate)
+        {
+            auto end = m_end;
+            while (predicate(end))
+                --end;
+
+            return IterableCollection { m_begin, end };
+        }
+
+    private:
+        static constexpr auto identity = [](auto& v) constexpr { return v; };
+        static constexpr auto default_dereference = [](auto& v) constexpr { return *v; };
+        static constexpr auto default_increment = [](auto& v) constexpr -> auto& { return ++v; };
+        static constexpr auto default_decrement = [](auto& v) constexpr -> auto& { return --v; };
+
+        TIterator m_begin;
+        TIterator m_end;
+    };
 
     template<typename TContainer, typename T>
     struct IterableExtensions
     {
-        template<typename TPredicate>
-        requires CallableWithReturnType<TPredicate, bool, T const&>
-        [[nodiscard]] decltype(auto) filter(TPredicate&& predicate) const
+        constexpr auto to_iterable_collection()
         {
-            return neo::filter(*static_cast<TContainer const*>(this), predicate);
-        }
-
-        template<typename TSelector>
-        requires Callable<TSelector, T> &&(!IsSame<ReturnType<TSelector, T const&>, void>)
-            [[nodiscard]] auto select(TSelector&& selector) const
-        {
-            return neo::select(*static_cast<const TContainer*>(this), selector);
-        }
-
-        template<typename U, typename TComparerFunc>
-        requires CallableWithReturnType<TComparerFunc, bool, const T&, const U&>
-        [[nodiscard]] bool contains(const U& what, TComparerFunc comparer)
-        {
-            return neo::contains(*static_cast<TContainer*>(this), what, comparer);
-        }
-
-        [[nodiscard]] bool contains(const T& what)
-        {
-            return neo::contains(*static_cast<TContainer*>(this), what, DefaultEqualityComparer<const T&>);
-        }
-
-        template<typename TPredicate>
-        requires CallableWithReturnType<TPredicate, bool, T const&>
-        [[nodiscard]] constexpr auto find(TPredicate&& finder) const
-        {
-            return neo::find(*static_cast<TContainer const*>(this), finder);
-        }
-
-        template<typename TPredicate>
-        requires CallableWithReturnType<TPredicate, bool, T const&>
-        [[nodiscard]] constexpr auto find(TPredicate&& finder)
-        {
-            return neo::find(*static_cast<TContainer const*>(this), finder);
-        }
-
-        template<typename TComparerFunc>
-        requires CallableWithReturnType<TComparerFunc, bool, const T&, const T&>
-        [[nodiscard]] constexpr bool contains(const T& what, TComparerFunc comparer) const
-        {
-            return neo::contains(*static_cast<const TContainer*>(this), what, comparer);
-        }
-
-        [[nodiscard]] constexpr bool contains(const T& what) const
-        {
-            return neo::contains(*static_cast<const TContainer*>(this), what, DefaultEqualityComparer<const T&>);
-        }
-
-        template<typename TComparerFunc>
-        requires CallableWithReturnType<TComparerFunc, bool, T const&, T const&>
-        [[nodiscard]] constexpr Vector<RewrapReference<T>> sort(TComparerFunc comparer)
-        {
-            return neo::sorted_view(*static_cast<TContainer*>(this), comparer);
-        }
-
-        template<typename TComparerFunc>
-        requires CallableWithReturnType<TComparerFunc, bool, T const&, T const&>
-        [[nodiscard]] constexpr const Vector<RewrapReference<const T>> sort(TComparerFunc comparer) const
-        {
-            return neo::sorted_view(*static_cast<const TContainer*>(this), comparer);
-        }
-
-        template<typename TPredicate>
-        requires CallableWithReturnType<TPredicate, bool, T const&>
-        [[nodiscard]] constexpr bool any(TPredicate&& predicate) const
-        {
-            return neo::any(*static_cast<TContainer const*>(this), predicate);
-        }
-
-        template<typename TPredicate>
-        requires CallableWithReturnType<TPredicate, bool, T const&>
-        [[nodiscard]] constexpr bool all(TPredicate&& predicate) const
-        {
-            return neo::all(*static_cast<TContainer const*>(this), predicate);
-        }
-
-        template<typename TTransformer>
-        requires Callable<TTransformer, T&>
-        constexpr TContainer& transform(TTransformer&& how)
-        {
-            return neo::transform(*static_cast<TContainer*>(this), how);
-        }
-
-        template<typename TAccumulation, typename TAccumulator>
-        requires Callable<TAccumulator, TAccumulation&, T const&>
-        [[nodiscard]] constexpr TAccumulation accumulate(TAccumulator&& accumulator, TAccumulation initial_value = {})
-        {
-            return neo::accumulate(*static_cast<TContainer const*>(this), accumulator, initial_value);
-        }
-
-        template<typename TAccumulation = T>
-        [[nodiscard]] constexpr TAccumulation accumulate(TAccumulation initial_value = {})
-        {
-            return neo::accumulate(*static_cast<TContainer const*>(this), initial_value);
+            return IterableCollection<typename TContainer::iterator>(static_cast<TContainer&>(*this).begin(), static_cast<TContainer&>(*this).end());
         }
     };
+
 }
 
-using neo::accumulate;
+using neo::aggregate;
 using neo::all;
 using neo::any;
 using neo::contains;
-using neo::filter;
 using neo::find;
-using neo::for_each;
-using neo::select;
+using neo::for_all;
 using neo::sort;
-using neo::transform;
 using neo::zip;
