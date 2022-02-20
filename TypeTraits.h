@@ -74,8 +74,8 @@ namespace std
     {
     };
 }
-#endif
 using std::move;
+#endif
 
 namespace neo
 {
