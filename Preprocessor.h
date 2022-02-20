@@ -40,3 +40,17 @@
 #define __ENUM_CASE(name) \
     case name:            \
         return #name;
+
+#define GENERATE_GETTER_BY_VALUE(field, name) \
+    constexpr auto get_##name() const { return field; }
+
+#define GENERATE_GETTER_BY_CONSTREF(field, name) \
+    constexpr auto const& get_##name() const { return field; }
+
+#define GENERATE_SETTER(field, name)                                           \
+    constexpr void set_##name(decltype(field) const& value) { field = value; } \
+    constexpr void set_##name(decltype(field)&& value) { field = move(value); }
+
+#define GENERATE_GETTER_SETTER(field, name) \
+    GENERATE_GETTER_BY_VALUE(field, name)   \
+    GENERATE_SETTER(field, value)
