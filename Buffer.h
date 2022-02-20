@@ -25,7 +25,7 @@
 namespace neo
 {
     template<typename T>
-    class Buffer
+    class Buffer : public IterableExtensions<Buffer<T>, T>
     {
     public:
         using type = T;
