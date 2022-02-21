@@ -16,8 +16,11 @@
  */
 
 #pragma once
-#define DEBUG_ASSERTS 1
-#define VERBOSE_ASSERTS 1
+#if DEBUG_ASSERTS == 0
+    #undef DEBUG_ASSERTS
+    #define DEBUG_ASSERTS 1
+    #define VERBOSE_ASSERTS 1
+#endif
 #include <Assert.h>
 
 #define TEST(expr) VERIFY(expr)
