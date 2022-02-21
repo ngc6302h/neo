@@ -89,7 +89,7 @@ namespace neo
                         if constexpr (InlineStorage > OtherInlineSize)
                         {
                             Copy(OtherInlineSize, other.inline_storage(), inline_storage());
-                            if (other.m_size < InlineStorage)
+                            if (other.m_size <= InlineStorage)
                                 Copy(other.m_size - OtherInlineSize, other.m_data, inline_storage() + OtherInlineSize);
                             else
                             {

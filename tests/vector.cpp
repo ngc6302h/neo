@@ -25,6 +25,12 @@ int main()
 
     Vector<int> reference { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
+    for (int i : reference.to_iterable_collection().skip_backwards(1).filter([](int k)
+             { return k > 5; }))
+    {
+        __builtin_printf("%d\n", i);
+    }
+
     Vector<int> pure_heap { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
     TEST_EQUAL(pure_heap, reference);
     print(pure_heap);
