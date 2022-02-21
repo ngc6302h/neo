@@ -5,6 +5,7 @@ namespace neo
 {
     enum class Error
     {
+        Success = 0,
         OperationNotPermitted = EPERM,
         NoSuchEntity = ENOENT,
         NoSuchProcess = ESRCH,
