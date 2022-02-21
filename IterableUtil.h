@@ -337,6 +337,11 @@ namespace neo
                 return m_iterator == m_end || m_index >= m_size;
             }
 
+            constexpr size_t index() const
+            {
+                return m_index;
+            }
+
             constexpr RangeLimitedIterator(RangeLimitedIterator const&) = default;
             constexpr RangeLimitedIterator& operator=(RangeLimitedIterator const& other) = default;
 
@@ -425,6 +430,88 @@ namespace neo
         TIncrementFunc m_increment;
         TDecrementFunc m_decrement;
     };
+
+    namespace detail
+    {
+        template<IteratorLike TIterator, Callable<size_t, typename TIterator::type> TDereferenceWithIndexFunc>
+        class IndexingIteratorWrapper
+        {
+        public:
+            using type = typename TIterator::type;
+            using iterator_type = TIterator;
+            using underlying_container_type = typename TIterator::underlying_container_type;
+
+            constexpr IndexingIteratorWrapper(TIterator const& iterator, TDereferenceWithIndexFunc dereference) :
+                m_iterator(iterator), m_dereference(dereference), m_index(0)
+            {
+            }
+
+            constexpr IndexingIteratorWrapper& operator++()
+            {
+                VERIFY(!m_iterator.is_end());
+                ++m_iterator;
+                ++m_index;
+                return *this;
+            }
+
+            constexpr IndexingIteratorWrapper operator++(int)
+            {
+                auto copy = *this;
+                ++*this;
+                return copy;
+            }
+
+            constexpr IndexingIteratorWrapper& operator--()
+            {
+                VERIFY(m_index != 0);
+                --m_iterator;
+                --m_index;
+                return *this;
+            }
+
+            constexpr IndexingIteratorWrapper operator--(int)
+            {
+                auto copy = *this;
+                --*this;
+                return copy;
+            }
+
+            constexpr decltype(auto) operator*()
+            {
+                VERIFY(!is_end());
+                return m_dereference(index(), *m_iterator);
+            }
+
+            constexpr bool operator==(IndexingIteratorWrapper const& other) const
+            {
+                return m_iterator == other.m_iterator;
+            }
+
+            constexpr bool is_end() const
+            {
+                return m_iterator.is_end();
+            }
+
+            constexpr size_t index() const
+            {
+                return m_index;
+            }
+
+            constexpr IndexingIteratorWrapper(IndexingIteratorWrapper const&) = default;
+            constexpr IndexingIteratorWrapper& operator=(IndexingIteratorWrapper const& other) = default;
+
+        private:
+            constexpr decltype(auto) implementation()
+            {
+                return m_iterator.implementation();
+            }
+
+        private:
+            TIterator m_iterator;
+            TDereferenceWithIndexFunc m_dereference;
+            size_t m_index;
+        };
+    }
 
     template<IteratorLike TIterator>
     class IterableCollection
@@ -589,9 +676,18 @@ namespace neo
         template<Callable<type> TSelectorFunc>
         constexpr auto select(TSelectorFunc selector)
         {
-            return IterableCollection<decltype(LazyIteratorWrapper(m_begin, m_end, selector, default_increment, default_decrement))>
-                (LazyIteratorWrapper(m_begin, m_end, selector, default_increment, default_decrement),
-                LazyIteratorWrapper(m_end, m_end, selector, default_increment, default_decrement) );
+            return IterableCollection<decltype(LazyIteratorWrapper(m_begin, m_end, selector, default_increment, default_decrement))>{
+                LazyIteratorWrapper {m_begin, m_end, selector, default_increment, default_decrement },
+                LazyIteratorWrapper {m_end, m_end, selector, default_increment, default_decrement} };
+        }
+
+        template<Callable<size_t, type> TSelectorFunc>
+        constexpr auto select(TSelectorFunc selector)
+        {
+            return IterableCollection<decltype(detail::IndexingIteratorWrapper(begin(), selector))>
+            {
+                detail::IndexingIteratorWrapper {begin(), selector}, detail::IndexingIteratorWrapper {end(), selector}
+            };
         }
 
         template<Callable<type&> TFunction>
