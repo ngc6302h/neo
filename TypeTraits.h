@@ -74,6 +74,8 @@ namespace std
     {
     };
 }
+#endif
+#ifndef NEO_NO_MOVE_IN_GLOBAL_NAMESPACE
 using std::move;
 #endif
 
