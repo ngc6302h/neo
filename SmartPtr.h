@@ -115,7 +115,7 @@ namespace neo
         size_t weak_reference_count;
     };
 
-    template<typename T, bool SharedBetweenThreads = true>
+    template<typename T, bool SharedBetweenThreads = false>
     class RefPtr
     {
         friend WeakPtr<T, SharedBetweenThreads>;
@@ -260,7 +260,7 @@ namespace neo
         ControlBlock* m_control;
     };
 
-    template<typename T, bool SharedBetweenThreads = true>
+    template<typename T, bool SharedBetweenThreads = false>
     class WeakPtr
     {
     public:
