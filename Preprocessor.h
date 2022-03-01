@@ -41,16 +41,20 @@
     case name:            \
         return #name;
 
-#define GENERATE_GETTER_BY_VALUE(field, name) \
-    constexpr auto get_##name() const { return field; }
+#define GENERATE_GETTER_BY_VALUE(field, name, ...) \
+    __VA_ARGS__ auto get_##name() const { return field; }
 
-#define GENERATE_GETTER_BY_CONSTREF(field, name) \
-    constexpr auto const& get_##name() const { return field; }
+#define GENERATE_GETTER_BY_CONSTREF(field, name, ...) \
+    __VA_ARGS__ auto const& get_##name() const { return field; }
 
-#define GENERATE_SETTER(field, name)                                           \
-    constexpr void set_##name(decltype(field) const& value) { field = value; } \
-    constexpr void set_##name(decltype(field)&& value) { field = move(value); }
+#define GENERATE_SETTER(field, name, ...)                                        \
+    __VA_ARGS__ void set_##name(decltype(field) const& value) { field = value; } \
+    __VA_ARGS__ void set_##name(decltype(field)&& value) { field = move(value); }
 
-#define GENERATE_GETTER_SETTER(field, name) \
-    GENERATE_GETTER_BY_VALUE(field, name)   \
-    GENERATE_SETTER(field, value)
+#define GENERATE_VALUE_GETTER_SETTER(field, name, ...) \
+    __VA_ARGS__ GENERATE_GETTER_BY_VALUE(field, name)  \
+    __VA_ARGS__ GENERATE_SETTER(field, value)
+
+#define GENERATE_CONSTREF_GETTER_SETTER(field, name, ...) \
+    __VA_ARGS__ GENERATE_GETTER_BY_CONSTREF(field, name)  \
+    __VA_ARGS__ GENERATE_SETTER(field, value)
