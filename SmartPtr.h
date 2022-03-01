@@ -51,7 +51,7 @@ namespace neo
             if (this == &other)
                 return *this;
 
-            ~OwnPtr();
+            this->~OwnPtr();
             new (this) OwnPtr(move(other));
 
             return *this;
@@ -162,7 +162,7 @@ namespace neo
 
             VERIFY(*other.m_reference_counter != 0);
 
-            ~RefPtr();
+            this->~RefPtr();
             new (this) RefPtr(other);
 
             return *this;
@@ -173,7 +173,7 @@ namespace neo
             if (this == &other)
                 return *this;
 
-            ~RefPtr();
+            this->~RefPtr();
             new (this) RefPtr(other);
 
             return *this;
@@ -183,7 +183,7 @@ namespace neo
         {
             VERIFY(*other.m_reference_counter != 0);
 
-            ~RefPtr();
+            this->~RefPtr();
             new (this) RefPtr(move(other));
 
             return *this;
@@ -294,7 +294,7 @@ namespace neo
         {
             VERIFY(other.is_valid());
 
-            ~WeakPtr();
+            this->~WeakPtr();
             new (this) WeakPtr(other);
 
             return *this;
@@ -304,7 +304,7 @@ namespace neo
         {
             VERIFY(other.is_valid());
 
-            ~WeakPtr();
+            this->~WeakPtr();
             new (this) WeakPtr(move(other));
 
             return *this;
