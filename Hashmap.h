@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2021  Iori Torres (shortanemoia@protonmail.com)
- *
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+* Copyright (C) 2021  Iori Torres (shortanemoia@protonmail.com)
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation, either version 3 of the License, or
+*  (at your option) any later version.
 
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
+*  This program is distributed in the hope that it will be useful,
+   *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
 
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+*  You should have received a copy of the GNU General Public License
+*  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 
 #pragma once
 #include "Types.h"
@@ -418,7 +418,7 @@ namespace neo
             VERIFY_NOT_REACHED();
         }
 
-        constexpr Optional<ReferenceWrapper<TValue>> get(TKey const& key)
+        constexpr Optional<Conditional<IsPointer<TValue>, TValue, ReferenceWrapper<TValue>>> get(TKey const& key)
         {
             size_t hash = Hasher::hash(key);
             auto bucket = (hash >> (sizeof(hash) * 8 / 2)) % m_buckets.size();
@@ -430,14 +430,14 @@ namespace neo
             else
             {
                 if (hit.m_key == key)
-                    return ReferenceWrapper<TValue>(hit.m_value);
+                    return Optional<Conditional<IsPointer<TValue>, TValue, ReferenceWrapper<TValue>>> { hit.m_value };
                 else if (hit.m_next != (HashmapRecord<TKey, TValue>*)-1)
                 {
                     auto* next = hit.m_next;
                     while (next != nullptr)
                     {
                         if (next->m_key == key)
-                            return ReferenceWrapper<TValue>(next->m_value);
+                            return Optional<Conditional<IsPointer<TValue>, TValue, ReferenceWrapper<TValue>>> { next->m_value };
                         else
                             next = next->m_next;
                     }
@@ -448,7 +448,7 @@ namespace neo
             return {};
         }
 
-        constexpr Optional<ReferenceWrapper<const TValue>> get(TKey const& key) const
+        constexpr Optional<Conditional<IsPointer<TValue>, const TValue, ReferenceWrapper<const TValue>>> get(TKey const& key) const
         {
             size_t hash = Hasher::hash(key);
             auto bucket = (hash >> (sizeof(hash) * 8 / 2)) % m_buckets.size();
@@ -460,14 +460,14 @@ namespace neo
             else
             {
                 if (hit.m_key == key)
-                    return ReferenceWrapper<const TValue>(hit.m_value);
+                    return Optional<Conditional<IsPointer<TValue>, const TValue, ReferenceWrapper<const TValue>>> { hit.m_value };
                 else if (hit.m_next != (HashmapRecord<TKey, TValue>*)-1)
                 {
                     auto* next = hit.m_next;
                     while (next != nullptr)
                     {
                         if (next->m_key == key)
-                            return ReferenceWrapper<const TValue>(next->m_value);
+                            return Optional<Conditional<IsPointer<TValue>, const TValue, ReferenceWrapper<const TValue>>> { next->m_value };
                         else
                             next = next->m_next;
                     }
