@@ -27,7 +27,7 @@ namespace neo
     consteval StringView get_type_name()
     {
         constexpr StringView function_signature = __PRETTY_FUNCTION__;
-        constexpr auto type_name = function_signature.substring(57);
+        constexpr auto type_name = function_signature.substring(47 + (function_signature.starts_with("consteval ") ? 10 : 0));
         constexpr auto ready = type_name.substring(0, type_name.length() - 1);
         return ready;
     }
