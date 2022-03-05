@@ -21,9 +21,53 @@
 #include <Concepts.h>
 #include <sys/syscall.h>
 #include <unistd.h>
+#include <syscall.h>
+#include <linux/futex.h>
+#include <errno.h>
 
 namespace neo
 {
+    class SpinlockMutex
+    {
+    public:
+        constexpr SpinlockMutex() = default;
+        constexpr SpinlockMutex& operator=(SpinlockMutex&) = delete;
+        constexpr SpinlockMutex& operator=(SpinlockMutex&&) = delete;
+
+        constexpr ~SpinlockMutex()
+        {
+            VERIFY(m_control.load(Relaxed) == 0);
+        }
+
+        constexpr void lock()
+        {
+            u32 expected = 0;
+            while (!m_control.compare_exchange_strong(expected, 1, AcquireRelease, Acquire))
+                ;
+        }
+
+        constexpr bool try_lock()
+        {
+            u32 expected = 0;
+            return m_control.compare_exchange_strong(expected, 1, AcquireRelease, Acquire);
+        }
+
+        constexpr bool unlock()
+        {
+            u32 expected = 1;
+            bool result = m_control.compare_exchange_strong(expected, 0, AcquireRelease, Acquire);
+            return result;
+        }
+
+        constexpr bool is_locked() const
+        {
+            return m_control.load(Acquire) == 1;
+        }
+
+    private:
+        Atomic<u32> m_control { 0 };
+    };
+
     class Mutex
     {
     public:
@@ -38,22 +82,29 @@ namespace neo
 
         constexpr void lock()
         {
-            size_t expected = 0;
+            u32 expected = 0;
             while (!m_control.compare_exchange_strong(expected, 1, AcquireRelease, Acquire))
-                ;
+            {
+                [[maybe_unused]] auto result = syscall(SYS_futex, m_control.ptr(), FUTEX_WAIT_PRIVATE, expected, nullptr);
+                VERIFY(result != -1);
+                expected = 0;
+            }
         }
 
+        // true if the lock was acquired
         constexpr bool try_lock()
         {
-            size_t expected = 0;
-            return m_control.compare_exchange_strong(expected, 1, AcquireRelease, Acquire);
+            u32 expected = 0;
+            return m_control.compare_exchange_strong(expected, 1, AcquireRelease, Acquire) == true;
         }
 
-        constexpr bool unlock()
+        constexpr void unlock()
         {
-            size_t expected = 1;
-            bool result = m_control.compare_exchange_strong(expected, 0, AcquireRelease, Acquire);
-            return result;
+            u32 expected = 1;
+            [[maybe_unused]] auto success = m_control.compare_exchange_strong(expected, 0, AcquireRelease, Acquire);
+            VERIFY(success)
+            success = syscall(SYS_futex, m_control.ptr(), FUTEX_WAKE_PRIVATE, 1) != -1;
+            VERIFY(success);
         }
 
         constexpr bool is_locked() const
@@ -62,7 +113,60 @@ namespace neo
         }
 
     private:
-        Atomic<size_t> m_control { 0 };
+        Atomic<u32> m_control alignas(4);
+    };
+
+    class HybridMutex
+    {
+    public:
+        constexpr HybridMutex() = default;
+        constexpr HybridMutex& operator=(HybridMutex&) = delete;
+        constexpr HybridMutex& operator=(HybridMutex&&) = delete;
+
+        constexpr ~HybridMutex()
+        {
+            VERIFY(m_control.load(Relaxed) == 0);
+        }
+
+        constexpr void lock()
+        {
+
+            u8 iterations = 0;
+            u32 expected = 0;
+            while (!m_control.compare_exchange_strong(expected, 1, AcquireRelease, Acquire))
+            {
+                if (++iterations > 60)
+                {
+                    [[maybe_unused]] auto result = syscall(SYS_futex, m_control.ptr(), FUTEX_WAIT_PRIVATE, 1, nullptr);
+                    VERIFY(result != -1);
+                    expected = 0;
+                }
+            }
+        }
+
+        // true if the lock was acquired
+        constexpr bool try_lock()
+        {
+            u32 expected = 0;
+            return m_control.compare_exchange_strong(expected, 1, AcquireRelease, Acquire) == true;
+        }
+
+        constexpr void unlock()
+        {
+            u32 expected = 1;
+            [[maybe_unused]] auto success = m_control.compare_exchange_strong(expected, 0, AcquireRelease, Acquire);
+            VERIFY(success)
+            success = syscall(SYS_futex, m_control.ptr(), FUTEX_WAKE_PRIVATE, 1) != -1;
+            VERIFY(success);
+        }
+
+        constexpr bool is_locked() const
+        {
+            return m_control.load(Acquire) == 1;
+        }
+
+    private:
+        Atomic<u32> m_control { 0 };
     };
 
     class RecursiveMutex
@@ -77,7 +181,7 @@ namespace neo
             VERIFY(m_control.load(Relaxed) == 0);
         }
 
-        size_t lock()
+        u32 lock()
         {
             auto tid = syscall(__NR_gettid);
             if (m_tid == tid)
@@ -86,45 +190,55 @@ namespace neo
             }
             else
             {
-                size_t expected;
-                do
+                u32 expected = 0;
+                while (!m_control.compare_exchange_strong(expected, 1, AcquireRelease, Acquire))
                 {
+                    [[maybe_unused]] auto result = syscall(SYS_futex, m_control.ptr(), FUTEX_WAIT_PRIVATE, expected, nullptr);
+                    VERIFY(result != -1);
                     expected = 0;
-                    m_control.compare_exchange_weak(expected, 1, AcquireRelease, Acquire);
-                } while (expected != 0);
+                }
                 m_tid = tid;
                 return 1;
             }
         }
 
-        bool try_lock()
+        ssize_t try_lock()
         {
             auto tid = syscall(__NR_gettid);
             if (m_tid == tid)
             {
-                m_control.add_fetch(1, Relaxed);
-                return true;
+                return m_control.add_fetch(1, Relaxed);
             }
             else
             {
-                size_t expected = 0;
-                bool success = m_control.compare_exchange_strong(expected, 1, AcquireRelease, Acquire);
+                constexpr size_t expected = 0;
+                bool success = syscall(SYS_futex, m_control.ptr(), FUTEX_WAIT_PRIVATE, expected, nullptr) == 0;
                 if (success)
+                {
+                    m_control.store(1, MemoryOrder::AcquireRelease);
                     m_tid = tid;
+                }
                 return success;
             }
         }
 
-        void unlock()
+        u32 unlock()
         {
             auto tid = syscall(__NR_gettid);
-            if (m_tid == tid)
+            VERIFY(m_tid == tid);
+            if (m_tid == tid) [[likely]]
             {
-                bool will_unlock = m_control.load(Acquire) == 1;
+                bool will_unlock = m_control.load(Relaxed) == 1;
                 if (will_unlock)
+                {
                     m_tid = 0;
-                m_control.sub_fetch(1, AcquireRelease);
+                }
+                auto result = m_control.sub_fetch(1, AcquireRelease);
+                syscall(SYS_futex, m_control.ptr(), FUTEX_WAKE_PRIVATE, 1, nullptr);
+                return result;
             }
+
+            __builtin_abort();
         }
 
         bool is_locked() const
@@ -133,7 +247,7 @@ namespace neo
         }
 
     private:
-        Atomic<size_t> m_control { 0 };
+        Atomic<u32> m_control alignas(4) { 0 };
         long m_tid { 0 };
     };
 
