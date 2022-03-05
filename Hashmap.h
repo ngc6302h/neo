@@ -7,7 +7,7 @@
 *  (at your option) any later version.
 
 *  This program is distributed in the hope that it will be useful,
-   *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+    *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 
@@ -299,7 +299,7 @@ namespace neo
             }
 
             size_t hash = Hasher::hash(key);
-            auto bucket = (hash >> (sizeof(hash) * 8 / 2)) % m_buckets.size();
+            auto bucket = hash % m_buckets.size();
             auto index = hash % m_buckets[bucket].size();
             auto& hit = m_buckets[bucket][index];
 
@@ -373,7 +373,7 @@ namespace neo
         constexpr bool remove(TKey const& key)
         {
             size_t hash = Hasher::hash(key);
-            auto bucket = (hash >> (sizeof(hash) * 8 / 2)) % m_buckets.size();
+            auto bucket = hash % m_buckets.size();
             auto index = hash % m_buckets[bucket].size();
             auto& hit = m_buckets[bucket][index];
 
@@ -421,7 +421,7 @@ namespace neo
         constexpr Optional<Conditional<IsPointer<TValue>, TValue, ReferenceWrapper<TValue>>> get(TKey const& key)
         {
             size_t hash = Hasher::hash(key);
-            auto bucket = (hash >> (sizeof(hash) * 8 / 2)) % m_buckets.size();
+            auto bucket = hash % m_buckets.size();
             auto index = hash % m_buckets[bucket].size();
             auto& hit = m_buckets[bucket][index];
 
@@ -451,7 +451,7 @@ namespace neo
         constexpr Optional<Conditional<IsPointer<TValue>, const TValue, ReferenceWrapper<const TValue>>> get(TKey const& key) const
         {
             size_t hash = Hasher::hash(key);
-            auto bucket = (hash >> (sizeof(hash) * 8 / 2)) % m_buckets.size();
+            auto bucket = hash % m_buckets.size();
             auto index = hash % m_buckets[bucket].size();
             auto& hit = m_buckets[bucket][index];
 
