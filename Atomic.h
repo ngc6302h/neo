@@ -149,7 +149,12 @@ namespace neo
             return __atomic_clear(&m_value, order);
         }
 
-    private :
+        constexpr T* ptr() __attribute__((always_inline))
+        {
+            return &m_value;
+        }
+
+    private:
 
         T m_value {};
     };
