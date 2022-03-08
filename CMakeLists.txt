@@ -28,3 +28,6 @@ endif()
 enable_testing()
 
 add_subdirectory(tests)
+
+file(GLOB neo_headers *.h)
+add_library(neo INTERFACE ${neo_headers})
