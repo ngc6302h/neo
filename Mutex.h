@@ -30,36 +30,36 @@ namespace neo
     class SpinlockMutex
     {
     public:
-        constexpr SpinlockMutex() = default;
-        constexpr SpinlockMutex& operator=(SpinlockMutex&) = delete;
-        constexpr SpinlockMutex& operator=(SpinlockMutex&&) = delete;
+        SpinlockMutex() = default;
+        SpinlockMutex& operator=(SpinlockMutex&) = delete;
+        SpinlockMutex& operator=(SpinlockMutex&&) = delete;
 
-        constexpr ~SpinlockMutex()
+        ~SpinlockMutex()
         {
             VERIFY(m_control.load(Relaxed) == 0);
         }
 
-        constexpr void lock()
+        void lock()
         {
             u32 expected = 0;
             while (!m_control.compare_exchange_strong(expected, 1, AcquireRelease, Acquire))
                 ;
         }
 
-        constexpr bool try_lock()
+        bool try_lock()
         {
             u32 expected = 0;
             return m_control.compare_exchange_strong(expected, 1, AcquireRelease, Acquire);
         }
 
-        constexpr bool unlock()
+        bool unlock()
         {
             u32 expected = 1;
             bool result = m_control.compare_exchange_strong(expected, 0, AcquireRelease, Acquire);
             return result;
         }
 
-        constexpr bool is_locked() const
+        bool is_locked() const
         {
             return m_control.load(Acquire) == 1;
         }
@@ -71,16 +71,16 @@ namespace neo
     class Mutex
     {
     public:
-        constexpr Mutex() = default;
-        constexpr Mutex& operator=(Mutex&) = delete;
-        constexpr Mutex& operator=(Mutex&&) = delete;
+        Mutex() = default;
+        Mutex& operator=(Mutex&) = delete;
+        Mutex& operator=(Mutex&&) = delete;
 
-        constexpr ~Mutex()
+        ~Mutex()
         {
             VERIFY(m_control.load(Relaxed) == 0);
         }
 
-        constexpr void lock()
+        void lock()
         {
             u32 expected = 0;
             while (!m_control.compare_exchange_strong(expected, 1, AcquireRelease, Acquire))
@@ -92,13 +92,13 @@ namespace neo
         }
 
         // true if the lock was acquired
-        constexpr bool try_lock()
+        bool try_lock()
         {
             u32 expected = 0;
             return m_control.compare_exchange_strong(expected, 1, AcquireRelease, Acquire) == true;
         }
 
-        constexpr void unlock()
+        void unlock()
         {
             u32 expected = 1;
             [[maybe_unused]] auto success = m_control.compare_exchange_strong(expected, 0, AcquireRelease, Acquire);
@@ -107,7 +107,7 @@ namespace neo
             VERIFY(success);
         }
 
-        constexpr bool is_locked() const
+        bool is_locked() const
         {
             return m_control.load(Acquire) == 1;
         }
@@ -119,16 +119,16 @@ namespace neo
     class HybridMutex
     {
     public:
-        constexpr HybridMutex() = default;
-        constexpr HybridMutex& operator=(HybridMutex&) = delete;
-        constexpr HybridMutex& operator=(HybridMutex&&) = delete;
+        HybridMutex() = default;
+        HybridMutex& operator=(HybridMutex&) = delete;
+        HybridMutex& operator=(HybridMutex&&) = delete;
 
-        constexpr ~HybridMutex()
+        ~HybridMutex()
         {
             VERIFY(m_control.load(Relaxed) == 0);
         }
 
-        constexpr void lock()
+        void lock()
         {
 
             u8 iterations = 0;
@@ -145,13 +145,13 @@ namespace neo
         }
 
         // true if the lock was acquired
-        constexpr bool try_lock()
+        bool try_lock()
         {
             u32 expected = 0;
             return m_control.compare_exchange_strong(expected, 1, AcquireRelease, Acquire) == true;
         }
 
-        constexpr void unlock()
+        void unlock()
         {
             u32 expected = 1;
             [[maybe_unused]] auto success = m_control.compare_exchange_strong(expected, 0, AcquireRelease, Acquire);
@@ -160,7 +160,7 @@ namespace neo
             VERIFY(success);
         }
 
-        constexpr bool is_locked() const
+        bool is_locked() const
         {
             return m_control.load(Acquire) == 1;
         }
@@ -211,7 +211,7 @@ namespace neo
             }
             else
             {
-                constexpr size_t expected = 0;
+                size_t expected = 0;
                 bool success = syscall(SYS_futex, m_control.ptr(), FUTEX_WAIT_PRIVATE, expected, nullptr) == 0;
                 if (success)
                 {
@@ -259,13 +259,13 @@ namespace neo
         ScopedLock& operator=(ScopedLock const&) = delete;
         ScopedLock& operator=(ScopedLock&&) = delete;
 
-        constexpr ScopedLock(T& mutex) :
+        ScopedLock(T& mutex) :
             m_mutex(mutex)
         {
             mutex.lock();
         }
 
-        constexpr ~ScopedLock()
+        ~ScopedLock()
         {
             m_mutex.unlock();
         }
