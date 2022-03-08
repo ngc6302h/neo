@@ -141,5 +141,105 @@ namespace neo
         bool m_has_value { false };
     };
 
+    template<typename T>
+    class Optional<ReferenceWrapper<T>>
+    {
+    public:
+        constexpr Optional() = default;
+        constexpr ~Optional() = default;
+
+        constexpr Optional(T& other) :
+            m_has_value(true)
+        {
+            m_ref = { other };
+        }
+
+        constexpr Optional(Optional const& other) :
+            m_has_value(other.m_has_value)
+        {
+            if (other.has_value())
+            {
+                new (this) Optional(other.value());
+            }
+        }
+
+        constexpr Optional(Optional&& other) :
+            m_has_value(other.m_has_value)
+        {
+            if (other.has_value())
+            {
+                new (this) Optional(other.release_value());
+                other.m_has_value = false;
+            }
+        }
+
+        constexpr Optional& operator=(const Optional& other)
+        {
+            if (this == &other)
+                return *this;
+
+            this->~Optional();
+            new (this) Optional(other);
+
+            return *this;
+        }
+
+        constexpr Optional& operator=(Optional&& other)
+        {
+            if (this == &other)
+                return *this;
+
+            this->~Optional();
+            new (this) Optional(move(other));
+
+            return *this;
+        }
+
+        constexpr operator bool()
+        {
+            return m_has_value;
+        }
+
+        constexpr explicit operator T&()
+        {
+            VERIFY(has_value());
+            return value();
+        }
+
+        constexpr explicit operator const T&() const
+        {
+            VERIFY(has_value());
+            return value();
+        }
+
+        [[nodiscard]] constexpr bool has_value() const
+        {
+            return m_has_value;
+        }
+
+        [[nodiscard]] constexpr T& value()
+        {
+            VERIFY(has_value());
+            return m_ref;
+        }
+
+        [[nodiscard]] constexpr const T& value() const
+        {
+            VERIFY(has_value());
+            return m_ref;
+        }
+
+        [[nodiscard]] T& value_or(T& fallback)
+        {
+            if (m_has_value)
+                return value();
+            return fallback;
+        }
+
+    private:
+        ReferenceWrapper<T> m_ref { nullptr };
+        bool m_has_value { false };
+    };
+
 }
 using neo::Optional;
