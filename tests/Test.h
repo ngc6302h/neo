@@ -18,6 +18,7 @@
 #pragma once
 #if DEBUG_ASSERTS == 0
     #undef DEBUG_ASSERTS
+    #undef VERBOSE_ASSERTS
     #define DEBUG_ASSERTS 1
     #define VERBOSE_ASSERTS 1
 #endif
