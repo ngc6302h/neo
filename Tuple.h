@@ -173,6 +173,26 @@ namespace neo
 
     template<typename A, typename B>
     using Pair = Tuple<A, B>;
+
+    namespace detail
+    {
+        template<typename TTuple, size_t Index>
+        requires(Same<typename TTuple::template TypeOfElementAtIndex<Index>, typename TTuple::template TypeOfElementAtIndex<Index + 1>>) bool tuple_are_equal_internal(TTuple const& tuple)
+        {
+            if constexpr (Index < TTuple::size() - 1)
+                return tuple.template get<Index>() == tuple.template get<Index + 1>() && tuple_are_equal_internal<TTuple, Index + 1>(tuple);
+            else
+                return tuple.template get<Index>() == tuple.template get<Index + 1>();
+        }
+    }
+
+    template<typename TTuple>
+    bool tuple_are_equal(TTuple const& tuple)
+    {
+        if constexpr (TTuple::size() == 1)
+            return true;
+        return detail::tuple_are_equal_internal<TTuple, 0>(tuple);
+    }
 }
 using neo::make_tuple;
 using neo::Pair;
