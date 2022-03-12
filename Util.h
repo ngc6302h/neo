@@ -50,6 +50,15 @@ constexpr T clamp(T minval, T maxval, T value)
                                                       value;
 }
 
+template<typename TFirst, typename TSecond, typename... TRest>
+constexpr bool are_equal(TFirst first, TSecond second, TRest const&... rest)
+{
+    if constexpr (sizeof...(TRest) > 0)
+        return first == second && are_equal(second, rest...);
+    else
+        return first == second;
+}
+
 constexpr void* neo_memmem(void* string, size_t string_length, void* substring, size_t substring_length)
 {
     const char* haystack = static_cast<const char*>(string);
