@@ -21,6 +21,7 @@
 #include "Tuple.h"
 #include "Iterator.h"
 #include "Optional.h"
+#include "Util.h"
 
 namespace neo
 {
@@ -216,6 +217,139 @@ namespace neo
 
     namespace detail
     {
+        template<IteratorLike TFirst, IteratorLike... TRest>
+        class SequenceZipIterator : public SequenceZipIterator<TRest...>
+        {
+        public:
+            using type = Tuple<ReferenceWrapper<typename TFirst::type>, ReferenceWrapper<typename TRest::type>...>;
+
+            constexpr SequenceZipIterator(TFirst const& begin, TFirst const& end, TRest... rest) requires (sizeof...(TRest) % 2 == 0) :
+                SequenceZipIterator<TRest...>(rest...), m_begin(begin), m_end(end)
+            {}
+
+            constexpr SequenceZipIterator& operator++()
+            {
+                VERIFY(m_begin != m_end);
+                ++m_begin;
+                ++static_cast<SequenceZipIterator<TRest...>&>(*this);
+                return *this;
+            }
+
+            constexpr SequenceZipIterator operator++(int)
+            {
+                auto copy = *this;
+                ++*this;
+                return copy;
+            }
+
+            constexpr SequenceZipIterator& operator--()
+            {
+                VERIFY(m_begin != m_end);
+                --m_begin;
+                --static_cast<SequenceZipIterator<TRest...>&>(*this);
+                return *this;
+            }
+
+            constexpr SequenceZipIterator operator--(int)
+            {
+                auto copy = *this;
+                --*this;
+                return copy;
+            }
+
+            constexpr type operator*()
+            {
+                return deref();
+            }
+
+            constexpr bool operator==(SequenceZipIterator const& other) const
+            {
+                return m_begin == other.m_begin && static_cast<SequenceZipIterator<TRest...>&>(*this) == static_cast<SequenceZipIterator<TRest...> const&>(other);
+            }
+
+            constexpr bool is_end() const
+            {
+                return m_begin == m_end || static_cast<SequenceZipIterator<TRest...>&>(*this).is_end();
+            }
+
+        private:
+
+            template<typename... Ts>
+            constexpr type deref(Ts&... ts)
+            {
+                VERIFY(m_begin != m_end);
+                return static_cast<SequenceZipIterator<TRest...>&>(*this).deref(ts..., *m_begin);
+            }
+
+            TFirst m_begin;
+            TFirst m_end;
+        };
+
+        template<IteratorLike TFirst>
+        class SequenceZipIterator<TFirst>
+        {
+        public:
+            using type = Tuple<ReferenceWrapper<typename TFirst::type>>;
+
+            constexpr SequenceZipIterator(TFirst const& begin, TFirst const& end) : m_begin(begin), m_end(end)
+            {}
+
+            constexpr SequenceZipIterator& operator++()
+            {
+                VERIFY(m_begin != m_end);
+                ++m_begin;
+                return *this;
+            }
+
+            constexpr SequenceZipIterator operator++(int)
+            {
+                auto copy = *this;
+                ++*this;
+                return copy;
+            }
+
+            constexpr SequenceZipIterator& operator--()
+            {
+                VERIFY(m_begin != m_end);
+                --m_begin;
+                return *this;
+            }
+
+            constexpr SequenceZipIterator operator--(int)
+            {
+                auto copy = *this;
+                --*this;
+                return copy;
+            }
+
+            constexpr type operator*()
+            {
+                return deref();
+            }
+
+            constexpr bool operator==(SequenceZipIterator const& other) const
+            {
+                return m_begin == other.m_begin;
+            }
+
+            constexpr bool is_end() const
+            {
+                return m_begin == m_end;
+            }
+
+        private:
+
+            template<typename... Ts>
+            constexpr type deref(Ts&... ts)
+            {
+                VERIFY(m_begin != m_end);
+                return make_tuple(ReferenceWrapper<Ts>(ts)...);
+            }
+
+            TFirst m_begin;
+            TFirst m_end;
+        };
+
         template<IteratorLike TIterator>
         class IteratorReverseWrapper
         {
@@ -747,6 +881,24 @@ namespace neo
         TIterator m_end;
     };
 
+    template<IteratorLike... Ts>
+    constexpr auto find_common_prefix_range(Ts const&... begin_end_pairs)
+    {
+        detail::SequenceZipIterator begin(begin_end_pairs...);
+        detail::SequenceZipIterator end(begin_end_pairs...);
+        size_t count = 0;
+        while(!end.is_end() && tuple_are_equal(*end))
+            ++count;
+
+        return make_tuple(count, IterableCollection(begin, end));
+    }
+
+    template<IteratorLike... Ts>
+    constexpr auto zip(Ts const&... begin_end_pairs)
+    {
+        return find_common_prefix_range(begin_end_pairs...).template get<1>();
+    }
+
     template<typename TContainer, typename T>
     struct IterableExtensions
     {
@@ -764,8 +916,12 @@ using neo::any;
 using neo::contains;
 using neo::find;
 using neo::for_all;
+using neo::skip_while;
+using neo::skip;
 using neo::sort;
 using neo::zip;
 using neo::first;
 using neo::last;
+using neo::find_common_prefix_range;
+using neo::copy;
 using neo::IterableCollection;
