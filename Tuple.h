@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2021  Iori Torres (shortanemoia@protonmail.com)
- *
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+* Copyright (C) 2021  Iori Torres (shortanemoia@protonmail.com)
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation, either version 3 of the License, or
+*  (at your option) any later version.
 
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
+*  This program is distributed in the hope that it will be useful,
+   *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
 
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+*  You should have received a copy of the GNU General Public License
+*  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 
 #pragma once
 #include "Assert.h"
@@ -46,7 +46,7 @@ namespace neo
 
         template<typename U>
         requires TypeContains<U, T, Ts...> && UniqueType<U, T, Ts...>
-        [[nodiscard]] constexpr U& get()
+        [[nodiscard]] constexpr RemoveReferenceWrapper<U>& get()
         {
             if constexpr (IsSame<T, U>)
                 return m_item;
@@ -56,7 +56,7 @@ namespace neo
 
         template<typename U>
         requires TypeContains<U, T, Ts...> && UniqueType<U, T, Ts...>
-        [[nodiscard]] constexpr const U& get() const
+        [[nodiscard]] constexpr const RemoveReferenceWrapper<U>& get() const
         {
             if constexpr (IsSame<T, U>)
                 return m_item;
@@ -66,7 +66,7 @@ namespace neo
 
         template<size_t Index>
         requires(Index < 1 + sizeof...(Ts))
-            [[nodiscard]] constexpr TypeOfElementAtIndex<Index> get()
+            [[nodiscard]] constexpr RemoveReferenceWrapper<TypeOfElementAtIndex<Index>> get()
         {
             if constexpr (Index == 0)
                 return m_item;
@@ -76,7 +76,7 @@ namespace neo
 
         template<size_t Index>
         requires(Index < 1 + sizeof...(Ts))
-            [[nodiscard]] constexpr TypeOfElementAtIndex<Index> get() const
+            [[nodiscard]] constexpr RemoveReferenceWrapper<TypeOfElementAtIndex<Index>> get() const
         {
             if constexpr (Index == 0)
                 return m_item;
@@ -122,26 +122,26 @@ namespace neo
         }
 
         template<typename>
-        [[nodiscard]] constexpr T& get()
+        [[nodiscard]] constexpr RemoveReferenceWrapper<T>& get()
         {
             return m_item;
         }
 
         template<typename>
-        [[nodiscard]] constexpr const T& get() const
+        [[nodiscard]] constexpr const RemoveReferenceWrapper<T>& get() const
         {
             return m_item;
         }
 
         template<size_t Index>
-        [[nodiscard]] constexpr T& get()
+        [[nodiscard]] constexpr RemoveReferenceWrapper<T>& get()
         {
             static_assert(Index == 0, "Index out of range");
             return m_item;
         }
 
         template<size_t Index>
-        [[nodiscard]] constexpr const T& get() const
+        [[nodiscard]] constexpr const RemoveReferenceWrapper<T>& get() const
         {
             static_assert(Index == 0, "Index out of range");
             return m_item;
