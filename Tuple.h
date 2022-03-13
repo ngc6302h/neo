@@ -66,7 +66,7 @@ namespace neo
 
         template<size_t Index>
         requires(Index < 1 + sizeof...(Ts))
-            [[nodiscard]] constexpr RemoveReferenceWrapper<TypeOfElementAtIndex<Index>> get()
+            [[nodiscard]] constexpr RemoveReferenceWrapper<TypeOfElementAtIndex<Index>>& get()
         {
             if constexpr (Index == 0)
                 return m_item;
@@ -76,7 +76,7 @@ namespace neo
 
         template<size_t Index>
         requires(Index < 1 + sizeof...(Ts))
-            [[nodiscard]] constexpr RemoveReferenceWrapper<TypeOfElementAtIndex<Index>> get() const
+            [[nodiscard]] constexpr RemoveReferenceWrapper<TypeOfElementAtIndex<Index>>& get() const
         {
             if constexpr (Index == 0)
                 return m_item;
