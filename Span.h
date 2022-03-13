@@ -106,8 +106,7 @@ namespace neo
             return { *this, m_size };
         }
 
-        template<typename>
-        [[nodiscard]] constexpr bool operator==(const Span other) const requires InequalityComparable<T>
+        [[nodiscard]] constexpr bool operator==(Span const& other) const requires InequalityComparable<T>
         {
             if (m_size != other.m_size)
                 return false;
@@ -120,7 +119,9 @@ namespace neo
             return true;
         }
 
-    private : T* m_data { nullptr };
+    private :
+
+        T* m_data { nullptr };
         size_t m_size {};
     };
 }
