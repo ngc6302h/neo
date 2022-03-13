@@ -27,8 +27,8 @@ namespace neo
     class Span : public IterableExtensions<Span<T>, RemoveReferenceWrapper<T>>
     {
     public:
-        using SpanIterator = Iterator<Span>;
-        using ConstantSpanIterator = Iterator<const Span>;
+        using iterator = Iterator<Span>;
+        using const_iterator = Iterator<const Span>;
         using type = T;
 
         constexpr Span() = delete;
@@ -86,24 +86,24 @@ namespace neo
             return m_data[index];
         }
 
-        [[nodiscard]] constexpr SpanIterator begin()
+        [[nodiscard]] constexpr iterator begin()
         {
-            return SpanIterator(*this);
+            return { *this };
         }
 
-        [[nodiscard]] constexpr ConstantSpanIterator begin() const
+        [[nodiscard]] constexpr const_iterator begin() const
         {
-            return ConstantSpanIterator(*this);
+            return { *this };
         }
 
-        [[nodiscard]] constexpr SpanIterator end()
+        [[nodiscard]] constexpr iterator end()
         {
-            return SpanIterator(*this, m_size);
+            return { *this, m_size };
         }
 
-        [[nodiscard]] constexpr ConstantSpanIterator end() const
+        [[nodiscard]] constexpr const_iterator end() const
         {
-            return ConstantSpanIterator(*this, m_size);
+            return { *this, m_size };
         }
 
         template<typename>
