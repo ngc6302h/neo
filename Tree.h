@@ -117,6 +117,16 @@ namespace neo
             return m_children[children_index];
         }
 
+        constexpr Vector<TreeNode*>& children()
+        {
+            return m_children;
+        }
+
+        constexpr Vector<TreeNode*> const& children() const
+        {
+            return m_children;
+        }
+
     private:
         T m_value;
         Vector<TreeNode*> m_children;
