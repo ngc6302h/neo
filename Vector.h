@@ -602,34 +602,29 @@ namespace neo
             m_size = 0;
         }
 
-        [[nodiscard]] constexpr Span<T> span() requires(InlineStorage == 0)
-        {
-            return { m_data, m_size };
-        }
-
-        [[nodiscard]] constexpr Span<const T> span() const requires(InlineStorage == 0)
+        [[nodiscard]] constexpr Span<T> span() const requires(InlineStorage == 0)
         {
             return { m_data, m_size };
         }
 
         [[nodiscard]] constexpr const_iterator begin() const
         {
-            return const_iterator(*this);
+            return { *this };
         }
 
         [[nodiscard]] constexpr iterator begin()
         {
-            return iterator(*this);
+            return { *this };
         }
 
         [[nodiscard]] constexpr const_iterator end() const
         {
-            return const_iterator(*this, m_size);
+            return { *this, m_size };
         }
 
         [[nodiscard]] constexpr iterator end()
         {
-            return iterator(*this, m_size);
+            return { *this, m_size };
         }
 
     private:
