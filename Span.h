@@ -24,7 +24,7 @@
 namespace neo
 {
     template<typename T>
-    class Span : IterableExtensions<Span<T>, RemoveReferenceWrapper<T>>
+    class Span : public IterableExtensions<Span<T>, RemoveReferenceWrapper<T>>
     {
     public:
         using SpanIterator = Iterator<Span>;
