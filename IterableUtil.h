@@ -272,19 +272,22 @@ namespace neo
 
            constexpr bool is_end() const
            {
-               return m_begin == m_end || static_cast<SequenceZipIterator<TRest...> const&>(*this).is_end();
+               return m_begin == m_end || SequenceZipIterator<TRest...>::is_end();
            }
 
-       private:
+       protected:
+
            template<typename... Ts>
            constexpr decltype(auto) deref(Ts&... ts)
            {
                VERIFY(m_begin != m_end);
                if constexpr(sizeof...(Ts) > 0)
-                   return static_cast<SequenceZipIterator<TRest...>&>(*this).deref(ts..., *m_begin);
+                   return SequenceZipIterator<TRest...>::deref(ts..., *m_begin);
                else
-                   return static_cast<SequenceZipIterator<TRest...>&>(*this).deref(*m_begin);
+                   return SequenceZipIterator<TRest...>::deref(*m_begin);
            }
+
+       private:
 
            TFirstA m_begin;
            TFirstA m_end;
