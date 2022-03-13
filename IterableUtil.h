@@ -223,7 +223,7 @@ namespace neo
         public:
             using type = Tuple<ReferenceWrapper<typename TFirst::type>, ReferenceWrapper<typename TRest::type>...>;
 
-            constexpr SequenceZipIterator(TFirst const& begin, TFirst const& end, TRest... rest) requires (sizeof...(TRest) % 2 == 0) :
+            constexpr SequenceZipIterator(TFirst const& begin, TFirst const& end, TRest const&... rest) requires (sizeof...(TRest) % 2 == 0) :
                 SequenceZipIterator<TRest...>(rest...), m_begin(begin), m_end(end)
             {}
 
