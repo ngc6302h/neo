@@ -222,6 +222,7 @@ namespace neo
         {
         public:
             using type = Tuple<ReferenceWrapper<typename TFirst::type>, ReferenceWrapper<typename TRest::type>...>;
+            using underlying_container_type = typename TFirst::underlying_container_type;
 
             constexpr SequenceZipIterator(TFirst const& begin, TFirst const& end, TRest const&... rest) requires (sizeof...(TRest) % 2 == 0) :
                 SequenceZipIterator<TRest...>(rest...), m_begin(begin), m_end(end)
@@ -290,6 +291,7 @@ namespace neo
         {
         public:
             using type = Tuple<ReferenceWrapper<typename TFirst::type>>;
+            using underlying_container_type = typename TFirst::underlying_container_type;
 
             constexpr SequenceZipIterator(TFirst const& begin, TFirst const& end) : m_begin(begin), m_end(end)
             {}
@@ -343,7 +345,7 @@ namespace neo
             constexpr type deref(Ts&... ts)
             {
                 VERIFY(m_begin != m_end);
-                return make_tuple(ReferenceWrapper<Ts>(ts)...);
+                return make_tuple(ReferenceWrapper<Ts>(ts)..., ReferenceWrapper(*m_begin));
             }
 
             TFirst m_begin;
