@@ -228,7 +228,7 @@ namespace neo
    }
 
    template<IteratorLike THaystackIterator, IteratorLike TNeedleIterator>
-   constexpr bool end_with(THaystackIterator const& haystack_begin, THaystackIterator haystack_end, TNeedleIterator const& needle_begin, TNeedleIterator needle_end)
+   constexpr bool ends_with(THaystackIterator const& haystack_begin, THaystackIterator haystack_end, TNeedleIterator const& needle_begin, TNeedleIterator needle_end)
    {
        --haystack_end;
        --needle_end;
@@ -743,6 +743,18 @@ namespace neo
        {
            return neo::contains(begin(), end(), what, DefaultEqualityComparer<type>);
        }
+       
+       template<IteratorLike TNeedleIterator>
+       constexpr bool starts_with(TNeedleIterator const& needle_begin, TNeedleIterator const& needle_end)
+       {
+           return neo::starts_with(begin(), end(), needle_begin, needle_end);
+       }
+       
+       template<IteratorLike TNeedleIterator>
+       constexpr bool ends_with(TNeedleIterator const& needle_begin, TNeedleIterator const& needle_end)
+       {
+           return neo::ends_with(begin(), end(), needle_begin, needle_end);
+       }
 
        template<typename T, CallableWithReturnType<bool, type, T> TComparer>
        constexpr auto find(T const& what, TComparer equality_comparer = DefaultEqualityComparer<type>)
@@ -958,4 +970,6 @@ using neo::first;
 using neo::last;
 using neo::find_common_prefix_range;
 using neo::copy;
+using neo::starts_with;
+using neo::ends_with;
 using neo::IterableCollection;
