@@ -78,45 +78,6 @@ namespace neo
             return m_children[children_index];
         }
 
-    private:
-        T m_value {};
-        TreeNode* m_children[Arity] {};
-    };
-
-    template<typename T>
-    class TreeNode<T, 0>
-    {
-    public:
-        explicit TreeNode(T const& value) :
-            m_value(value)
-        {
-        }
-
-        explicit TreeNode(T&& value) :
-            m_value(move(value))
-        {
-        }
-
-        constexpr T& value()
-        {
-            return m_value;
-        }
-
-        constexpr T const& value() const
-        {
-            return m_value;
-        }
-
-        constexpr TreeNode*& get(size_t children_index)
-        {
-            return m_children[children_index];
-        }
-
-        constexpr TreeNode const* const& get(size_t children_index) const
-        {
-            return m_children[children_index];
-        }
-
         constexpr Vector<TreeNode*>& children()
         {
             return m_children;
@@ -128,7 +89,100 @@ namespace neo
         }
 
     private:
-        T m_value;
-        Vector<TreeNode*> m_children;
+        T m_value {};
+        Vector<TreeNode*, Arity> m_children {};
     };
+
+    namespace detail
+    {
+        template<typename TKey, typename TValue>
+        class KeyValuePair
+        {
+        public:
+            KeyValuePair(TKey const& key, TValue const& value) :
+                m_key(key), m_value(value) { }
+            TKey& key() { return m_key; }
+            TKey const& key() const { return m_key; }
+            TValue& value() { return m_value; }
+            TValue const& value() const { return m_value; }
+
+        private:
+            TKey m_key;
+            TValue m_value;
+        };
+    }
+
+    template<typename TKey, typename TValue>
+    class Trie
+    {
+    public:
+        template<IteratorLike TKeyIterator>
+        requires(Same<decltype(*declval<TKeyIterator>()), TKey>) void insert(TKeyIterator begin, TKeyIterator end, TValue const& value)
+        {
+            insert_internal(&m_root, begin, end, value);
+        }
+
+        template<IteratorLike TKeyIterator>
+        requires(Same<decltype(*declval<TKeyIterator>()), TKey>)
+            TValue* find(TKeyIterator begin, TKeyIterator end)
+        {
+            return find_internal(&m_root, begin, end);
+        }
+
+        template<IteratorLike TKeyIterator>
+        requires(Same<decltype(*declval<TKeyIterator>()), TKey>) bool contains(TKeyIterator begin, TKeyIterator end)
+        {
+            return find_internal(&m_root, begin, end) != nullptr;
+        }
+
+    private:
+        template<IteratorLike TKeyIterator>
+        TValue* find_internal(TreeNode<detail::KeyValuePair<TKey, TValue>, 0>* node, TKeyIterator begin, TKeyIterator end)
+        {
+            if (begin == end)
+            {
+                return node->value().value();
+            }
+            for (TreeNode<detail::KeyValuePair<TKey, TValue>, 0>* child : node->children())
+            {
+                if (child->value().key() == *begin)
+                {
+                    return contains_internal(child, ++begin, end);
+                }
+            }
+            return nullptr;
+        }
+
+        template<IteratorLike TKeyIterator>
+        void insert_internal(TreeNode<detail::KeyValuePair<TKey, TValue>, 0>* node, TKeyIterator begin, TKeyIterator end, TValue const& value)
+        {
+            if (begin == end)
+            {
+                return;
+            }
+            else
+            {
+                for (TreeNode<detail::KeyValuePair<TKey, TValue>, 0>* child : node->children())
+                {
+                    if (child->value().key() == *begin)
+                    {
+                        insert_internal(child, ++begin, end, value);
+                        return;
+                    }
+                }
+
+                if (skip(begin, 1) == end)
+                    node->children().template append(new TreeNode<detail::KeyValuePair<TKey, TValue>, 0>({ *begin++, value }));
+                else
+                {
+                    auto new_node = new TreeNode<detail::KeyValuePair<TKey, TValue>, 0>({ *begin, nullptr });
+                    node->children().template append(new_node);
+                    insert_internal(new_node, ++begin, end, value);
+                }
+            }
+        }
+
+        TreeNode<detail::KeyValuePair<TKey, TValue>, 0> m_root;
+    };
+
 }
