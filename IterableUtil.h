@@ -215,6 +215,31 @@ namespace neo
        }
    }
 
+   template<IteratorLike THaystackIterator, IteratorLike TNeedleIterator>
+   constexpr bool starts_with(THaystackIterator haystack_begin, THaystackIterator const& haystack_end, TNeedleIterator needle_begin, TNeedleIterator const& needle_end)
+   {
+       while (haystack_begin != haystack_end && needle_begin != needle_end && *haystack_begin++ == *needle_begin++)
+       {
+           if (needle_begin == needle_end)
+               return true;
+       }
+
+       return false;
+   }
+
+   template<IteratorLike THaystackIterator, IteratorLike TNeedleIterator>
+   constexpr bool end_with(THaystackIterator const& haystack_begin, THaystackIterator haystack_end, TNeedleIterator const& needle_begin, TNeedleIterator needle_end)
+   {
+       --haystack_end;
+       --needle_end;
+
+       while (haystack_end != haystack_begin && needle_end != needle_begin && *--haystack_end == *--needle_end)
+       {
+           if (needle_end == needle_begin)
+               return true;
+       }
+   }
+
    namespace detail
    {
        template<IteratorLike TFirstA, IteratorLike TFirstB, IteratorLike... TRest>
