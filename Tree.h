@@ -118,7 +118,7 @@ namespace neo
     {
     public:
         template<IteratorLike TKeyIterator>
-        requires(Same<decltype(*declval<TKeyIterator>()), TKey>) void insert(TKeyIterator const& begin, TKeyIterator const& end, TValue const& value)
+        requires(Same<Naked<decltype(*declval<TKeyIterator>())>, TKey>) void insert(TKeyIterator const& begin, TKeyIterator const& end, TValue const& value)
         {
             insert_internal(&m_root, begin, end, value);
         }
