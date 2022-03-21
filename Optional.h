@@ -100,7 +100,7 @@ namespace neo
             return value();
         }
 
-        constexpr explicit operator const T&() const
+        constexpr explicit operator T const&() const
         {
             VERIFY(has_value());
             return value();
@@ -117,10 +117,10 @@ namespace neo
             return *reinterpret_cast<T*>(&m_storage);
         }
 
-        [[nodiscard]] constexpr const T& value() const
+        [[nodiscard]] constexpr T const& value() const
         {
             VERIFY(has_value());
-            return *reinterpret_cast<const T*>(&m_storage);
+            return *reinterpret_cast<T const*>(&m_storage);
         }
 
         [[nodiscard]] constexpr T release_value()
@@ -129,7 +129,14 @@ namespace neo
             return *reinterpret_cast<T*>(&m_storage);
         }
 
-        [[nodiscard]] T value_or(const T& fallback)
+        [[nodiscard]] T& value_or(T& fallback)
+        {
+            if (m_has_value)
+                return value();
+            return fallback;
+        }
+
+        [[nodiscard]] T const& value_or(T const& fallback) const
         {
             if (m_has_value)
                 return value();
@@ -148,28 +155,113 @@ namespace neo
         constexpr Optional() = default;
         constexpr ~Optional() = default;
 
-        constexpr Optional(T& other) :
-            m_has_value(true), m_ref(&other)
+        constexpr Optional(T* other) :
+            m_ref(other)
         {
         }
 
         constexpr Optional(Optional const& other) :
-            m_has_value(other.m_has_value)
+            m_ref(other.m_value)
         {
-            if (other.has_value())
-            {
-                new (this) Optional(other.value());
-            }
         }
 
         constexpr Optional(Optional&& other) :
-            m_has_value(other.m_has_value)
+            m_ref(other.m_value)
         {
-            if (other.has_value())
-            {
-                new (this) Optional(other.release_value());
-                other.m_has_value = false;
-            }
+            other.m_value = nullptr;
+        }
+
+        constexpr Optional& operator=(Optional const& other)
+        {
+            if (this == &other)
+                return *this;
+
+            this->~Optional();
+            new (this) Optional(other);
+
+            return *this;
+        }
+
+        constexpr Optional& operator=(Optional&& other)
+        {
+            if (this == &other)
+                return *this;
+
+            this->~Optional();
+            new (this) Optional(move(other));
+
+            return *this;
+        }
+
+        constexpr operator bool()
+        {
+            return has_value();
+        }
+
+        constexpr explicit operator T&()
+        {
+            VERIFY(has_value());
+            return *m_ref;
+        }
+
+        constexpr explicit operator T const&() const
+        {
+            VERIFY(has_value());
+            return *m_ref;
+        }
+
+        [[nodiscard]] constexpr bool has_value() const
+        {
+            return m_ref != nullptr;
+        }
+
+        [[nodiscard]] constexpr T& value()
+        {
+            VERIFY(has_value());
+            return *m_ref;
+        }
+
+        [[nodiscard]] constexpr T const& value() const
+        {
+            VERIFY(has_value());
+            return *m_ref;
+        }
+
+        [[nodiscard]] constexpr T& value_or(T& fallback)
+        {
+            return m_ref != nullptr ? m_ref : fallback;
+        }
+
+        [[nodiscard]] constexpr T const& value_or(T const& fallback) const
+        {
+            return m_ref != nullptr ? m_ref : fallback;
+        }
+
+    private:
+        T* m_ref { nullptr };
+    };
+
+    template<typename T>
+    class Optional<T*>
+    {
+    public:
+        constexpr Optional() = default;
+        constexpr ~Optional() = default;
+
+        constexpr Optional(T* other) :
+            m_value(other)
+        {
+        }
+
+        constexpr Optional(Optional const& other) :
+            m_value(other.m_value)
+        {
+        }
+
+        constexpr Optional(Optional&& other) :
+            m_value(other.m_value)
+        {
+            other.m_value = nullptr;
         }
 
         constexpr Optional& operator=(const Optional& other)
@@ -196,49 +288,50 @@ namespace neo
 
         constexpr operator bool()
         {
-            return m_has_value;
+            return has_value();
         }
 
-        constexpr explicit operator T&()
+        constexpr explicit operator T*()
         {
             VERIFY(has_value());
-            return value();
+            return m_value;
         }
 
-        constexpr explicit operator const T&() const
+        constexpr explicit operator T const*() const
         {
             VERIFY(has_value());
-            return value();
+            return m_value;
         }
 
         [[nodiscard]] constexpr bool has_value() const
         {
-            return m_has_value;
+            return m_value != nullptr;
         }
 
-        [[nodiscard]] constexpr T& value()
+        [[nodiscard]] constexpr T* value()
         {
             VERIFY(has_value());
-            return *m_ref;
+            return m_value;
         }
 
-        [[nodiscard]] constexpr const T& value() const
+        [[nodiscard]] constexpr T const* value() const
         {
             VERIFY(has_value());
-            return *m_ref;
+            return m_value;
         }
 
-        [[nodiscard]] T& value_or(T& fallback)
+        [[nodiscard]] constexpr T& value_or(T* fallback)
         {
-            if (m_has_value)
-                return value();
-            return fallback;
+            return m_value != nullptr ? m_value : fallback;
+        }
+
+        [[nodiscard]] constexpr T const& value_or(T const* fallback) const
+        {
+            return m_value != nullptr ? m_value : fallback;
         }
 
     private:
-        T* m_ref { nullptr };
-        bool m_has_value { false };
+        T* m_value { nullptr };
     };
-
 }
 using neo::Optional;
