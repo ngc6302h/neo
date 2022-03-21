@@ -186,3 +186,4 @@ namespace neo
     };
 
 }
+using neo::Trie;
