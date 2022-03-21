@@ -229,12 +229,12 @@ namespace neo
 
         [[nodiscard]] constexpr T& value_or(T& fallback)
         {
-            return m_ref != nullptr ? m_ref : fallback;
+            return m_ref != nullptr ? *m_ref : fallback;
         }
 
         [[nodiscard]] constexpr T const& value_or(T const& fallback) const
         {
-            return m_ref != nullptr ? m_ref : fallback;
+            return m_ref != nullptr ? *m_ref : fallback;
         }
 
     private:
