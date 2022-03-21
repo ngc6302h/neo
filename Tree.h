@@ -19,6 +19,7 @@
 #include "Concepts.h"
 #include "Assert.h"
 #include "Vector.h"
+#include "Optional.h"
 
 namespace neo
 {
@@ -117,31 +118,32 @@ namespace neo
     {
     public:
         template<IteratorLike TKeyIterator>
-        requires(Same<decltype(*declval<TKeyIterator>()), TKey>) void insert(TKeyIterator begin, TKeyIterator end, TValue const& value)
+        requires(Same<decltype(*declval<TKeyIterator>()), TKey>) void insert(TKeyIterator const& begin, TKeyIterator const& end, TValue const& value)
         {
             insert_internal(&m_root, begin, end, value);
         }
 
         template<IteratorLike TKeyIterator>
         requires(Same<Naked<decltype(*declval<TKeyIterator>())>, TKey>)
-            TValue* find(TKeyIterator begin, TKeyIterator end) const
+            Optional<ReferenceWrapper<TValue>> find(TKeyIterator const& begin, TKeyIterator const& end)
+        const
         {
             return find_internal(&m_root, begin, end);
         }
 
         template<IteratorLike TKeyIterator>
-        requires(Same<decltype(*declval<TKeyIterator>()), TKey>) bool contains(TKeyIterator begin, TKeyIterator end) const
+        requires(Same<Naked<decltype(*declval<TKeyIterator>())>, TKey>) bool contains(TKeyIterator const& begin, TKeyIterator const& end) const
         {
             return find_internal(&m_root, begin, end) != nullptr;
         }
 
     private:
         template<IteratorLike TKeyIterator>
-        TValue* find_internal(TreeNode<detail::KeyValuePair<TKey, TValue>, 0>* node, TKeyIterator begin, TKeyIterator end)
+        Optional<ReferenceWrapper<TValue>> find_internal(TreeNode<detail::KeyValuePair<TKey, TValue>, 0>* node, TKeyIterator begin, TKeyIterator const& end)
         {
             if (begin == end)
             {
-                return &node->value().value();
+                return node->value().value();
             }
             for (TreeNode<detail::KeyValuePair<TKey, TValue>, 0>* child : node->children())
             {
@@ -154,7 +156,7 @@ namespace neo
         }
 
         template<IteratorLike TKeyIterator>
-        void insert_internal(TreeNode<detail::KeyValuePair<TKey, TValue>, 0>* node, TKeyIterator begin, TKeyIterator end, TValue const& value)
+        void insert_internal(TreeNode<detail::KeyValuePair<TKey, TValue>, 0>* node, TKeyIterator begin, TKeyIterator const& end, TValue const& value)
         {
             if (begin == end)
             {
