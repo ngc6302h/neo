@@ -123,14 +123,14 @@ namespace neo
         }
 
         template<IteratorLike TKeyIterator>
-        requires(Same<decltype(*declval<TKeyIterator>()), TKey>)
-            TValue* find(TKeyIterator begin, TKeyIterator end)
+        requires(Same<Naked<decltype(*declval<TKeyIterator>())>, TKey>)
+            TValue* find(TKeyIterator begin, TKeyIterator end) const
         {
             return find_internal(&m_root, begin, end);
         }
 
         template<IteratorLike TKeyIterator>
-        requires(Same<decltype(*declval<TKeyIterator>()), TKey>) bool contains(TKeyIterator begin, TKeyIterator end)
+        requires(Same<decltype(*declval<TKeyIterator>()), TKey>) bool contains(TKeyIterator begin, TKeyIterator end) const
         {
             return find_internal(&m_root, begin, end) != nullptr;
         }
@@ -141,7 +141,7 @@ namespace neo
         {
             if (begin == end)
             {
-                return node->value().value();
+                return &node->value().value();
             }
             for (TreeNode<detail::KeyValuePair<TKey, TValue>, 0>* child : node->children())
             {
