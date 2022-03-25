@@ -252,7 +252,7 @@ namespace neo
     };
 
     template<MutexLike T>
-    class ScopedLock
+    class [[nodiscard]] ScopedLock
     {
     public:
         ScopedLock() = delete;
