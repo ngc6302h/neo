@@ -18,24 +18,21 @@
 #include "Test.h"
 #include <Tuple.h>
 
-template<typename T, typename... TRest>
-Tuple<T, TRest...> make(T t, TRest... rest)
-{
-    return Tuple<T, TRest...>(forward<T>(t), forward<TRest>(rest)...);
-}
-
 int main()
 {
     int _a = 2;
-    auto tup = make(_a, true, (size_t)5);
-    TEST_EQUAL(tup.get<int>(), 2);
+    Tuple<ReferenceWrapper<int>, bool, size_t> tup { _a, true, (size_t)5 };
+    TEST_EQUAL(tup.get<ReferenceWrapper<int>>(), 2);
     TEST_EQUAL(tup.get<bool>(), true);
     TEST_EQUAL(tup.get<size_t>(), 5);
     TEST_EQUAL(tup.get<0>(), 2);
     TEST_EQUAL(tup.get<1>(), true);
     TEST_EQUAL(tup.get<2>(), 5);
-    const auto& [a, b, c] = tup;
-    TEST_EQUAL(a, 2);
+    [[maybe_unused]] auto& [a, b, c] = tup;
+    a = 9;
+    TEST_EQUAL(a, _a);
+    [[maybe_unused]] auto const& [aref, bref, cref] = tup;
+    TEST_EQUAL(a, 9);
     TEST_EQUAL(b, true);
     TEST_EQUAL(c, 5);
     return 0;
