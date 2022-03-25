@@ -430,7 +430,7 @@ namespace neo
             else
             {
                 if (hit.m_key == key)
-                    return { hit.m_value };
+                    return hit.m_value;
                 else if (hit.m_next != (HashmapRecord<TKey, TValue>*)-1)
                 {
                     auto* next = hit.m_next;
@@ -448,7 +448,7 @@ namespace neo
             return {};
         }
 
-        constexpr Optional<ReferenceWrapper<const TValue>> get(TKey const& key) const
+        constexpr Optional<const ReferenceWrapper<TValue>> get(TKey const& key) const
         {
             size_t hash = Hasher::hash(key);
             auto bucket = hash % m_buckets.size();
@@ -460,14 +460,14 @@ namespace neo
             else
             {
                 if (hit.m_key == key)
-                    return { hit.m_value };
+                    return hit.m_value;
                 else if (hit.m_next != (HashmapRecord<TKey, TValue>*)-1)
                 {
                     auto* next = hit.m_next;
                     while (next != nullptr)
                     {
                         if (next->m_key == key)
-                            return { next->m_value };
+                            return next->m_value;
                         else
                             next = next->m_next;
                     }
