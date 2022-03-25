@@ -196,6 +196,12 @@ namespace neo
         static_cast<TBase*>(d);
     };
 
+    template<typename TCallable>
+    concept VoidCallable = requires(TCallable f)
+    {
+        f();
+    };
+
     template<typename TCallable, typename... Args>
     concept Callable = requires(TCallable f, Args... args)
     {
@@ -263,7 +269,7 @@ namespace neo
         --t;
         t--;
         *t;
-        //t = t2;
+        // t = t2;
         t == t;
         t != t;
         typename T::type;
@@ -314,3 +320,4 @@ using neo::Subtractable;
 using neo::ThreeWayComparable;
 using neo::TupleLike;
 using neo::Unsigned;
+using neo::VoidCallable;
