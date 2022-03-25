@@ -132,20 +132,23 @@ namespace neo
     template<bool VBool, auto VTrueType, auto VFalseType>
     static constexpr auto ValueConditional = detail::value_conditional_t<VBool, VTrueType, VFalseType>::value;
 
-    template<typename T>
-    struct remove_pointer_t
+    namespace detail
     {
-        using type = T;
-    };
+        template<typename T>
+        struct remove_pointer_t
+        {
+            using type = T;
+        };
+
+        template<typename T>
+        struct remove_pointer_t<T*>
+        {
+            using type = T;
+        };
+    }
 
     template<typename T>
-    struct remove_pointer_t<T*>
-    {
-        using type = T;
-    };
-
-    template<typename T>
-    using RemovePointer = typename remove_pointer_t<T>::type;
+    using RemovePointer = typename detail::remove_pointer_t<T>::type;
 
     template<typename T>
     using RemoveReference = typename detail::__RemoveReference<T>::type;
@@ -187,16 +190,19 @@ namespace neo
     template<typename T>
     using RemoveCV = typename detail::remove_volatile_t<typename detail::remove_const_t<T>::type>::type;
 
-    template<typename T>
-    struct make_signed
+    namespace detail
     {
-        using type = Conditional<sizeof(T) == 1, int8_t,
-            Conditional<sizeof(T) == 2, int16_t,
-                Conditional<sizeof(T) == 4, int32_t, int64_t>>>;
-    };
+        template<typename T>
+        struct make_signed
+        {
+            using type = Conditional<sizeof(T) == 1, int8_t,
+                Conditional<sizeof(T) == 2, int16_t,
+                    Conditional<sizeof(T) == 4, int32_t, int64_t>>>;
+        };
+    }
 
     template<typename T>
-    using MakeSigned = typename make_signed<T>::type;
+    using MakeSigned = typename detail::make_signed<T>::type;
 
     template<class T>
     constexpr bool IsLvalueReference = false;
@@ -244,91 +250,108 @@ namespace neo
         }
     };
 
-    template<bool TBool, typename T>
-    struct enable_if
+    namespace detail
     {
-    };
-    template<typename T>
-    struct enable_if<true, T>
-    {
-        using type = T;
-    };
+        template<bool TBool, typename T>
+        struct enable_if
+        {
+        };
+        template<typename T>
+        struct enable_if<true, T>
+        {
+            using type = T;
+        };
+    }
     template<bool TBool, typename T = void>
-    using EnableIf = typename enable_if<TBool, T>::type;
+    using EnableIf = typename detail::enable_if<TBool, T>::type;
 
     template<typename T>
     constexpr T&& declval();
 
-    template<typename T, typename U>
-    struct is_same
+    namespace detail
     {
-        static constexpr bool value = false;
-    };
-    template<typename T>
-    struct is_same<T, T>
-    {
-        static constexpr bool value = true;
-    };
+        template<typename T, typename U>
+        struct is_same
+        {
+            static constexpr bool value = false;
+        };
+        template<typename T>
+        struct is_same<T, T>
+        {
+            static constexpr bool value = true;
+        };
+    }
     template<typename T, typename U>
-    constexpr bool IsSame = is_same<T, U>::value;
+    constexpr bool IsSame = detail::is_same<T, U>::value;
+
+    template<typename T, typename... Pack>
+    constexpr bool PackContains = (detail::is_same<T, Pack>::value || ...);
 
     template<auto t, auto u>
     constexpr bool IsSameValue = t == u;
 
-    template<typename T, typename... Pack>
-    constexpr bool PackContains = (is_same<T, Pack>::value || ...);
+    namespace detail
+    {
+        template<typename T, typename... Pack>
+        struct index_of_type
+        {
+            static constexpr auto value = 0;
+        };
+        template<typename T, typename... Pack>
+        struct index_of_type<T, T, Pack...>
+        {
+            static constexpr auto value = 0;
+        };
+        template<typename T, typename U, typename... Pack>
+        struct index_of_type<T, U, Pack...>
+        {
+            static constexpr auto value = 1 + index_of_type<T, Pack...>::value;
+        };
+    }
 
     template<typename T, typename... Pack>
-    struct index_of_type
-    {
-        static constexpr auto value = 0;
-    };
-    template<typename T, typename... Pack>
-    struct index_of_type<T, T, Pack...>
-    {
-        static constexpr auto value = 0;
-    };
-    template<typename T, typename U, typename... Pack>
-    struct index_of_type<T, U, Pack...>
-    {
-        static constexpr auto value = 1 + index_of_type<T, Pack...>::value;
-    };
-    template<typename T, typename... Pack>
-    static constexpr auto IndexOfType = index_of_type<T, Pack...>::value;
+    static constexpr auto IndexOfType = detail::index_of_type<T, Pack...>::value;
 
-    template<typename T, typename... Ts>
-    struct first_type_t
+    namespace detail
     {
-        using type = typename first_type_t<Ts...>::type;
-    };
-    template<typename T>
-    struct first_type_t<T>
-    {
-        using type = T;
-    };
+        template<typename T, typename... Ts>
+        struct first_type_t
+        {
+            using type = typename first_type_t<Ts...>::type;
+        };
+        template<typename T>
+        struct first_type_t<T>
+        {
+            using type = T;
+        };
+    }
+
     template<typename... Ts>
-    using FirstType = typename first_type_t<Ts...>::type;
+    using FirstType = typename detail::first_type_t<Ts...>::type;
 
-    template<int Index, typename T, typename... Types>
-    struct type_of_index
+    namespace detail
     {
-        using type = typename type_of_index<Index - 1, Types...>::type;
-    };
+        template<int Index, typename T, typename... Types>
+        struct type_of_index
+        {
+            using type = typename type_of_index<Index - 1, Types...>::type;
+        };
 
-    template<typename T, typename... Types>
-    struct type_of_index<0, T, Types...>
-    {
-        using type = T;
-    };
+        template<typename T, typename... Types>
+        struct type_of_index<0, T, Types...>
+        {
+            using type = T;
+        };
 
-    template<typename T>
-    struct type_of_index<0, T>
-    {
-        using type = T;
-    };
+        template<typename T>
+        struct type_of_index<0, T>
+        {
+            using type = T;
+        };
+    }
 
     template<int Index, typename... Types>
-    using TypeOfIndex = typename type_of_index<Index, Types...>::type;
+    using TypeOfIndex = typename detail::type_of_index<Index, Types...>::type;
 
     template<typename T, typename U, typename... Ts>
     constexpr size_t TypeContainsN = IsSame<T, U> + TypeContainsN<T, Ts...>;
@@ -449,27 +472,37 @@ namespace neo
     template<typename T>
     using DecayArray = typename detail::decay_array<T>::type;
 
-    template<typename T>
-    struct remove_reference_wrapper_t
+    namespace detail
     {
-        using type = T;
-    };
+        template<typename T>
+        struct remove_reference_wrapper_t
+        {
+            using type = T;
+        };
+
+        template<typename T>
+        struct remove_reference_wrapper_t<ReferenceWrapper<T>>
+        {
+            using type = T;
+        };
+    }
 
     template<typename T>
-    struct remove_reference_wrapper_t<ReferenceWrapper<T>>
-    {
-        using type = T;
-    };
-
-    template<typename T>
-    using RemoveReferenceWrapper = typename remove_reference_wrapper_t<T>::type;
+    using RemoveReferenceWrapper = typename detail::remove_reference_wrapper_t<T>::type;
 
     template<typename T>
     using RewrapReference = ReferenceWrapper<RemoveReferenceWrapper<T>>;
 
+    template<typename T>
+    static constexpr bool IsReferenceWrapped = false;
+    template<typename T>
+    static constexpr bool IsReferenceWrapped<ReferenceWrapper<T>> = true;
+
     template<typename F, typename... Args>
     using ReturnType = decltype(declval<F>()(forward<Args>(declval<Args>())...));
 
+    // Returns the same type without const/volatile references, reference wrapper and top-level const/volatile.
+    // Example: Naked<ReferenceWrapper<const size_t> const&> returns size_t.
     template<typename T>
     using Naked = RemoveCV<RemoveReferenceWrapper<RemoveCV<RemoveReference<T>>>>;
 
@@ -478,6 +511,44 @@ namespace neo
     {
         for (size_t i = 0; i < num; ++i)
             to[i] = from[i];
+    }
+
+    template<typename T>
+    static constexpr void OverlappingTypedCopy(size_t num, T const* from, T* to)
+    {
+        if (from > to)
+        {
+            for (size_t i = 0; i < num; ++i)
+                to[i] = from[i];
+        }
+        else
+        {
+            while (true)
+            {
+                to[num] = from[num];
+                if (num-- == 0)
+                    break;
+            }
+        }
+    }
+
+    template<typename T>
+    static constexpr void OverlappingTypedMove(size_t num, T const* from, T* to)
+    {
+        if (from > to)
+        {
+            for (size_t i = 0; i < num; ++i)
+                to[i] = move(from[i]);
+        }
+        else
+        {
+            while (true)
+            {
+                to[num] = move(from[num]);
+                if (num-- == 0)
+                    break;
+            }
+        }
     }
 
     template<typename T>
@@ -490,6 +561,15 @@ namespace neo
     static constexpr void OverlappingUntypedCopy(size_t num, T const* from, T* to)
     {
         __builtin_memmove(to, from, num * sizeof(T));
+    }
+
+    template<typename T>
+    static constexpr void OverlappingMoveOrCopy(size_t num, T const* from, T* to)
+    {
+        if constexpr (IsTriviallyCopyable<T>)
+            OverlappingUntypedCopy(num, from, to);
+        else
+            OverlappingTypedMove(num, from, to);
     }
 
     template<typename T>
@@ -545,11 +625,12 @@ namespace neo
 
 namespace std
 {
-    template<size_t I, typename TTuple>
+    template<size_t Index, typename TTuple>
     struct tuple_element
     {
-        using raw_type = typename TTuple::template TypeOfElementAtIndex<I>;
-        using type = neo::Conditional<neo::IsSame<raw_type, neo::RemoveReferenceWrapper<raw_type>>, raw_type, neo::RemoveReferenceWrapper<raw_type>&&>;
+        using raw_type = typename TTuple::template TypeOfElementAtIndex<Index>;
+        using clean_type = neo::Conditional<neo::IsReferenceWrapped<raw_type>, neo::RemoveReferenceWrapper<raw_type>, raw_type>;
+        using type = neo::Conditional<neo::IsSame<TTuple, neo::RemoveConst<TTuple>>, clean_type&, clean_type const&>;
     };
 }
 
@@ -600,6 +681,6 @@ using neo::ValueConditional;
 using neo::bit_cast;
 using neo::declval;
 using neo::forward;
-using neo::make_signed;
+using neo::MakeSigned;
 using neo::swap;
 using neo::virtual_cast;
