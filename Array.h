@@ -33,7 +33,13 @@ namespace neo
         using ArrayIterator = Iterator<Array>;
         using ConstantArrayIterator = Iterator<const Array>;
 
-        constexpr ~Array() = default;
+        constexpr ~Array()
+        {
+            for (size_t i = 0; i < Size; ++i)
+            {
+                m_storage[i].~T();
+            }
+        }
 
         constexpr Array& operator=(const Array& other)
         {
@@ -167,7 +173,11 @@ namespace neo
             return m_storage[Index];
         }
 
-        T m_storage[Size];
+        union
+        {
+            u8 m_storage_untyped[sizeof(T) * Size] = { 0 };
+            T m_storage[Size];
+        };
     };
 }
 using neo::Array;
