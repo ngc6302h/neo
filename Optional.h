@@ -247,6 +247,87 @@ namespace neo
     };
 
     template<typename T>
+    class Optional<const ReferenceWrapper<T>>
+    {
+    public:
+        constexpr Optional() = default;
+        constexpr ~Optional() = default;
+
+        constexpr Optional(T const* other) :
+            m_ref(other)
+        {
+        }
+
+        constexpr Optional(T const& other) :
+            m_ref(&other)
+        {
+        }
+
+        constexpr Optional(Optional const& other) :
+            m_ref(other.m_value)
+        {
+        }
+
+        constexpr Optional(Optional&& other) :
+            m_ref(other.m_value)
+        {
+            other.m_value = nullptr;
+        }
+
+        constexpr Optional& operator=(Optional const& other)
+        {
+            if (this == &other)
+                return *this;
+
+            this->~Optional();
+            new (this) Optional(other);
+
+            return *this;
+        }
+
+        constexpr Optional& operator=(Optional&& other)
+        {
+            if (this == &other)
+                return *this;
+
+            this->~Optional();
+            new (this) Optional(move(other));
+
+            return *this;
+        }
+
+        constexpr operator bool()
+        {
+            return has_value();
+        }
+
+        constexpr explicit operator T const&() const
+        {
+            VERIFY(has_value());
+            return *m_ref;
+        }
+
+        [[nodiscard]] constexpr bool has_value() const
+        {
+            return m_ref != nullptr;
+        }
+
+        [[nodiscard]] constexpr T const& value() const
+        {
+            VERIFY(has_value());
+            return *m_ref;
+        }
+
+        [[nodiscard]] constexpr T const& value_or(T const& fallback) const
+        {
+            return m_ref != nullptr ? *m_ref : fallback;
+        }
+
+    private:
+        T const* m_ref { nullptr };
+    };
+
+    template<typename T>
     class Optional<T*>
     {
     public:
@@ -337,6 +418,82 @@ namespace neo
 
     private:
         T* m_value { nullptr };
+    };
+
+    template<typename T>
+    class Optional<T const*>
+    {
+    public:
+        constexpr Optional() = default;
+        constexpr ~Optional() = default;
+
+        constexpr Optional(T const* other) :
+            m_value(other)
+        {
+        }
+
+        constexpr Optional(Optional const& other) :
+            m_value(other.m_value)
+        {
+        }
+
+        constexpr Optional(Optional&& other) :
+            m_value(other.m_value)
+        {
+            other.m_value = nullptr;
+        }
+
+        constexpr Optional& operator=(const Optional& other)
+        {
+            if (this == &other)
+                return *this;
+
+            this->~Optional();
+            new (this) Optional(other);
+
+            return *this;
+        }
+
+        constexpr Optional& operator=(Optional&& other)
+        {
+            if (this == &other)
+                return *this;
+
+            this->~Optional();
+            new (this) Optional(move(other));
+
+            return *this;
+        }
+
+        constexpr operator bool()
+        {
+            return has_value();
+        }
+
+        constexpr explicit operator T const*() const
+        {
+            VERIFY(has_value());
+            return m_value;
+        }
+
+        [[nodiscard]] constexpr bool has_value() const
+        {
+            return m_value != nullptr;
+        }
+
+        [[nodiscard]] constexpr T const* value() const
+        {
+            VERIFY(has_value());
+            return m_value;
+        }
+
+        [[nodiscard]] constexpr T const& value_or(T const* fallback) const
+        {
+            return m_value != nullptr ? m_value : fallback;
+        }
+
+    private:
+        T const* m_value { nullptr };
     };
 }
 using neo::Optional;
