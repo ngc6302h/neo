@@ -7,7 +7,7 @@
 *  (at your option) any later version.
 
 *  This program is distributed in the hope that it will be useful,
-   *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 
@@ -46,7 +46,7 @@ namespace neo
 
         template<typename U>
         requires TypeContains<U, T, Ts...> && UniqueType<U, T, Ts...>
-        [[nodiscard]] constexpr RemoveReferenceWrapper<U>& get()
+        [[nodiscard]] constexpr U& get()
         {
             if constexpr (IsSame<T, U>)
                 return m_item;
@@ -56,7 +56,7 @@ namespace neo
 
         template<typename U>
         requires TypeContains<U, T, Ts...> && UniqueType<U, T, Ts...>
-        [[nodiscard]] constexpr const RemoveReferenceWrapper<U>& get() const
+        [[nodiscard]] constexpr U const& get() const
         {
             if constexpr (IsSame<T, U>)
                 return m_item;
@@ -66,22 +66,16 @@ namespace neo
 
         template<size_t Index>
         requires(Index < 1 + sizeof...(Ts))
-            [[nodiscard]] constexpr RemoveReferenceWrapper<TypeOfElementAtIndex<Index>>& get()
+            [[nodiscard]] constexpr decltype(auto) get()
         {
-            if constexpr (Index == 0)
-                return m_item;
-            else
-                return Tuple<Ts...>::template get<Index - 1>();
+            return get<TypeOfElementAtIndex<Index>>();
         }
 
         template<size_t Index>
         requires(Index < 1 + sizeof...(Ts))
-            [[nodiscard]] constexpr RemoveReferenceWrapper<TypeOfElementAtIndex<Index>>& get() const
+            [[nodiscard]] constexpr decltype(auto) get() const
         {
-            if constexpr (Index == 0)
-                return m_item;
-            else
-                return Tuple<Ts...>::template get<Index - 1>();
+            return get<TypeOfElementAtIndex<Index>>();
         }
 
         [[nodiscard]] static constexpr size_t size()
@@ -128,7 +122,7 @@ namespace neo
         }
 
         template<typename>
-        [[nodiscard]] constexpr const RemoveReferenceWrapper<T>& get() const
+        [[nodiscard]] constexpr RemoveReferenceWrapper<T> const& get() const
         {
             return m_item;
         }
@@ -141,7 +135,7 @@ namespace neo
         }
 
         template<size_t Index>
-        [[nodiscard]] constexpr const RemoveReferenceWrapper<T>& get() const
+        [[nodiscard]] constexpr RemoveReferenceWrapper<T> const& get() const
         {
             static_assert(Index == 0, "Index out of range");
             return m_item;
