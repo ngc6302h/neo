@@ -155,8 +155,13 @@ namespace neo
         constexpr Optional() = default;
         constexpr ~Optional() = default;
 
-        constexpr Optional(T* other) :
+        constexpr Optional(T const* other) :
             m_ref(other)
+        {
+        }
+
+        constexpr Optional(T& other) :
+            m_ref(&other)
         {
         }
 
