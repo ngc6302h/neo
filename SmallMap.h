@@ -34,6 +34,7 @@ namespace neo
             OverlappingMoveOrCopy(m_size - index, m_value.data() + index, m_value.data() + index + 1);
             m_keys[index] = forward<TKey>(key);
             m_value[index] = forward<TValue>(value);
+            ++m_size;
         }
 
         constexpr Optional<ReferenceWrapper<TValue>> get(TKey const& key) const
@@ -43,6 +44,15 @@ namespace neo
                 return { m_value[maybe_index] };
 
             return {};
+        }
+
+        constexpr void remove(TKey const& key)
+        {
+            VERIFY(m_size > 0);
+            size_t index = bsearch(m_keys, m_size, key);
+            OverlappingMoveOrCopy(m_size - index - 1, m_keys.data() + index + 1, m_keys.data() + index);
+            OverlappingMoveOrCopy(m_size - index - 1, m_value.data() + index + 1, m_value.data() + index);
+            --m_size;
         }
 
         constexpr size_t size() const
