@@ -43,3 +43,4 @@ namespace neo
         EndOfFile = 1025
     };
 }
+using neo::OSError;
