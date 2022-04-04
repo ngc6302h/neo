@@ -3,7 +3,7 @@
 
 namespace neo
 {
-    enum class Error
+    enum class OSError
     {
         Success = 0,
         OperationNotPermitted = EPERM,
