@@ -19,8 +19,8 @@
 #include "Types.h"
 #include "Assert.h"
 #include "Checked.h"
-#include <time.h>
 #include "Optional.h"
+#include <time.h>
 
 namespace neo
 {
@@ -37,7 +37,7 @@ namespace neo
             m_seconds(seconds), m_nanoseconds(nanoseconds) { }
         constexpr Time() = default;
 
-        constexpr Optional<Time> add(Time const& other)
+        constexpr Optional<Time> add(Time const& other) const
         {
             Checked<u64> secs(m_seconds);
             Checked<u64> nanosecs(m_nanoseconds);
@@ -49,7 +49,7 @@ namespace neo
             return Time { secs.value(), nanosecs.value() };
         }
 
-        constexpr Optional<Time> sub(Time const& other)
+        constexpr Optional<Time> sub(Time const& other) const
         {
             Checked<u64> secs(m_seconds);
             Checked<u64> nanosecs(m_nanoseconds);
@@ -61,21 +61,21 @@ namespace neo
             return Time { secs.value(), nanosecs.value() };
         }
 
-        constexpr bool operator<(Time const& other)
+        constexpr bool operator<(Time const& other) const
         {
             if (m_seconds < other.m_seconds || (m_seconds == other.m_seconds && m_nanoseconds < other.m_nanoseconds))
                 return true;
             return false;
         }
 
-        constexpr bool operator>(Time const& other)
+        constexpr bool operator>(Time const& other) const
         {
             if (m_seconds > other.m_seconds || (m_seconds == other.m_seconds && m_nanoseconds > other.m_nanoseconds))
                 return true;
             return false;
         }
 
-        constexpr bool operator==(Time const& other)
+        constexpr bool operator==(Time const& other) const
         {
             return m_seconds == other.m_seconds && m_nanoseconds == other.m_nanoseconds;
         }
@@ -135,4 +135,24 @@ namespace neo
         }
     };
 
+    class ScopedTimer
+    {
+        explicit ScopedTimer(Time& store) :
+            m_start_time(Timer::now()), m_store(store)
+        {
+        }
+
+        ~ScopedTimer()
+        {
+            m_store = Timer::now().sub(m_start_time).release_value();
+        }
+
+    private:
+        Time m_start_time;
+        Time& m_store;
+    };
+
 }
+using neo::ScopedTimer;
+using neo::Time;
+using neo::Timer;
