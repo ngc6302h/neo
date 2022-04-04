@@ -17,6 +17,7 @@
 
 #pragma once
 #include "Types.h"
+#include "Assert.h"
 #define this_is_constexpr() __builtin_is_constant_evaluated()
 
 template<typename T>
@@ -115,6 +116,28 @@ constexpr size_t lower_bound(T const* array, size_t size, T const& target)
         }
     }
     return low + 1;
+}
+
+constexpr u32 get_next_power_of_2(u32 x)
+{
+    VERIFY(x != 0);
+    return 1 << (32 - __builtin_clz(x - 1));
+}
+
+constexpr u64 get_next_power_of_2(u64 x)
+{
+    VERIFY(x != 0);
+    return 1 << (64 - __builtin_clzl(x - 1));
+}
+
+constexpr u32 log2(u32 x)
+{
+    return 32 - __builtin_clz(x);
+}
+
+constexpr u32 log2(u64 x)
+{
+    return 64 - __builtin_clzl(x);
 }
 
 // true if the architecture is little endian
