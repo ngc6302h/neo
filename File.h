@@ -16,7 +16,7 @@
  */
 
 #pragma once
-#include "Error.h"
+#include "OSError.h"
 #include "Optional.h"
 #include "ResultOrError.h"
 #include "Span.h"
@@ -65,11 +65,11 @@ namespace neo
             return *this;
         }
 
-        [[nodiscard]] static Optional<Error> remove(const String& path)
+        [[nodiscard]] static Optional<OSError> remove(const String& path)
         {
             auto result = ::remove(path.null_terminated_characters());
             if (result != 0)
-                return (Error)errno;
+                return (OSError)errno;
             return {};
         }
 
@@ -78,7 +78,7 @@ namespace neo
             return ::rename(path.non_null_terminated_buffer(), new_path.null_terminated_characters()) == 0;
         }
 
-        [[nodiscard]] static Optional<Error> exists(const StringView& path)
+        [[nodiscard]] static Optional<OSError> exists(const StringView& path)
         {
 #ifdef _WIN32
     #pragma warning(suppress:4996)
@@ -87,20 +87,20 @@ namespace neo
             if (success == 0)
                 return {};
             else
-                return (Error)errno;
+                return (OSError)errno;
         }
 
-        [[nodiscard]] static ResultOrError<File, Error> open(const String& path, const char* posix_open_mode)
+        [[nodiscard]] static ResultOrError<File, OSError> open(const String& path, const char* posix_open_mode)
         {
             VERIFY(!path.is_empty());
 
             FILE* file = fopen(path.null_terminated_characters(), posix_open_mode);
             if (file == nullptr)
-                return (Error)errno;
+                return (OSError)errno;
             return File(file);
         }
 
-        [[nodiscard]] static ResultOrError<Vector<u8>, Error> read_to_buffer(const String& path, size_t max_bytes_to_read)
+        [[nodiscard]] static ResultOrError<Vector<u8>, OSError> read_to_buffer(const String& path, size_t max_bytes_to_read)
         {
             VERIFY(!path.is_empty());
 
@@ -121,81 +121,81 @@ namespace neo
             return buffer;
         }
 
-        [[nodiscard]] static ResultOrError<Vector<u8>, Error> read_all(const String& path)
+        [[nodiscard]] static ResultOrError<Vector<u8>, OSError> read_all(const String& path)
         {
             auto file_or_error = open(path, "r");
             if (file_or_error.has_error())
-                return (Error)errno;
+                return (OSError)errno;
             auto size_or_error = file_or_error.result().size();
             if (size_or_error.has_error())
-                return (Error)errno;
+                return (OSError)errno;
             Vector<u8> buffer((size_t)size_or_error.result(), true);
             auto bytes_read_or_error = file_or_error.result().read(buffer.span(), buffer.size());
             if (bytes_read_or_error.has_error())
-                return (Error)errno;
+                return (OSError)errno;
             return buffer;
         }
 
-        [[nodiscard]] ResultOrError<u8, Error> read_byte()
+        [[nodiscard]] ResultOrError<u8, OSError> read_byte()
         {
             if (!m_is_open)
-                return Error::BadFileNumber;
+                return OSError::BadFileNumber;
 
             auto byte_read = fgetc(m_handle);
             if (byte_read == EOF)
-                return Error::EndOfFile;
+                return OSError::EndOfFile;
             return (u8)byte_read;
         }
 
-        [[nodiscard]] ResultOrError<size_t, Error> read(const Span<u8>& to, size_t max_bytes)
+        [[nodiscard]] ResultOrError<size_t, OSError> read(const Span<u8>& to, size_t max_bytes)
         {
             VERIFY(to.size() <= max_bytes);
             if (!m_is_open)
-                return Error::BadFileNumber;
+                return OSError::BadFileNumber;
 
             size_t bytes_read = fread(to.data(), 1, max_bytes, m_handle);
 
             if (bytes_read == 0)
             {
                 if (feof(m_handle))
-                    return Error::EndOfFile;
+                    return OSError::EndOfFile;
                 else
-                    return (Error)errno;
+                    return (OSError)errno;
             }
             return bytes_read;
         }
 
-        [[nodiscard]] ResultOrError<size_t, Error> write(const Span<const u8> from, size_t bytes_to_write)
+        [[nodiscard]] ResultOrError<size_t, OSError> write(const Span<const u8> from, size_t bytes_to_write)
         {
             VERIFY(bytes_to_write <= from.size());
             if (!m_is_open)
-                return Error::BadFileNumber;
+                return OSError::BadFileNumber;
 
             size_t bytes_written = fwrite(from.data(), 1, bytes_to_write, m_handle);
             return bytes_written;
         }
 
-        [[nodiscard]] Optional<Error> seek(SeekMode relative_to, long offset)
+        [[nodiscard]] Optional<OSError> seek(SeekMode relative_to, long offset)
         {
             auto result = fseek(m_handle, offset, (int)relative_to);
             if (result == -1)
-                return (Error)errno;
+                return (OSError)errno;
             return {};
         }
 
-        [[nodiscard]] Optional<Error> close()
+        [[nodiscard]] Optional<OSError> close()
         {
             if (fclose(m_handle) == EOF)
-                return (Error)errno;
+                return (OSError)errno;
             m_is_open = false;
             return {};
         }
 
-        [[nodiscard]] ResultOrError<long, Error> getpos() const
+        [[nodiscard]] ResultOrError<long, OSError> getpos() const
         {
             auto result = ftell(m_handle);
             if (result == -1)
-                return (Error)errno;
+                return (OSError)errno;
             return result;
         }
 
@@ -209,39 +209,39 @@ namespace neo
             return ferror(m_handle);
         }
 
-        [[nodiscard]] static ResultOrError<long, Error> size(const String& path)
+        [[nodiscard]] static ResultOrError<long, OSError> size(const String& path)
         {
             auto* handle = fopen(path.null_terminated_characters(), "r");
             auto result = fseek(handle, 0, SEEK_END);
             if (result == -1)
             {
                 fclose(handle);
-                return (Error)errno;
+                return (OSError)errno;
             }
             auto size = ftell(handle);
             if (size == -1)
             {
                 fclose(handle);
-                return (Error)errno;
+                return (OSError)errno;
             }
             fclose(handle);
             return size;
         }
 
-        [[nodiscard]] ResultOrError<long, Error> size() const
+        [[nodiscard]] ResultOrError<long, OSError> size() const
         {
             auto current_pos = ftell(m_handle);
             if (current_pos == -1)
-                return (Error)errno;
+                return (OSError)errno;
             auto result = fseek(m_handle, 0, SEEK_END);
             if (result == -1)
-                return (Error)errno;
+                return (OSError)errno;
             auto size = ftell(m_handle);
             if (size == -1)
-                return (Error)errno;
+                return (OSError)errno;
             result = fseek(m_handle, current_pos, SEEK_SET);
             if (result == -1)
-                return (Error)errno;
+                return (OSError)errno;
             return size;
         }
 
