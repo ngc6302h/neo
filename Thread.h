@@ -63,7 +63,7 @@ namespace neo
     {
     public:
         template<VoidCallable TFunc>
-        [[gnu::noinline]] [[nodiscard]] static ResultOrError<OwnPtr<Thread>, OSError> create(TFunc&& start_function)
+        [[nodiscard]] static ResultOrError<OwnPtr<Thread>, OSError> create(TFunc&& start_function)
         {
             OwnPtr<Thread> thread(new Thread());
             if (thread.is_null())
