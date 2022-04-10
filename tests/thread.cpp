@@ -18,30 +18,35 @@
 #include "Test.h"
 #include <Thread.h>
 #include <stdio.h>
+#include <Barrier.h>
 
-void entry(String const& msg)
+void entry(String const& msg, Barrier& barrier)
 {
     puts("Hello world 👋 from another thread");
     printf("%s\n", msg.null_terminated_characters());
-    sleep(1);
     char name[32];
+    barrier.arrive_and_wait();
     auto result = pthread_getname_np(pthread_self(), name, 32);
     if (result != 0)
     {
         printf("%d\n", result);
     }
     printf("My thread name is: %s\n", name);
+    sleep(1);
+    barrier.arrive_and_drop();
 }
 
 int main()
 {
     auto* s = new String("I am just a poor string from another thread");
+    Barrier barrier(2);
     auto maybe_thread = Thread::create([&]()
-        { entry(*s); });
+        { entry(*s, barrier); });
     if (maybe_thread.has_error())
         return -1;
     auto thread = move(maybe_thread.result());
-    __builtin_printf("Hello world 👋\n");
+    printf("Hello world 👋\n");
     thread->set_name("second thread!");
-    sleep(2);
+    barrier.arrive_and_wait();
+    barrier.arrive_and_drop();
 }
