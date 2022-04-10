@@ -109,6 +109,21 @@ namespace neo
             return {};
         }
 
+        String get_name() const
+        {
+            char buf[16] {};
+            pthread_getname_np(m_tid, buf, sizeof(buf));
+            return buf;
+        }
+
+        // returns end code
+        void* wait_for_thread_exit()
+        {
+            void* end_code {};
+            pthread_join(m_tid, &end_code);
+            return end_code;
+        }
+
     private:
         explicit Thread() :
             m_tid(0)
