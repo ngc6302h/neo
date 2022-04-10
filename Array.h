@@ -82,6 +82,12 @@ namespace neo
             initializer_list_copy_helper<sizeof...(Ts), Ts...>(0, forward<Ts>(items)...);
         }
 
+        constexpr explicit Array(T const& repeat)
+        {
+            for (size_t i = 0; i < Size; ++i)
+                m_storage[i] = repeat;
+        }
+
         [[nodiscard]] constexpr size_t size() const
         {
             return Size;
