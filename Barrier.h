@@ -26,27 +26,35 @@ namespace neo
 {
     class Barrier
     {
+    public:
         explicit Barrier(u32 expected) :
             m_control(expected), m_expected(expected)
         {
         }
 
-    public:
         void arrive_and_wait()
         {
             auto count = m_control.sub_fetch(1, AcquireRelease);
             if (count == 0)
             {
+
                 m_control.store(m_expected, Relaxed);
                 syscall(SYS_futex, m_control.ptr(), FUTEX_WAKE_PRIVATE, NumericLimits<int>::max());
             }
             else
-                syscall(SYS_futex, m_control.ptr(), FUTEX_WAIT_PRIVATE, 0, nullptr);
+                wait();
         }
 
         void wait()
         {
-            syscall(SYS_futex, m_control.ptr(), FUTEX_WAIT_PRIVATE, 0, nullptr);
+            auto count = m_control.load(MemoryOrder::Acquire);
+            while (count != 0)
+            {
+                auto result = syscall(SYS_futex, m_control.ptr(), FUTEX_WAIT_PRIVATE, count, nullptr);
+                if (result == 0)
+                    break;
+                count = m_control.load(MemoryOrder::Acquire);
+            }
         }
 
         void arrive()
@@ -64,7 +72,7 @@ namespace neo
                 syscall(SYS_futex, m_control.ptr(), FUTEX_WAKE_PRIVATE, (int)NumericLimits<int>::max());
             }
             else
-                syscall(SYS_futex, m_control.ptr(), FUTEX_WAIT_PRIVATE, 0, NULL);
+                wait();
         }
 
     private:
@@ -72,3 +80,4 @@ namespace neo
         Atomic<u32> m_expected;
     };
 }
+using neo::Barrier;
