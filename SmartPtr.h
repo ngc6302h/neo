@@ -18,6 +18,7 @@
 #pragma once
 #include "Assert.h"
 #include "Types.h"
+#include "TypeTraits.h"
 
 namespace neo
 {
@@ -98,6 +99,11 @@ namespace neo
         [[nodiscard]] constexpr const T* operator->() const
         {
             return m_data;
+        }
+
+        [[nodiscard]] constexpr bool is_null() const
+        {
+            return m_data == nullptr;
         }
 
     private:
