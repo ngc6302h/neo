@@ -32,7 +32,7 @@ void entry(String const& msg, Barrier& barrier)
         printf("%d\n", result);
     }
     printf("My thread name is: %s\n", name);
-    sleep(1);
+    sleep(1 + DEBUG_ASSERTS * 3);
     barrier.arrive_and_drop();
 }
 
