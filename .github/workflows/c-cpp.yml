@@ -20,7 +20,7 @@ jobs:
     - name: make
       run: cd debug && make
     - name: run tests
-      run: cd debug && ctest
+      run: cd debug && ctest --output-on-failure
   test-release:
     runs-on: ubuntu-latest
     steps:
@@ -34,4 +34,4 @@ jobs:
     - name: make
       run: cd release && make
     - name: run tests
-      run: cd release && ctest
+      run: cd release && ctest --output-on-failure
