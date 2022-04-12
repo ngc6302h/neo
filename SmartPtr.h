@@ -17,6 +17,7 @@
 
 #pragma once
 #include "Assert.h"
+#include "Atomic.h"
 #include "Types.h"
 #include "TypeTraits.h"
 
@@ -117,8 +118,8 @@ namespace neo
 
     struct ControlBlock
     {
-        size_t reference_count;
-        size_t weak_reference_count;
+        Atomic<size_t> reference_count;
+        Atomic<size_t> weak_reference_count;
     };
 
     template<typename T, bool SharedBetweenThreads = false>
@@ -139,15 +140,16 @@ namespace neo
         {
             VERIFY(other.m_data != nullptr);
             if constexpr (SharedBetweenThreads)
-                __atomic_add_fetch(&m_control->reference_count, 1, __ATOMIC_ACQ_REL);
+                m_control->reference_count.add_fetch(1, MemoryOrder::Release);
             else
-                m_control->reference_count++;
+                m_control->reference_count.add_fetch(1, MemoryOrder::Relaxed);
         }
 
         constexpr RefPtr(RefPtr&& other) :
             m_data(other.m_data), m_control(other.m_control)
         {
             other.m_data = nullptr;
+            other.m_control = nullptr;
         }
 
         template<typename... Args>
@@ -161,12 +163,12 @@ namespace neo
             return WeakPtr<T, SharedBetweenThreads>(*this);
         }
 
-        constexpr RefPtr& operator=(const RefPtr& other)
+        constexpr RefPtr& operator=(RefPtr const& other)
         {
             if (this == &other)
                 return *this;
 
-            VERIFY(*other.m_reference_counter != 0);
+            VERIFY(other.m_control != nullptr);
 
             this->~RefPtr();
             new (this) RefPtr(other);
@@ -187,36 +189,43 @@ namespace neo
 
         constexpr RefPtr& operator=(RefPtr&& other)
         {
-            VERIFY(*other.m_reference_counter != 0);
+            VERIFY(other.m_control != nullptr);
 
-            this->~RefPtr();
+            unref();
             new (this) RefPtr(move(other));
 
             return *this;
         }
 
-        constexpr void destroy()
+        constexpr void unref()
         {
-            if constexpr (SharedBetweenThreads)
-                __atomic_sub_fetch(&m_control->reference_count, 1, __ATOMIC_ACQ_REL);
-            else
-                m_control->reference_count--;
-
-            if (m_control->reference_count == 0)
+            if (m_control != nullptr)
             {
-                delete m_data;
-                m_data = nullptr;
-                if (m_control->weak_reference_count == 0)
+                size_t refs;
+                if constexpr (SharedBetweenThreads)
+                    refs = m_control->reference_count.sub_fetch(1, AcquireRelease);
+                else
+                    refs = m_control->reference_count.sub_fetch(1, Relaxed);
+
+                if (refs == 0)
                 {
-                    delete m_control;
-                    m_control = nullptr;
+                    delete m_data;
+                    m_data = nullptr;
+                    if (m_control->weak_reference_count == 0)
+                    {
+                        delete m_control;
+                        m_control = nullptr;
+                    }
                 }
+
+                m_data = nullptr;
+                m_control = nullptr;
             }
         }
 
         constexpr ~RefPtr()
         {
-            destroy();
+            unref();
         }
 
         [[nodiscard]] constexpr const T* leak() const
@@ -260,7 +269,7 @@ namespace neo
         }
 
     private:
-        RefPtr() = default;
+        RefPtr() = delete;
 
         T* m_data;
         ControlBlock* m_control;
@@ -275,18 +284,18 @@ namespace neo
         {
             VERIFY(other.is_valid());
             if constexpr (SharedBetweenThreads)
-                __atomic_add_fetch(&m_control->weak_reference_count, 1, __ATOMIC_ACQ_REL);
+                m_control->weak_reference_count.add_fetch(1, AcquireRelease);
             else
-                m_control->weak_reference_count++;
+                m_control->weak_reference_count.add_fetch(1, Relaxed);
         }
 
         constexpr WeakPtr(WeakPtr const& other) :
             m_data(other.m_data), m_control(other.m_control)
         {
             if constexpr (SharedBetweenThreads)
-                __atomic_add_fetch(&m_control->weak_reference_count, 1, __ATOMIC_ACQ_REL);
+                m_control->weak_reference_count.add_fetch(1, AcquireRelease);
             else
-                m_control->weak_reference_count++;
+                m_control->weak_reference_count.add_fetch(1, Relaxed);
         }
 
         constexpr WeakPtr(WeakPtr&& other) :
@@ -321,11 +330,12 @@ namespace neo
             if (m_control == nullptr)
                 return;
 
+            size_t refs;
             if constexpr (SharedBetweenThreads)
-                __atomic_sub_fetch(&m_control->weak_reference_count, 1, __ATOMIC_ACQ_REL);
+                refs = m_control->weak_reference_count.sub_fetch(1, AcquireRelease);
             else
-                m_control->weak_reference_count--;
-            if (m_control->reference_count == 0 && m_control->weak_reference_count == 0)
+                refs = m_control->weak_reference_count.sub_fetch(1, Relaxed);
+            if (m_control->reference_count.load(Acquire) == 0 && refs == 0)
             {
                 delete m_data;
                 m_data = nullptr;
