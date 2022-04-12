@@ -77,24 +77,38 @@ namespace neo
     template<typename T>
     class Promise
     {
+        using state = RefPtr<detail::FutureState<T>, true>;
+
     public:
         Promise() :
-            m_state(RefPtr<detail::FutureState<T>>::make())
+            m_state(state::make())
         {
         }
 
         ~Promise()
         {
-            if (!m_state.is_valid())
+            if (m_state.is_valid())
             {
                 if (!m_state->has_value())
                     m_state->break_promise();
             }
         }
 
-        Promise(Promise&& other) = default;
+        Promise(Promise&& other) :
+            m_state(move(other.m_state))
+        {
+        }
+
         Promise& operator=(Promise const&) = delete;
-        Promise& operator=(Promise&& other) = default;
+        Promise& operator=(Promise&& other)
+        {
+            if (this == &other)
+                return *this;
+
+            new (this) Promise(move(other));
+
+            return *this;
+        }
 
         [[nodiscard]] Future<T> get_future()
         {
@@ -140,21 +154,46 @@ namespace neo
         }
 
     private:
-        RefPtr<detail::FutureState<T>> m_state;
+        state m_state;
     };
 
     template<typename T>
     class Future
     {
         friend Promise<T>;
+        using state = RefPtr<detail::FutureState<T>, true>;
 
     public:
         Future() = delete;
-        Future(Future const&) = default;
-        Future(Future&&) = default;
+        Future(Future const& other) :
+            m_state(other.m_state)
+        {
+        }
 
-        Future& operator=(Future const& other) = default;
-        Future& operator=(Future&& other) = default;
+        Future(Future&& other) :
+            m_state(move(other.m_state))
+        {
+        }
+
+        Future& operator=(Future const& other)
+        {
+            if (this == &other)
+                return *this;
+
+            new (this) Future(other);
+
+            return *this;
+        }
+
+        Future& operator=(Future&& other)
+        {
+            if (this == &other)
+                return *this;
+
+            new (this) Future(move(other));
+
+            return *this;
+        }
 
         operator bool() const
         {
@@ -202,12 +241,12 @@ namespace neo
         }
 
     private:
-        explicit Future(RefPtr<detail::FutureState<T>> const& state) :
+        explicit Future(state const& state) :
             m_state(state)
         {
         }
 
-        RefPtr<detail::FutureState<T>> m_state;
+        state m_state;
     };
 }
 using neo::Future;
