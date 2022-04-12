@@ -19,7 +19,6 @@
 #include <Future.h>
 #include <Thread.h>
 #include <stdio.h>
-#include <unistd.h>
 
 void lambda(Promise<int>& promise)
 {
