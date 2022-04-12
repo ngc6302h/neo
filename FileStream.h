@@ -25,11 +25,11 @@ namespace neo
     {
     public:
         explicit FileStream(File&& open_file) :
-            m_file(move(open_file)), m_last_error(Error::Success)
+            m_file(move(open_file)), m_last_error(OSError::Success)
         {
         }
 
-        static ResultOrError<FileStream, Error> create(StringView filename, StringView posix_open_mode)
+        static ResultOrError<FileStream, OSError> create(StringView filename, StringView posix_open_mode)
         {
             auto maybe_file = File::open(filename, posix_open_mode.non_null_terminated_buffer());
             if (maybe_file.has_error())
@@ -46,7 +46,7 @@ namespace neo
 
         bool has_error() const override
         {
-            return m_file.has_error() || m_last_error != Error::Success;
+            return m_file.has_error() || m_last_error != OSError::Success;
         }
 
         size_t read(Span<u8>& to) override
@@ -79,22 +79,22 @@ namespace neo
             return m_file;
         }
 
-        ResultOrError<long, Error> pos() const
+        ResultOrError<long, OSError> pos() const
         {
             return m_file.getpos();
         }
 
-        Error last_error() const
+        OSError last_error() const
         {
             return m_last_error;
         }
 
         void clear_error_state()
         {
-            m_last_error = Error::Success;
+            m_last_error = OSError::Success;
         }
 
-        Optional<Error> seek(long offset)
+        Optional<OSError> seek(long offset)
         {
             auto maybe_error = m_file.seek(SeekMode::Start, offset);
             if (maybe_error.has_value())
@@ -104,7 +104,7 @@ namespace neo
 
     private:
         File m_file;
-        Error m_last_error;
+        OSError m_last_error;
     };
 }
 using neo::FileStream;
