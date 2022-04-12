@@ -16,38 +16,43 @@
  */
 
 #include "Test.h"
+#include "ScopeExit.h"
 #include <Future.h>
-#include <pthread.h>
+#include <Thread.h>
 #include <stdio.h>
 #include <unistd.h>
 
-void* lambda(void* promise_v)
+void lambda(Promise<int>& promise)
 {
-    auto* promise = (Promise<int>*)promise_v;
     printf("Downloading...");
-    promise->set_value(42);
-    return nullptr;
+    promise.set_value(42);
+    printf("Downloaded! ");
 }
 
 Future<int> download()
 {
     Promise<int> promise;
     Future<int> willbe_int = promise.get_future();
-    pthread_t thread;
-    pthread_create(&thread, nullptr, reinterpret_cast<void* (*)(void*)>(lambda), &promise);
-    pthread_detach(thread);
+    auto maybe_thread = Thread::create([p = move(promise)]() mutable
+        {
+        printf("Downloading...");
+        p.set_value(42);
+        printf("Downloaded! "); });
 
+    VERIFY(maybe_thread.has_result());
     return willbe_int;
 }
 
 int main()
 {
+    setbuf(stdout, nullptr);
+
     auto willbe_result = download();
     while (!willbe_result.has_value())
     {
-        printf("Main thread doing some other work");
-        usleep(10000);
+        printf("Main thread doing some other work\n");
     }
     printf("The result is %d\n", willbe_result.value());
+    TEST_EQUAL(willbe_result.value(), 42);
     return 0;
 }
