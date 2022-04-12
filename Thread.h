@@ -22,6 +22,7 @@
 #include "String.h"
 #include "ResultOrError.h"
 #include "OSError.h"
+#include "SmartPtr.h"
 #include <syscall.h>
 #include <linux/sched.h>
 #include <sched.h>
@@ -39,6 +40,7 @@ namespace neo
     {
         struct generic_callable_view
         {
+            virtual ~generic_callable_view() = default;
             virtual void* function_ptr() = 0;
         };
 
@@ -49,6 +51,10 @@ namespace neo
                 callable(move(f)) { }
             explicit callable_storage(TCallable const& f) :
                 callable(f) { }
+
+            virtual ~callable_storage()
+            {
+            }
 
             void* function_ptr() override
             {
@@ -63,34 +69,41 @@ namespace neo
     {
     public:
         template<VoidCallable TFunc>
-        [[nodiscard]] static ResultOrError<OwnPtr<Thread>, OSError> create(TFunc&& start_function)
+        [[nodiscard]] static ResultOrError<RefPtr<Thread, true>, OSError> create(TFunc&& start_function)
         {
-            OwnPtr<Thread> thread(new Thread());
-            if (thread.is_null())
-                return OSError(OSError::OutOfMemory);
-
             auto entry_point_storage = new detail::callable_storage<TFunc>(forward<TFunc>(start_function));
             if (entry_point_storage == nullptr)
                 return OSError::OutOfMemory;
 
-            thread->m_entry_point_storage = entry_point_storage;
+            RefPtr<Thread, true> thread(new Thread(entry_point_storage));
+            if (!thread.is_valid())
+                return OSError(OSError::OutOfMemory);
+
+            RefPtr<Thread, true>* temp_storage = new RefPtr<Thread, true>(thread);
+
+            asm volatile(""
+                         :
+                         :
+                         : "memory");
 
             auto result = pthread_create(
-                &thread->m_tid, nullptr, [](void* thread) -> void*
+                &thread->m_tid, nullptr, [](void* thread_ptr) -> void*
                 {
-                auto* this_thread = reinterpret_cast<Thread*>(thread);
-                u64 result;
+                    auto* this_thread = reinterpret_cast<RefPtr<Thread, true>*>(thread_ptr);
+                    u64 result;
 
-                if constexpr(!CallableWithReturnType<TFunc, void>)
-                   result = (*this_thread->template get_start_function_ptr<TFunc>())();
-                else
-                {
-                    (*this_thread->template get_start_function_ptr<TFunc>())();
-                    result = 0;
-                }
-                this_thread->m_tid = 0;
-                return (void*)(ptr_t)result; },
-                thread.leak_ptr());
+                    if constexpr(!CallableWithReturnType<TFunc, void>)
+                    result = (*this_thread->leak()->template get_start_function_ptr<TFunc>())();
+                    else
+                    {
+                        (*this_thread->leak()->template get_start_function_ptr<TFunc>())();
+                        result = 0;
+                    }
+
+                    this_thread->leak()->m_tid = 0;
+                    delete this_thread;
+                    return (void*)(ptr_t)result; },
+                temp_storage);
 
             if (result != 0)
                 return OSError(result);
@@ -109,24 +122,41 @@ namespace neo
             return {};
         }
 
-        String get_name() const
+        ~Thread()
+        {
+            if (m_tid != 0)
+                pthread_detach(m_tid);
+            m_tid = 0;
+            delete m_entry_point_storage;
+        }
+
+        Thread& operator=(Thread const&) = delete;
+        Thread& operator=(Thread&& other) = delete;
+
+        ResultOrError<String, OSError> get_name() const
         {
             char buf[16] {};
-            pthread_getname_np(m_tid, buf, sizeof(buf));
-            return buf;
+            auto result = pthread_getname_np(m_tid, buf, sizeof(buf));
+            if (result != 0)
+                return OSError(result);
+            return String(buf);
         }
 
         // returns end code
-        void* wait_for_thread_exit()
+        ResultOrError<void*, OSError> wait_for_thread_exit()
         {
+            VERIFY(m_tid > 0);
+
             void* end_code {};
-            pthread_join(m_tid, &end_code);
+            auto result = pthread_join(m_tid, &end_code);
+            if (result != 0)
+                return OSError(result);
             return end_code;
         }
 
     private:
-        explicit Thread() :
-            m_tid(0)
+        explicit Thread(detail::generic_callable_view* entry_point_storage) :
+            m_tid(0), m_entry_point_storage(entry_point_storage)
         {
         }
 
