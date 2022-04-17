@@ -48,7 +48,7 @@ namespace neo
             return { m_data + start, m_size - start };
         }
 
-        [[nodiscard]] constexpr Span slice(size_t start, size_t length)
+        [[nodiscard]] constexpr Span slice(size_t start, size_t length) const
         {
             VERIFY(start < m_size);
             VERIFY(start + length < m_size);
