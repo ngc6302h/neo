@@ -51,3 +51,9 @@ static char __backtrace_buffer[sizeof(void*) * 256];
     #define VERIFY(expr)
     #define VERIFY_NOT_REACHED() print_backtrace_and_fail("Reached unreachable code!", __FILE__, __LINE__, __PRETTY_FUNCTION__)
 #endif
+
+#define ENSURE(expr)                                                     \
+    if (!(expr)) [[unlikely]]                                            \
+    {                                                                    \
+        __ASSERT_FAILED(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
+    }
