@@ -74,6 +74,16 @@ namespace neo
                 wait();
         }
 
+        u32 waiting() const
+        {
+            return m_expected - m_control.load(Acquire);
+        }
+
+        u32 size() const
+        {
+            return m_control.load(Acquire);
+        }
+
     private:
         Atomic<u32> m_control;
         Atomic<u32> m_expected;
