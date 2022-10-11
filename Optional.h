@@ -53,7 +53,7 @@ namespace neo
         constexpr Optional(T&& other) :
             m_has_value(true)
         {
-            new (m_storage) T(move(other));
+            new (m_storage) T(forward<T>(other));
         }
 
         constexpr Optional(Optional&& other) :
