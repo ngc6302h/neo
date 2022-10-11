@@ -19,6 +19,7 @@
 #include "Util.h"
 #include "New.h"
 #include "TypeTraits.h"
+#include "Concepts.h"
 
 namespace neo
 {
@@ -85,7 +86,7 @@ namespace neo
         constexpr ResultOrError(TResult&& other) :
             m_has_error(false)
         {
-            new (&m_storage) TResult(move(other));
+            new (&m_storage) TResult(forward<TResult>(other));
         }
 
         constexpr ResultOrError(const TError& other) :
@@ -97,7 +98,7 @@ namespace neo
         constexpr ResultOrError(TError&& other) :
             m_has_error(true)
         {
-            new (&m_storage) TError(move(other));
+            new (&m_storage) TError(forward<TError>(other));
         }
 
         [[nodiscard]] constexpr bool has_error() const
