@@ -19,7 +19,6 @@
 #include "Util.h"
 #include "New.h"
 #include "TypeTraits.h"
-#include "Concepts.h"
 
 namespace neo
 {
