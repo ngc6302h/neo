@@ -123,7 +123,7 @@ namespace neo
             m_first = nullptr;
         }
 
-        constexpr void add_back(const T& element)
+        constexpr void add_back(T const& element)
         {
             auto ptr = new QueueNode<T> { new T(element) };
             if (m_size == 0)
@@ -136,10 +136,38 @@ namespace neo
             }
             m_size++;
         }
+        
+        constexpr void add_back(T&& element)
+        {
+            auto ptr = new QueueNode<T> { new T(std::move(element)) };
+            if (m_size == 0)
+                m_first = m_last = ptr;
+            else
+            {
+                m_last->next = ptr;
+                ptr->back = m_last;
+                m_last = ptr;
+            }
+            m_size++;
+        }
 
-        constexpr void add_front(const T& element)
+        constexpr void add_front(T const& element)
         {
             auto ptr = new QueueNode { new T(element) };
+            if (m_size == 0)
+                m_first = m_last = ptr;
+            else
+            {
+                ptr->next = m_first;
+                m_first->back = ptr;
+                m_first = ptr;
+            }
+            m_size++;
+        }
+        
+        constexpr void add_front(T&& element)
+        {
+            auto ptr = new QueueNode { new T(std::move(element)) };
             if (m_size == 0)
                 m_first = m_last = ptr;
             else
@@ -178,25 +206,25 @@ namespace neo
         constexpr T&& pop_back()
         {
             VERIFY(m_size > 0);
-            T value = move(*m_last->data);
+            T value = std::move(*m_last->data);
             auto new_back = m_last->back;
             new_back->next = nullptr;
             delete m_last;
             m_last = new_back;
             m_size--;
-            return move(value);
+            return value;
         }
 
         constexpr T&& pop_front()
         {
             VERIFY(m_size > 0);
-            T value = move(*m_first->data);
+            T value = std::move(*m_first->data);
             auto next = m_first->next;
             next->back = nullptr;
             delete m_first;
             m_first = next;
             m_size--;
-            return move(value);
+            return std::move(value);
         }
 
         [[nodiscard]] constexpr const QueueNodeView<T> first() const
