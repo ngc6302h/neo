@@ -47,7 +47,7 @@ namespace neo
         struct callable_storage : public generic_callable_view
         {
             explicit callable_storage(TCallable&& f) :
-                callable(move(f)) { }
+                callable(std::move(f)) { }
             explicit callable_storage(TCallable const& f) :
                 callable(f) { }
 
@@ -100,7 +100,6 @@ namespace neo
                     }
 
                     this_thread->leak()->m_tid = 0;
-                    delete this_thread;
                     return (void*)(ptr_t)result; },
                 temp_storage);
 
@@ -152,6 +151,11 @@ namespace neo
                 return OSError(result);
             return end_code;
         }
+        
+        bool is_valid_or_alive() const
+        {
+            return m_tid != 0;
+        }
 
     private:
         explicit Thread(detail::generic_callable_view* entry_point_storage) :
@@ -165,8 +169,8 @@ namespace neo
             return (TFunc*)m_entry_point_storage->function_ptr();
         }
 
-        pthread_t m_tid;
-        detail::generic_callable_view* m_entry_point_storage;
+        pthread_t m_tid {0};
+        detail::generic_callable_view* m_entry_point_storage { nullptr};
     };
 }
 using neo::Thread;
