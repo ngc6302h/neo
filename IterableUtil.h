@@ -96,8 +96,8 @@ namespace neo
        return false;
    }
 
-   template<IteratorLike TIterator, typename T>
-   constexpr TIterator find(TIterator begin, TIterator end, T what, auto equality_comparer = DefaultEqualityComparer<typename TIterator::type>)
+   template<IteratorLike TIterator, typename T, typename TComparer = decltype(DefaultEqualityComparer<typename TIterator::type>)>
+   constexpr TIterator find(TIterator begin, TIterator end, T what, TComparer equality_comparer = DefaultEqualityComparer<typename TIterator::type>)
    {
        if (begin == end)
            return end;
