@@ -39,6 +39,7 @@ namespace neo
         template<size_t CurrentDimensionIndex, typename ... Rest>
         constexpr size_t underlying_index(size_t index, Rest... rest)
         {
+            VERIFY(index < m_dimension_sizes[CurrentDimensionIndex]);
             size_t sum {1};
             for(size_t i = 0; i < sizeof...(DimensionsSizes)-CurrentDimensionIndex-1; ++i)
                 sum*=m_dimension_sizes[i];
