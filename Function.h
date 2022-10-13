@@ -112,6 +112,115 @@ namespace neo
                 return m_callable_ptr->operator()(forward<TArgs>(args)...);
         }
 
+        TReturn operator()() const requires (PackSize<TArgs...> == 0)
+        {
+            VERIFY(m_callable_ptr != nullptr);
+            if constexpr (IsSame<TReturn, void>)
+                m_callable_ptr->operator()();
+            else
+                return m_callable_ptr->operator()();
+        }
+
+        bool is_valid()
+        {
+            return m_callable_ptr != nullptr;
+        }
+
+    private:
+        CallableStorageView* m_callable_ptr { nullptr };
+    };
+    
+    template<typename TReturn>
+    class Function<TReturn, void>
+    {
+        struct CallableStorageView
+        {
+            virtual TReturn operator()() = 0;
+            virtual ~CallableStorageView() = default;
+            virtual CallableStorageView* clone() = 0;
+        };
+        
+        template<typename TCallable>
+        struct CallableStorage : public CallableStorageView
+        {
+            CallableStorage(TCallable callable) :
+                m_callable(callable) { }
+            ~CallableStorage() = default;
+
+            TCallable m_callable;
+
+            virtual TReturn operator()() override
+            {
+                if constexpr (IsSame<TReturn, void>)
+                    m_callable();
+                else
+                    return m_callable();
+            }
+
+            virtual CallableStorage* clone() override
+            {
+                return new CallableStorage(m_callable);
+            }
+        };
+
+    public:
+
+        Function()
+        {
+        }
+
+        Function(Function const& other)
+        {
+            if (m_callable_ptr != nullptr)
+                delete m_callable_ptr;
+
+            m_callable_ptr = other.m_callable_ptr->clone();
+        }
+
+        Function(Function&& other)
+        {
+            if (m_callable_ptr != nullptr)
+                delete m_callable_ptr;
+
+            m_callable_ptr = other.m_callable_ptr;
+            other.m_callable_ptr = m_callable_ptr;
+        }
+
+        Function& operator=(Function const& other)
+        {
+            new (this) Function(other);
+        }
+
+        Function& operator=(Function&& other)
+        {
+            new (this) Function(move(other));
+        }
+
+        template<CallableWithReturnType<TReturn> Callable>
+        Function(Callable const& callable) :
+            m_callable_ptr(new CallableStorage<Callable> { callable })
+        {
+        }
+
+        template<CallableWithReturnType<TReturn> Callable>
+        Function& operator=(Callable callable)
+        {
+            if (m_callable_ptr != nullptr)
+                delete m_callable_ptr;
+            m_callable_ptr = new CallableStorage<Callable> { callable };
+
+            return *this;
+        }
+
+        TReturn operator()() const
+        {
+            VERIFY(m_callable_ptr != nullptr);
+            if constexpr (IsSame<TReturn, void>)
+                m_callable_ptr->operator()();
+            else
+                return m_callable_ptr->operator()();
+        }
+        
         bool is_valid()
         {
             return m_callable_ptr != nullptr;
@@ -121,3 +230,4 @@ namespace neo
         CallableStorageView* m_callable_ptr { nullptr };
     };
 }
+using neo::Function;
