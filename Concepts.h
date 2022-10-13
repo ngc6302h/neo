@@ -188,6 +188,9 @@ namespace neo
 
     template<typename T, typename U>
     concept Same = IsSame<T, U>;
+    
+    template<typename T, typename U>
+    concept NotSame = !IsSame<T, U>;
 
     template<typename TBase, typename TDerived>
     concept BaseOf = requires(TDerived* d)
@@ -213,6 +216,14 @@ namespace neo
         {
             f(forward<Args>(args)...)
             } -> Same<TReturn>;
+    };
+    
+    template<typename TCallable, typename... Args>
+    concept CallableWithReturnTypeNonVoid = requires(TCallable f, Args... args)
+    {
+        {
+            f(forward<Args>(args)...)
+            } -> NotSame<void>;
     };
 
     template<typename T>
