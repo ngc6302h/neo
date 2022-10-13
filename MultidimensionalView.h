@@ -30,8 +30,7 @@ namespace neo
         }
 
     private:
-
-        template<size_t CurrentDimensionIndex>
+        template<size_t>
         constexpr size_t underlying_index(size_t index)
         {
             return index;
@@ -48,9 +47,13 @@ namespace neo
         }
 
         public:
+        constexpr auto& operator[](DimensionsSizes... indexes)
+        {
+            size_t index = underlying_index<0>(indexes...);
+            return m_underlying_container[index];
+        }
         
-        
-        constexpr auto operator[](DimensionsSizes... indexes)
+        constexpr auto const& operator[](DimensionsSizes... indexes) const
         {
             size_t index = underlying_index<0>(indexes...);
             return m_underlying_container[index];
