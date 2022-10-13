@@ -166,7 +166,7 @@ namespace neo
         {
         }
 
-        constexpr Iterator(TIteratorImplementation&& impl) requires detail::IteratorImplementationHasConstructorThatTakesAContainerAndIndex<TIteratorImplementation, TContainer> : m_impl(move(impl))
+        constexpr Iterator(TIteratorImplementation&& impl) requires detail::IteratorImplementationHasConstructorThatTakesAContainerAndIndex<TIteratorImplementation, TContainer> : m_impl(std::move(impl))
         {
         }
 
@@ -186,7 +186,7 @@ namespace neo
         }
 
         constexpr Iterator(Iterator&& other) :
-            m_impl(move(other.m_impl))
+            m_impl(std::move(other.m_impl))
         {
         }
 
