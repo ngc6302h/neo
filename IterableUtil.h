@@ -120,7 +120,7 @@ namespace neo
        return initial_value;
    }
 
-   template<IteratorLike TIterator, Callable<typename TIterator::type> TPredicate>
+   template<IteratorLike TIterator, CallableWithReturnType<bool, typename TIterator::type> TPredicate>
    constexpr bool all(TIterator begin, TIterator end, TPredicate&& predicate)
    {
        for (; begin != end; ++begin)
@@ -132,7 +132,7 @@ namespace neo
        return true;
    }
 
-   template<IteratorLike TIterator, Callable<typename TIterator::type> TPredicate>
+   template<IteratorLike TIterator, CallableWithReturnType<bool, typename TIterator::type> TPredicate>
    constexpr bool any(TIterator begin, TIterator end, TPredicate&& predicate)
    {
        for (; begin != end; ++begin)
@@ -527,7 +527,7 @@ namespace neo
        };
    }
 
-   template<IteratorLike TIterator, Callable<typename TIterator::type> TDereferenceFunc, Callable<TIterator> TIncrementFunc, Callable<TIterator> TDecrementFunc>
+   template<IteratorLike TIterator, CallableWithReturnTypeNonVoid<typename TIterator::type> TDereferenceFunc, Callable<TIterator> TIncrementFunc, Callable<TIterator> TDecrementFunc>
    class LazyIteratorWrapper
    {
    public:
@@ -852,7 +852,7 @@ namespace neo
            };
        }
 
-       template<Callable<type> TSelectorFunc>
+       template<CallableWithReturnTypeNonVoid<type> TSelectorFunc>
        constexpr auto select(TSelectorFunc selector)
        {
            return IterableCollection<decltype(LazyIteratorWrapper(m_begin, m_end, selector, default_increment, default_decrement))>{
@@ -860,7 +860,7 @@ namespace neo
                LazyIteratorWrapper {m_end, m_end, selector, default_increment, default_decrement} };
        }
 
-       template<Callable<size_t, type> TSelectorFunc>
+       template<CallableWithReturnTypeNonVoid<size_t, type> TSelectorFunc>
        constexpr auto select(TSelectorFunc selector)
        {
            return IterableCollection<decltype(detail::IndexingIteratorWrapper(begin(), selector))>
