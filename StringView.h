@@ -54,6 +54,13 @@ namespace neo
             other.m_byte_length = 0;
         }
 
+        constexpr StringView(StringViewIterator begin, StringViewIterator end) :
+            m_view(begin.m_current), m_byte_length((size_t)(end.m_current - begin.m_current))
+        {
+            VERIFY(begin.m_base == end.m_base);
+            VERIFY(begin.m_current <= end.m_current);
+        }
+
         constexpr StringView& operator=(StringView const& other) = default;
         constexpr StringView& operator=(StringView&& other) = default;
 
@@ -83,13 +90,6 @@ namespace neo
     }
 
     // BEGIN STRINGCOMMON DEFINITIONS
-
-    template<typename T, typename TIterator>
-    constexpr Span<char> IString<T, TIterator>::span()
-    {
-        auto& o = static_cast<T const&>(*this);
-        return { o.data(), o.byte_size() };
-    }
 
     template<typename T, typename TIterator>
     constexpr Span<const char> IString<T, TIterator>::span() const

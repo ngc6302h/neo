@@ -24,6 +24,7 @@ namespace neo
 
     class StringIteratorContainer
     {
+        friend class StringView;
     public:
         
         using type = Utf32Char;
