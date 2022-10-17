@@ -92,7 +92,13 @@ namespace neo
                 return *static_cast<const base_type*>(*this) == static_cast<const base_type&>(other);
         }
 
-    private:
+        template<typename Type>
+        [[nodiscard]] constexpr bool contains_type() const
+        {
+            return TypeContains<Type, T, Ts...>;
+        }
+
+        private:
         T m_item;
     };
 
@@ -152,6 +158,12 @@ namespace neo
             if (get<0>() != other.template get<0>())
                 return false;
             return true;
+        }
+        
+        template<typename Type>
+        [[nodiscard]] constexpr bool contains_type() const
+        {
+            return Same<Type, T>;
         }
 
     private:
