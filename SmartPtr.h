@@ -52,7 +52,7 @@ namespace neo
                 return *this;
 
             this->~OwnPtr();
-            new (this) OwnPtr(move(other));
+            new (this) OwnPtr(std::move(other));
 
             return *this;
         }
@@ -190,7 +190,7 @@ namespace neo
             VERIFY(other.m_control != nullptr);
 
             unref();
-            new (this) RefPtr(move(other));
+            new (this) RefPtr(std::move(other));
 
             return *this;
         }
@@ -266,11 +266,12 @@ namespace neo
             return m_data != nullptr;
         }
 
-    private:
-        RefPtr() = delete;
+        RefPtr() = default;
 
-        T* m_data;
-        ControlBlock* m_control;
+    private:
+
+        T* m_data { nullptr };
+        ControlBlock* m_control { nullptr };
     };
 
     template<typename T, bool SharedBetweenThreads = false>
@@ -318,7 +319,7 @@ namespace neo
             VERIFY(other.is_valid());
 
             this->~WeakPtr();
-            new (this) WeakPtr(move(other));
+            new (this) WeakPtr(std::move(other));
 
             return *this;
         }
