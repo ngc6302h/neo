@@ -25,6 +25,9 @@ namespace neo
     class StringIteratorContainer
     {
     public:
+        
+        using type = Utf32Char;
+        
         explicit constexpr StringIteratorContainer(const char* base, const char* end, const char* current) :
             m_base(base),
             m_end(end),
