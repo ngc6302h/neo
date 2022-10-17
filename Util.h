@@ -17,7 +17,18 @@
 #pragma once
 #include "Types.h"
 #include "Assert.h"
-#define this_is_constexpr() __builtin_is_constant_evaluated()
+constexpr bool compile_time()
+{
+    if consteval
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 
 template<typename T>
 constexpr T max(const T& a, const T& b)
@@ -137,6 +148,20 @@ constexpr u32 log2(u32 x)
 constexpr u32 log2(u64 x)
 {
     return 64 - __builtin_clzl(x);
+}
+
+template<typename T, typename TFirst, typename... TRest>
+constexpr bool is_any_of(T const& value, TFirst const& first, TRest const&... values)
+{
+    if (value == static_cast<T>(first))
+        return true;
+    else
+    {
+        if constexpr (sizeof...(TRest) > 0)
+            return is_any_of(value, values...);
+        else
+            return false;
+    }
 }
 
 // true if the architecture is little endian
