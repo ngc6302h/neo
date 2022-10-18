@@ -8,15 +8,15 @@ on:
 
 jobs:
   test-debug:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: install g++
-      run: sudo apt update && sudo apt install g++-11
+      run: sudo apt update && sudo apt install g++-12
     - name: makedir
       run: mkdir debug
     - name: cmake generate
-      run: cd debug && cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=g++-11
+      run: cd debug && cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=g++-12
     - name: make
       run: cd debug && make
     - name: run tests
@@ -24,13 +24,13 @@ jobs:
   test-release:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: install g++
-      run: sudo apt update && sudo apt install g++-11
+      run: sudo apt update && sudo apt install g++-12
     - name: makedir
       run: mkdir release
     - name: cmake generate
-      run: cd release && cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++-11
+      run: cd release && cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++-12
     - name: make
       run: cd release && make
     - name: run tests
