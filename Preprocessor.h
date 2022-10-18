@@ -57,3 +57,27 @@
 #define GENERATE_CONSTREF_GETTER_SETTER(field, name, ...) \
     __VA_ARGS__ GENERATE_GETTER_BY_CONSTREF(field, name)  \
     __VA_ARGS__ GENERATE_SETTER(field, value)
+
+namespace neo::detail
+{
+    template<typename T>
+    concept IsResultOrErrorType = requires (T t)
+    {
+        t.error();
+    };
+}
+
+#define returnerr(x)  { auto&& ___temp__var___ = (x); \
+if (!___temp__var___.has_value()) { \
+    return [](auto& v){ \
+        if constexpr (neo::detail::IsResultOrErrorType<decltype(___temp__var___)>)\
+        {\
+            return v.error();\
+        }\
+        else\
+        {\
+            return Naked<decltype(v)>{};\
+        }\
+    }(___temp__var___);\
+}\
+}
