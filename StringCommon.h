@@ -32,7 +32,6 @@ namespace neo
     template<typename T, typename TIterator>
     struct IString
     {
-        [[nodiscard]] constexpr Span<char> span();
         [[nodiscard]] constexpr Span<const char> span() const;
         [[nodiscard]] constexpr explicit operator char const*() const;
         [[nodiscard]] constexpr bool operator==(StringView const& other) const;
