@@ -22,8 +22,8 @@
 int main()
 {
     Variant<int, String, LifetimeLogger, bool> variant { LifetimeLogger() };
-    __builtin_printf("%s\n", nameof<decltype(variant)>.non_null_terminated_buffer());
-    TEST_EQUAL(nameof<decltype(variant)>, "neo::Variant<int, neo::String, LifetimeLogger, bool>");
+    __builtin_printf("%s\n", String(nameof<decltype(variant)>).null_terminated_characters());
+    TEST_EQUAL(nameof<decltype(variant)>, "Variant<int, String, LifetimeLogger, bool>");
     variant = "Hello world"_s;
     TEST(variant.check_type_active<String>());
     TEST_FALSE(variant.check_type_active<int>());
