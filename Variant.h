@@ -81,7 +81,7 @@ namespace neo
         template<typename T>
         requires(PackContains<T, Types...>) constexpr Variant(T&& other)
         {
-            new (&this->m_storage) T(move(other));
+            new (&this->m_storage) T(std::move(other));
             this->m_active_type = IndexOfType<T, Types...>;
         }
 
@@ -129,7 +129,7 @@ namespace neo
         requires(PackContains<T, Types...>&& BaseOf<_VariantTag, T>) constexpr Variant& operator=(T&& other)
         {
             destructor_helper<0>(this->m_active_type);
-            *reinterpret_cast<T*>(this->m_storage) = move(*reinterpret_cast<T*>(other.m_storage));
+            *reinterpret_cast<T*>(this->m_storage) = std::move(*reinterpret_cast<T*>(other.m_storage));
             this->m_active_type = IndexOfType<T, Types...>;
             return *this;
         }
@@ -138,7 +138,7 @@ namespace neo
         requires(PackContains<T, Types...>) constexpr Variant& operator=(const T&& other)
         {
             destructor_helper<0>(this->m_active_type);
-            *reinterpret_cast<T*>(this->m_storage) = move(other);
+            *reinterpret_cast<T*>(this->m_storage) = std::move(other);
             this->m_active_type = IndexOfType<T, Types...>;
             return *this;
         }
