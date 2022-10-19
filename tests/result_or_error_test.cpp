@@ -20,7 +20,7 @@
 ResultOrError<int, bool> generate(bool success)
 {
     if (success)
-        return 0;
+        return 42;
     else
         return false;
 }
@@ -32,7 +32,7 @@ int main()
     TEST_EQUAL(test1.error(), false);
     TEST_EQUAL(test1.result_or(42), 42);
     auto test2 = generate(true);
-    TEST(test2.has_result());
-    TEST_EQUAL(test2.result(), 0);
+    TEST(test2.has_value());
+    TEST_EQUAL(test2.result(), 42);
     return 0;
 }
