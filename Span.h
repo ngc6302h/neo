@@ -65,7 +65,7 @@ namespace neo
         {
             VERIFY(sizeof(T) % sizeof(U) == 0);
             VERIFY(size() >= sizeof(U));
-            return { reinterpret_cast<U*>(m_data), (size() * sizeof(T)) / sizeof(U) };
+            return { reinterpret_cast<U*>(const_cast<RemoveCV<T>*>(m_data)), (size() * sizeof(T)) / sizeof(U) };
         }
 
         [[nodiscard]] constexpr Span<const T> as_readonly() const
