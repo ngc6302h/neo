@@ -105,14 +105,14 @@ namespace neo
             return m_has_error;
         }
 
-        [[nodiscard]] constexpr bool has_result() const
+        [[nodiscard]] constexpr bool has_value() const
         {
             return !m_has_error;
         }
 
         [[nodiscard]] constexpr TResult& result()
         {
-            VERIFY(has_result());
+            VERIFY(has_value());
             return *reinterpret_cast<TResult*>(&m_storage);
         }
 
