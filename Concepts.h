@@ -188,15 +188,21 @@ namespace neo
 
     template<typename T, typename U>
     concept Same = IsSame<T, U>;
-    
+
     template<typename T, typename U>
     concept NotSame = !IsSame<T, U>;
 
-    template<typename TBase, typename TDerived>
-    concept BaseOf = requires(TDerived* d)
+    template<typename TFrom, typename TTo>
+    concept ConvertibleTo = requires
     {
-        static_cast<TBase*>(d);
+        static_cast<TTo const&>(neo::declval<TFrom>());
     };
+
+    template<typename TBase, typename TDerived>
+    concept BaseOf = ConvertibleTo<TDerived, TBase>;
+
+    template<typename TDerived, typename TBase>
+    concept DerivedOf = ConvertibleTo<TBase, TDerived>;
 
     template<typename TCallable>
     concept VoidCallable = requires(TCallable f)
@@ -217,7 +223,7 @@ namespace neo
             f(forward<Args>(args)...)
             } -> Same<TReturn>;
     };
-    
+
     template<typename TCallable, typename... Args>
     concept CallableWithReturnTypeNonVoid = requires(TCallable f, Args... args)
     {
@@ -296,10 +302,12 @@ using neo::CallableWithReturnType;
 using neo::Container;
 using neo::ContiguousContainer;
 using neo::ContiguousIterableContainer;
+using neo::ConvertibleTo;
 using neo::CopyAssignable;
 using neo::CopyConstructable;
 using neo::Decrementable;
 using neo::Dereferenceable;
+using neo::DerivedOf;
 using neo::Divisible;
 using neo::Enum;
 using neo::EqualityComparable;
