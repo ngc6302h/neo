@@ -125,6 +125,9 @@ namespace neo
     {
         friend WeakPtr<T, SharedBetweenThreads>;
 
+        template<typename TF, bool SharedBetweenThreadsF>
+        friend class RefPtr;
+
     public:
         constexpr explicit RefPtr(T* obj) :
             m_data(obj)
@@ -154,6 +157,33 @@ namespace neo
         static constexpr RefPtr make(Args&&... args)
         {
             return RefPtr(new T(forward<Args>(args)...));
+        }
+
+        template<typename TBase>
+        requires BaseOf<TBase, T>
+        constexpr operator RefPtr<TBase, SharedBetweenThreads>()
+        {
+            if constexpr (SharedBetweenThreads)
+                m_control->reference_count.add_fetch(1, MemoryOrder::Release);
+            else
+                m_control->reference_count.add_fetch(1, MemoryOrder::Relaxed);
+
+            RefPtr<TBase, SharedBetweenThreads> base;
+            base.m_control = m_control;
+            base.m_data = m_data;
+            return base;
+        }
+
+        template<typename TDerived>
+        requires BaseOf<T, TDerived>
+        constexpr RefPtr<T, SharedBetweenThreads>(RefPtr<TDerived, SharedBetweenThreads> const& other) :
+            m_data(other.m_data), m_control(other.m_control)
+        {
+            VERIFY(other.m_data != nullptr);
+            if constexpr (SharedBetweenThreads)
+                m_control->reference_count.add_fetch(1, MemoryOrder::Release);
+            else
+                m_control->reference_count.add_fetch(1, MemoryOrder::Relaxed);
         }
 
         constexpr WeakPtr<T, SharedBetweenThreads> make_weak() const
