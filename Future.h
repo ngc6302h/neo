@@ -35,7 +35,7 @@ namespace neo
 
             void set_value(T&& value)
             {
-                m_object = move(value);
+                m_object = std::move(value);
             }
 
             void break_promise()
@@ -93,7 +93,7 @@ namespace neo
         }
 
         Promise(Promise&& other) :
-            m_state(move(other.m_state))
+            m_state(std::move(other.m_state))
         {
         }
 
@@ -103,7 +103,7 @@ namespace neo
             if (this == &other)
                 return *this;
 
-            new (this) Promise(move(other));
+            new (this) Promise(std::move(other));
 
             return *this;
         }
@@ -132,7 +132,7 @@ namespace neo
         void set_value(T&& value)
         {
             VERIFY(!m_state->has_value());
-            m_state->set_value(move(value));
+            m_state->set_value(std::move(value));
         }
 
         Promise& operator=(T const& value)
@@ -146,7 +146,7 @@ namespace neo
         Promise& operator=(T&& value)
         {
             VERIFY(!m_state->has_value());
-            m_state->set_value(move(value));
+            m_state->set_value(std::move(value));
 
             return *this;
         }
@@ -169,7 +169,7 @@ namespace neo
         }
 
         Future(Future&& other) :
-            m_state(move(other.m_state))
+            m_state(std::move(other.m_state))
         {
         }
 
@@ -188,7 +188,7 @@ namespace neo
             if (this == &other)
                 return *this;
 
-            new (this) Future(move(other));
+            new (this) Future(std::move(other));
 
             return *this;
         }
@@ -226,7 +226,7 @@ namespace neo
         [[nodiscard]] T release_value()
         {
             wait();
-            auto value = move(m_state->release_value());
+            auto value = std::move(m_state->release_value());
             m_state.clear();
             return value;
         }
