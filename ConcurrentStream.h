@@ -92,13 +92,13 @@ namespace neo
         {
         }
 
-        void write(Span<const u8> const& from) override
+        void write(Span<u8> const& from) override
         {
             ScopedLock lock(m_mutex);
             m_base.write(from);
         }
 
-        void unlocked_write(Span<const u8> const& from)
+        void unlocked_write(Span<u8> const& from)
         {
             m_base.write(from);
         }

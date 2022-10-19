@@ -28,7 +28,7 @@ namespace neo
         {
         }
 
-        virtual void write(Span<const u8> const& from) override
+        virtual void write(Span<u8> const& from) override
         {
             if (m_buffer.size() + from.size() > m_buffer.capacity())
                 flush();
@@ -37,7 +37,7 @@ namespace neo
 
         virtual void flush() override
         {
-            m_base.write(m_buffer.span().as_readonly());
+            m_base.write(m_buffer.span());
             m_buffer.clear();
         }
 

@@ -37,7 +37,7 @@ namespace neo
     class OutputStream : public Stream
     {
     public:
-        virtual void write(Span<const u8> const& from) = 0;
+        virtual void write(Span<u8> const& from) = 0;
         virtual void flush() = 0;
     };
 }

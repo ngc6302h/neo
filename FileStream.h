@@ -77,7 +77,7 @@ namespace neo
             return m_file.eof();
         }
 
-        void write(Span<const u8> const& from) override
+        void write(Span<u8> const& from) override
         {
             auto maybe_error = m_file.write(from, from.size());
             if (maybe_error.has_error())

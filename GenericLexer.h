@@ -140,7 +140,7 @@ namespace neo
                     }
                 }
 
-                tokens.append({ GenericLexerTokenType::Unknown, current.linepos, String(current++.it.ptr(), 1) });
+                tokens.append(GenericLexerToken { GenericLexerTokenType::Unknown, current.linepos, String(current++.it.ptr(), 1) });
             main_loop:
                 continue;
             }

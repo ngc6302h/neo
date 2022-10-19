@@ -22,7 +22,7 @@
 
 namespace neo
 {
-    class MemoryStream final : public InputStream, OutputStream
+    class MemoryStream final : public InputStream, public OutputStream
     {
     public:
         explicit MemoryStream(size_t initial_size) :
@@ -38,7 +38,7 @@ namespace neo
             return to_read;
         }
 
-        virtual void write(Span<const u8> const& from) override
+        virtual void write(Span<u8> const& from) override
         {
             m_backing.append(from);
             m_write_pos += from.size();

@@ -146,7 +146,7 @@ namespace neo
             return (u8)byte_read;
         }
 
-        [[nodiscard]] ResultOrError<size_t, OSError> read(const Span<u8>& to, size_t max_bytes)
+        [[nodiscard]] ResultOrError<size_t, OSError> read(Span<u8> to, size_t max_bytes)
         {
             VERIFY(to.size() <= max_bytes);
             if (!m_is_open)
@@ -164,7 +164,7 @@ namespace neo
             return bytes_read;
         }
 
-        [[nodiscard]] ResultOrError<size_t, OSError> write(const Span<const u8> from, size_t bytes_to_write)
+        [[nodiscard]] ResultOrError<size_t, OSError> write(Span<u8> const& from, size_t bytes_to_write)
         {
             VERIFY(bytes_to_write <= from.size());
             if (!m_is_open)
