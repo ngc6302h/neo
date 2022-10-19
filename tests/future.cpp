@@ -37,7 +37,7 @@ Future<int> download()
         p.set_value(42);
         printf("Downloaded! "); });
 
-    VERIFY(maybe_thread.has_result());
+    VERIFY(maybe_thread.has_value());
     return willbe_int;
 }
 
