@@ -20,6 +20,7 @@
 #include "Iterator.h"
 #include "New.h"
 #include "Types.h"
+#include "ResultOrError.h"
 
 namespace neo
 {
@@ -63,6 +64,15 @@ namespace neo
             {
                 new (this) Optional(other.release_value());
                 other.m_has_value = false;
+            }
+        }
+
+        template<typename TError>
+        constexpr Optional(ResultOrError<T, TError>&& other) : m_has_value(other.has_value())
+        {
+            if (other.has_value())
+            {
+                new (this) Optional(std::move(other.result()));
             }
         }
 
