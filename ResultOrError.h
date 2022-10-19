@@ -71,7 +71,7 @@ namespace neo
                 return *this;
 
             ~ResultOrError();
-            new (this) ResultOrError(move(other));
+            new (this) ResultOrError(std::move(other));
 
             return *this;
         }
@@ -179,7 +179,7 @@ namespace neo
                 return *this;
 
             ~ResultOrError();
-            new (this) ResultOrError(move(other));
+            new (this) ResultOrError(std::move(other));
 
             return *this;
         }
@@ -193,7 +193,7 @@ namespace neo
         constexpr ResultOrError(TError&& other) :
             m_has_error(true)
         {
-            new (&m_storage) TError(move(other));
+            new (&m_storage) TError(std::move(other));
         }
 
         [[nodiscard]] constexpr bool has_error() const
