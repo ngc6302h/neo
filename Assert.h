@@ -35,18 +35,18 @@ static char __backtrace_buffer[sizeof(void*) * 256];
 }
 
 #if VERBOSE_ASSERTS == 1
-    #define __ASSERT_FAILED print_backtrace_and_fail
+    #define __NEO_ASSERT_FAILED print_backtrace_and_fail
 #else
-    #define __ASSERT_FAILED __assert_fail
+    #define __NEO_ASSERT_FAILED __assert_fail
 #endif
 
 #if DEBUG_ASSERTS == 1
     #define VERIFY(expr)                                                     \
         if (!(expr)) [[unlikely]]                                            \
         {                                                                    \
-            __ASSERT_FAILED(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
+            __NEO_ASSERT_FAILED(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
         }
-    #define VERIFY_NOT_REACHED() __ASSERT_FAILED("Reached unreachable code!", __FILE__, __LINE__, __PRETTY_FUNCTION__)
+    #define VERIFY_NOT_REACHED() __NEO_ASSERT_FAILED("Reached unreachable code!", __FILE__, __LINE__, __PRETTY_FUNCTION__)
 #else
     #define VERIFY(expr)
     #define VERIFY_NOT_REACHED() print_backtrace_and_fail("Reached unreachable code!", __FILE__, __LINE__, __PRETTY_FUNCTION__)
@@ -55,5 +55,5 @@ static char __backtrace_buffer[sizeof(void*) * 256];
 #define ENSURE(expr)                                                     \
     if (!(expr)) [[unlikely]]                                            \
     {                                                                    \
-        __ASSERT_FAILED(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
+        __NEO_ASSERT_FAILED(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
     }
