@@ -304,13 +304,13 @@ namespace neo
                 return *this;
 
             this->~Vector();
-            new (this) Vector(move(other));
+            new (this) Vector(std::move(other));
 
             return *this;
         }
 
-        template<typename TT = T>
-        requires Same<Naked<TT>, T>
+        template<typename TT>
+        requires Same<T, TT> || BaseOf<Naked<T>, Naked<TT>>
         constexpr void append(TT&& e)
         {
             ensure_capacity(m_size + 1);
@@ -327,8 +327,7 @@ namespace neo
             }
         }
 
-        template<typename TT = Span<T>>
-        constexpr void append(TT&& items)
+        constexpr void append(Span<T>&& items)
         {
             ensure_capacity(m_size + items.size());
 
@@ -336,30 +335,40 @@ namespace neo
             {
                 if (m_size < InlineStorage)
                 {
-                    if constexpr (IsRvalueReference<TT>)
-                        MoveOrCopy<T>(InlineStorage - m_size, items.data(), inline_storage() + m_size);
-                    else
-                        Copy<T>(InlineStorage - m_size, items.data(), inline_storage() + m_size);
-
-                    if constexpr (IsRvalueReference<TT>)
-                        MoveOrCopy<T>(items.size() - (InlineStorage - m_size), items.data() + InlineStorage - m_size, m_data + m_size);
-                    else
-                        Copy<T>(items.size() - (InlineStorage - m_size), items.data() + InlineStorage - m_size, m_data + m_size);
+                    MoveOrCopy<T>(InlineStorage - m_size, items.data(), inline_storage() + m_size);
+                    MoveOrCopy<T>(items.size() - (InlineStorage - m_size), items.data() + InlineStorage - m_size, m_data + m_size);
                 }
                 else
                 {
-                    if constexpr (IsRvalueReference<TT>)
-                        MoveOrCopy<T>(items.size(), items.data(), m_data + m_size - InlineStorage);
-                    else
-                        Copy<T>(items.size(), items.data(), m_data + m_size - InlineStorage);
+                    MoveOrCopy<T>(items.size(), items.data(), m_data + m_size - InlineStorage);
                 }
             }
             else
             {
-                if constexpr (IsRvalueReference<TT>)
-                    MoveOrCopy<T>(items.size(), items.data(), m_data + m_size);
+                MoveOrCopy<T>(items.size(), items.data(), m_data + m_size);
+            }
+            m_size += items.size();
+        }
+
+        constexpr void append(Span<T> const& items)
+        {
+            ensure_capacity(m_size + items.size());
+
+            if constexpr (InlineStorage != 0)
+            {
+                if (m_size < InlineStorage)
+                {
+                    Copy<T>(InlineStorage - m_size, items.data(), inline_storage() + m_size);
+                    Copy<T>(items.size() - (InlineStorage - m_size), items.data() + InlineStorage - m_size, m_data + m_size);
+                }
                 else
-                    Copy<T>(items.size(), items.data(), m_data + m_size);
+                {
+                    Copy<T>(items.size(), items.data(), m_data + m_size - InlineStorage);
+                }
+            }
+            else
+            {
+                Copy<T>(items.size(), items.data(), m_data + m_size);
             }
             m_size += items.size();
         }
@@ -516,7 +525,7 @@ namespace neo
 
         constexpr T take_first()
         {
-            T value = move(first());
+            T value = std::move(first());
             m_size--;
             if constexpr (InlineStorage == 0)
             {
@@ -540,7 +549,7 @@ namespace neo
 
         constexpr T take_last()
         {
-            T value = move(last());
+            T value = std::move(last());
             last().~T();
             m_size--;
             return value;
