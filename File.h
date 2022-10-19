@@ -59,7 +59,7 @@ namespace neo
             if (this == &other)
                 return *this;
 
-            new (this) File(move(other));
+            new (this) File(std::move(other));
 
             return *this;
         }
@@ -109,7 +109,7 @@ namespace neo
             if (file_or_error.has_error())
                 return file_or_error.error();
 
-            auto file = move(file_or_error.result());
+            auto file = std::move(file_or_error.result());
             auto result_or_error = file.read(buffer.span(), max_bytes_to_read);
             if (result_or_error.has_error())
                 return result_or_error.error();
