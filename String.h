@@ -131,7 +131,7 @@ namespace neo
                 return *this;
 
             this->~String();
-            new (this) String(move(other));
+            new (this) String(std::move(other));
 
             return *this;
         }
@@ -156,6 +156,13 @@ namespace neo
         char* m_buffer { nullptr };
         size_t m_byte_length { 0 };
     };
+
+    constexpr String operator+(StringView const& left, StringView const& right)
+    {
+        String sum(left.data(), left.byte_size() + right.byte_size());
+        __builtin_memcpy(sum.data() + left.byte_size(), right.data(), right.byte_size());
+        return sum;
+    }
 
     [[nodiscard]] constexpr String operator""_s(const char* cstring, size_t length)
     {
