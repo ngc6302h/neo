@@ -142,7 +142,7 @@ namespace neo
         constexpr HashmapIteratorContainer operator++()
         {
             auto prev = *this;
-            ++*this;
+            (*this)++;
             return prev;
         }
 
