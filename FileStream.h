@@ -17,15 +17,30 @@
 #pragma once
 #include "File.h"
 #include "ResultOrError.h"
+#include "Stream.h"
 
 namespace neo
 {
-    class FileStream final : public InputStream, OutputStream
+    class FileStream final : public InputStream, public OutputStream
     {
     public:
         explicit FileStream(File&& open_file) :
-            m_file(move(open_file)), m_last_error(OSError::Success)
+            m_file(std::move(open_file)), m_last_error(OSError::Success)
         {
+        }
+
+        FileStream(FileStream const&) = delete;
+        FileStream& operator=(FileStream const&) = delete;
+
+        FileStream(FileStream&& other) :
+            m_file(std::move(other.m_file)), m_last_error(other.m_last_error)
+        {
+        }
+
+        ~FileStream()
+        {
+            flush();
+            close();
         }
 
         static ResultOrError<FileStream, OSError> create(StringView filename, StringView posix_open_mode)
@@ -33,7 +48,8 @@ namespace neo
             auto maybe_file = File::open(filename, posix_open_mode.non_null_terminated_buffer());
             if (maybe_file.has_error())
                 return maybe_file.error();
-            return FileStream { move(maybe_file.result()) };
+
+            return FileStream { std::move(maybe_file.result()) };
         }
 
         void close() override
