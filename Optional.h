@@ -68,7 +68,8 @@ namespace neo
         }
 
         template<typename TError>
-        constexpr Optional(ResultOrError<T, TError>&& other) : m_has_value(other.has_value())
+        constexpr Optional(ResultOrError<T, TError>&& other) :
+            m_has_value(other.has_value())
         {
             if (other.has_value())
             {
@@ -504,5 +505,27 @@ namespace neo
     private:
         T const* m_value { nullptr };
     };
+
+    // SPECIAL CASE FOR returnerr(). DO NOT use in code!!!!
+
+    namespace detail
+    {
+        struct DummyOptional
+        {
+        };
+    }
+
+    template<>
+    class Optional<detail::DummyOptional>
+    {
+    public:
+        template<typename T>
+        constexpr operator Optional<T>() const
+        {
+            return {};
+        }
+    };
+
+    // END SPECIAL CASE
 }
 using neo::Optional;

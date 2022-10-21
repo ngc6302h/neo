@@ -61,23 +61,26 @@
 namespace neo::detail
 {
     template<typename T>
-    concept IsResultOrErrorType = requires (T t)
+    concept IsResultOrErrorType = requires(T t)
     {
         t.error();
     };
 }
 
-#define returnerr(x)  { auto&& ___temp__var___ = (x); \
-if (!___temp__var___.has_value()) { \
-    return [](auto& v){ \
-        if constexpr (neo::detail::IsResultOrErrorType<decltype(___temp__var___)>)\
-        {\
-            return v.error();\
-        }\
-        else\
-        {\
-            return Naked<decltype(v)>{};\
-        }\
-    }(___temp__var___);\
-}\
-}
+#define returnerr(x)                                                                       \
+    {                                                                                      \
+        auto&& ___temp__var___ = (x);                                                      \
+        if (!___temp__var___.has_value())                                                  \
+        {                                                                                  \
+            return [](auto& v) {                                                           \
+                if constexpr (neo::detail::IsResultOrErrorType<decltype(___temp__var___)>) \
+                {                                                                          \
+                    return v.error();                                                      \
+                }                                                                          \
+                else                                                                       \
+                {                                                                          \
+                    return Optional<detail::DummyOptional> {};                             \
+                }                                                                          \
+            }(___temp__var___);                                                            \
+        }                                                                                  \
+    }
