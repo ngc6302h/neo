@@ -37,8 +37,8 @@ using i32 = __INT32_TYPE__;
 using u32 = __UINT32_TYPE__;
 using i64 = __INT64_TYPE__;
 using u64 = __UINT64_TYPE__;
-using i128 = _BitInt(128);
-using u128 = unsigned _BitInt(128);
+using i128 = __int128;
+using u128 = unsigned __int128;
 
 using f32 = float;
 using f64 = double;
