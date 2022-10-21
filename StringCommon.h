@@ -53,5 +53,10 @@ namespace neo
         [[nodiscard]] constexpr bool contains(Utf32Char c) const;
         [[nodiscard]] constexpr bool contains(StringView const& other) const;
         [[nodiscard]] constexpr T trim_whitespace(TrimMode from_where) const;
+        [[nodiscard]] constexpr Utf32Char operator[](size_t index) const;
+        template<typename I>
+        constexpr Optional<I> to();
+        template<typename I>
+        constexpr Optional<I> checked_to();
     };
 }

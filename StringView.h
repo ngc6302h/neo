@@ -23,6 +23,7 @@
 #include "Text.h"
 #include "Types.h"
 #include "Vector.h"
+#include "Checked.h"
 
 namespace neo
 {
@@ -351,6 +352,96 @@ namespace neo
             start = _start.ptr();
         }
         return T(start, length);
+    }
+
+    template<typename T, typename TIterator>
+    [[nodiscard]] constexpr Utf32Char IString<T, TIterator>::operator[](size_t index) const
+    {
+        auto _begin = begin();
+        auto _end = end();
+
+        for (size_t i = 0; i < index; ++i)
+        {
+            VERIFY(_begin != _end);
+            ++_begin;
+        }
+        return *_begin;
+    }
+
+    template<typename T, typename TIterator>
+    template<typename I>
+    constexpr Optional<I> neo::IString<T, TIterator>::to()
+    {
+        I value {};
+        int sign;
+
+        auto begin = this->begin();
+        auto end = this->end();
+
+        switch (*begin)
+        {
+        case '+':
+        case '0' ... '9':
+            sign = 1;
+            ++begin;
+            break;
+        case '-':
+            sign = -1;
+            ++begin;
+            break;
+        default:
+            return {};
+        }
+
+        while (begin != end)
+        {
+#ifdef DEBUG_ASSERTS
+            if (!isdigit(*begin))
+                return {};
+#endif
+            value = value * 10 + (*begin - '0');
+        }
+        value = value * sign;
+        return value;
+    }
+
+    template<typename T, typename TIterator>
+    template<typename I>
+    constexpr Optional<I> neo::IString<T, TIterator>::checked_to()
+    {
+        Checked<I> value {};
+        int sign;
+
+        auto begin = this->begin();
+        auto end = this->end();
+
+        switch (*begin)
+        {
+        case '+':
+        case '0' ... '9':
+            sign = 1;
+            ++begin;
+            break;
+        case '-':
+            sign = -1;
+            ++begin;
+            break;
+        default:
+            return {};
+        }
+
+        while (begin != end)
+        {
+            if (!isdigit(*begin))
+                return {};
+            value = value * 10 + (*begin - '0');
+            if (value.has_overflow())
+                return {};
+        }
+        value = value * sign;
+        if (value.has_overflow())
+            return {};
+        return value.value();
     }
 
     // END STRINGCOMMON DEFINITIONS

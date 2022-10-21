@@ -96,6 +96,14 @@ namespace neo
             __builtin_memcpy(m_buffer, cstring, size);
         }
 
+        constexpr String(StringIterator begin, StringIterator end) :
+            m_byte_length((size_t)(end.m_current - begin.m_current))
+        {
+            VERIFY(begin.m_base == end.m_base);
+            VERIFY(begin.m_current <= end.m_current);
+            new (this) String(begin.m_current, (size_t)(end.m_current - begin.m_current));
+        }
+
         constexpr String(const StringView& other) :
             m_byte_length(other.byte_size())
         {
@@ -166,7 +174,7 @@ namespace neo
 
     [[nodiscard]] constexpr String operator""_s(const char* cstring, size_t length)
     {
-        return String(cstring, length);
+        return { cstring, length };
     }
 
     template<typename>
