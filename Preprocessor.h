@@ -79,7 +79,7 @@ namespace neo::detail
                 }                                                                          \
                 else                                                                       \
                 {                                                                          \
-                    return Optional<detail::DummyOptional> {};                             \
+                    return Optional<neo::detail::DummyOptional> {};                        \
                 }                                                                          \
             }(___temp__var___);                                                            \
         }                                                                                  \
