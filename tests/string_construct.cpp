@@ -28,9 +28,10 @@ int main()
     TEST_EQUAL(__builtin_strlen(String("Another string"_s).data()), 14);
     String a { "This is a string" };
     TEST_EQUAL(__builtin_strlen(String("").data()), 0);
-    String b = move(a);
+    String b = std::move(a);
     TEST_EQUAL(__builtin_strcmp(b.null_terminated_characters(), "This is a string"), 0);
     String c = b;
+    String s = b + b;
     TEST_EQUAL(__builtin_strcmp(b.null_terminated_characters(), c.null_terminated_characters()), 0);
     TEST_EQUAL(__builtin_strcmp(String("").data(), ""), 0);
     return 0;
