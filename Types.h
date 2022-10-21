@@ -16,6 +16,7 @@
 
 #pragma once
 #include "Preprocessor.h"
+#include "Assert.h"
 
 #if (__SIZEOF_POINTER__ == 4)
     #define PTR_TYPE u32
