@@ -286,6 +286,15 @@ namespace neo
     template<typename T, typename... Pack>
     constexpr bool PackContains = (detail::is_same<T, Pack>::value || ...);
 
+    template<typename T, typename TFirst, typename... TRest>
+    requires(PackContains<T, TFirst, TRest...>) constexpr auto get_from_pack(TFirst&& first, TRest&&... rest)
+    {
+        if constexpr (IsSame<T, TFirst>)
+            return forward<T>(first);
+        else
+            get_from_pack<T, TRest...>(rest...);
+    }
+
     template<auto t, auto u>
     constexpr bool IsSameValue = t == u;
 
@@ -330,7 +339,7 @@ namespace neo
 
     namespace detail
     {
-        template<int Index, typename T, typename... Types>
+        template<size_t Index, typename T, typename... Types>
         struct type_of_index
         {
             using type = typename type_of_index<Index - 1, Types...>::type;
@@ -349,7 +358,7 @@ namespace neo
         };
     }
 
-    template<int Index, typename... Types>
+    template<size_t Index, typename... Types>
     using TypeOfIndex = typename detail::type_of_index<Index, Types...>::type;
 
     template<typename T, typename U, typename... Ts>
@@ -381,9 +390,9 @@ namespace neo
     template<typename T>
     constexpr void swap(T& a, T& b)
     {
-        T temp = move(a);
-        a = move(b);
-        b = move(temp);
+        T temp = std::move(a);
+        a = std::move(b);
+        b = std::move(temp);
     }
 
     template<typename T>
@@ -537,13 +546,13 @@ namespace neo
         if (from > to)
         {
             for (size_t i = 0; i < num; ++i)
-                to[i] = move(from[i]);
+                to[i] = std::move(from[i]);
         }
         else
         {
             while (true)
             {
-                to[num] = move(from[num]);
+                to[num] = std::move(from[num]);
                 if (num-- == 0)
                     break;
             }
@@ -584,7 +593,7 @@ namespace neo
     static constexpr void TypedMove(size_t num, T const* from, T* to)
     {
         for (size_t i = 0; i < num; ++i)
-            to[i] = move(from[i]);
+            to[i] = std::move(from[i]);
     }
 
     template<typename T>
