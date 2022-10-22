@@ -136,7 +136,7 @@ namespace neo
             }
             m_size++;
         }
-        
+
         constexpr void add_back(T&& element)
         {
             auto ptr = new QueueNode<T> { new T(std::move(element)) };
@@ -164,7 +164,7 @@ namespace neo
             }
             m_size++;
         }
-        
+
         constexpr void add_front(T&& element)
         {
             auto ptr = new QueueNode { new T(std::move(element)) };
@@ -203,7 +203,7 @@ namespace neo
             return *m_first->data;
         }
 
-        constexpr T&& pop_back()
+        constexpr T pop_back()
         {
             VERIFY(m_size > 0);
             T value = std::move(*m_last->data);
@@ -215,7 +215,7 @@ namespace neo
             return value;
         }
 
-        constexpr T&& pop_front()
+        constexpr T pop_front()
         {
             VERIFY(m_size > 0);
             T value = std::move(*m_first->data);
@@ -224,7 +224,7 @@ namespace neo
             delete m_first;
             m_first = next;
             m_size--;
-            return std::move(value);
+            return value;
         }
 
         [[nodiscard]] constexpr const QueueNodeView<T> first() const
