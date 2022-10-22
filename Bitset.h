@@ -125,7 +125,7 @@ namespace neo
             return (*where >> (index % 8)) & 1;
         }
 
-        constexpr bool operator[](size_t index)
+        constexpr bool operator[](size_t index) const
         {
             return get(index);
         }
