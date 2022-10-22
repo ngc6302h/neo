@@ -19,14 +19,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace neo
 {
-    template<Indexable T, typename... DimensionsSizes> requires ((Integral<DimensionsSizes>&&...))
+    template<Indexable T, Integral... DimensionsSizes>
     class MultidimensionalView
     {
     public:
-        MultidimensionalView(T& container, DimensionsSizes... sizes) : m_underlying_container(container)
+        MultidimensionalView(T& container, DimensionsSizes... sizes) :
+            m_underlying_container(container)
         {
+            VERIFY((sizes != 0) && ...);
             size_t i {};
-            ((m_dimension_sizes[i++] = sizes) , ...);
+            ((m_dimension_sizes[i++] = sizes), ...);
         }
 
     private:
@@ -35,31 +37,31 @@ namespace neo
         {
             return index;
         }
-        
-        template<size_t CurrentDimensionIndex, typename ... Rest>
+
+        template<size_t CurrentDimensionIndex, typename... Rest>
         constexpr size_t underlying_index(size_t index, Rest... rest)
         {
             VERIFY(index < m_dimension_sizes[CurrentDimensionIndex]);
-            size_t sum {1};
-            for(size_t i = 0; i < sizeof...(DimensionsSizes)-CurrentDimensionIndex-1; ++i)
-                sum*=m_dimension_sizes[i];
-            
-            return index * sum + underlying_index<CurrentDimensionIndex+1>(rest...);
+            size_t sum { 1 };
+            for (size_t i = 0; i < sizeof...(DimensionsSizes) - CurrentDimensionIndex - 1; ++i)
+                sum *= m_dimension_sizes[i];
+
+            return index * sum + underlying_index<CurrentDimensionIndex + 1>(rest...);
         }
 
-        public:
+    public:
         constexpr auto& operator[](DimensionsSizes... indexes)
         {
             size_t index = underlying_index<0>(indexes...);
             return m_underlying_container[index];
         }
-        
+
         constexpr auto const& operator[](DimensionsSizes... indexes) const
         {
             size_t index = underlying_index<0>(indexes...);
             return m_underlying_container[index];
         }
-        
+
     private:
         size_t m_dimension_sizes[sizeof...(DimensionsSizes)];
         T& m_underlying_container;
