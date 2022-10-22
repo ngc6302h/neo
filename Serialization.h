@@ -24,20 +24,24 @@
 
 namespace neo
 {
-    STRINGIFIABLE_ENUM(SerializationEndianness, Little, Big)
+    enum class SerializationEndianness
+    {
+        Little,
+        Big
+    };
 
     template<typename T>
     struct BinaryFormatter
     {
-        constexpr size_t serialize_into(T const& object, Span<u8>& buffer);
-        constexpr Optional<T> deserialize_from(Span<u8> const& buffer);
+        static constexpr size_t serialize_into(T const& object, Span<u8> buffer);
+        static constexpr Optional<T> deserialize_from(Span<u8> const& buffer);
     };
 
     template<Scalar T>
     struct BinaryFormatter<T>
     {
-        template<SerializationEndianness Endianness>
-        constexpr size_t serialize_into(T const& object, Span<u8>& buffer)
+        template<SerializationEndianness Endianness = SerializationEndianness::Little>
+        static constexpr size_t serialize_into(T const& object, Span<u8> buffer)
         {
             VERIFY(buffer.size() >= sizeof(T));
             if constexpr ((LittleEndian && Endianness == SerializationEndianness::Little) || (BigEndian && Endianness == SerializationEndianness::Big) || (sizeof(T) == 1))
@@ -66,8 +70,8 @@ namespace neo
             return sizeof(T);
         }
 
-        template<SerializationEndianness Endianness>
-        constexpr Optional<T> deserialize_from(Span<u8> const& buffer)
+        template<SerializationEndianness Endianness = SerializationEndianness::Little>
+        static constexpr Optional<T> deserialize_from(Span<u8> const& buffer)
         {
             VERIFY(buffer.size() >= sizeof(T));
             if constexpr ((LittleEndian && Endianness == SerializationEndianness::Little) || (BigEndian && Endianness == SerializationEndianness::Big) || (sizeof(T) == 1))
@@ -94,6 +98,29 @@ namespace neo
                 }
             }
             VERIFY_NOT_REACHED();
+        }
+    };
+
+    template<>
+    struct BinaryFormatter<String>
+    {
+        template<SerializationEndianness Endianness = SerializationEndianness::Little>
+        static constexpr size_t serialize_to(String const& str, Span<u8> buffer)
+        {
+            VERIFY(buffer.size() >= str.byte_size() + sizeof(size_t));
+            BinaryFormatter<size_t>::serialize_into<Endianness>(str.byte_size(), buffer);
+            Copy(str.byte_size(), (u8*)str.data(), buffer.slice(sizeof(size_t)).data());
+            return str.byte_size() + sizeof(size_t);
+        }
+
+        template<SerializationEndianness Endianness = SerializationEndianness::Little>
+        static constexpr Optional<String> deserialize_from(Span<u8> const& buffer)
+        {
+            VERIFY(buffer.size() > sizeof(u64));
+            u64 string_length = BinaryFormatter<u64>::deserialize_from<Endianness>(buffer);
+            auto string_bytes = buffer.slice(sizeof(u64), string_length);
+            String deserialized_string((const char*)string_bytes.data(), string_bytes.size());
+            return deserialized_string;
         }
     };
 }
