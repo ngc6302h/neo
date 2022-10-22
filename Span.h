@@ -79,7 +79,7 @@ namespace neo
             return m_data[index];
         }
 
-        [[nodiscard]] constexpr const T& operator[](size_t index) const
+        [[nodiscard]] constexpr T const& operator[](size_t index) const
         {
             VERIFY(index < m_size);
             return m_data[index];
