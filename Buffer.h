@@ -20,6 +20,7 @@
 #include "Span.h"
 #include "Iterator.h"
 #include "New.h"
+#include "Optional.h"
 
 namespace neo
 {
@@ -31,23 +32,32 @@ namespace neo
         using iterator = Iterator<Buffer>;
         using const_iterator = Iterator<const Buffer>;
 
-        static constexpr Buffer create_uninitialized(size_t size)
+        static constexpr Optional<Buffer> create_uninitialized(size_t size)
         {
-            return Buffer(size);
+            auto ptr = (T*)__builtin_malloc(sizeof(T) * size);
+            if (ptr == nullptr)
+                return {};
+            return Buffer(ptr, size);
         }
 
         template<typename... Ts>
-        static constexpr Buffer create_initialized(size_t size, Ts... args)
+        static constexpr Optional<Buffer> create_initialized(size_t size, Ts... args)
         {
-            Buffer mem(size);
+            auto ptr = (T*)__builtin_malloc(sizeof(T) * size);
+            if (ptr == nullptr)
+                return {};
+            Buffer mem(ptr, size);
             for (size_t i = 0; i < size; ++i)
                 new (mem.m_data + i) T(forward<Ts>(args)...);
             return mem;
         }
 
-        static constexpr Buffer create_zero_initialized(size_t size)
+        static constexpr Optional<Buffer> create_zero_initialized(size_t size)
         {
-            Buffer mem(size);
+            auto ptr = (T*)__builtin_malloc(sizeof(T) * size);
+            if (ptr == nullptr)
+                return {};
+            Buffer mem(ptr, size);
             __builtin_memset((char*)mem.m_data, 0, size * sizeof(T));
             return mem;
         }
@@ -164,12 +174,9 @@ namespace neo
         }
 
     private:
-        constexpr explicit Buffer(size_t size) :
-            m_size(size)
+        constexpr explicit Buffer(T* backing, size_t size) :
+            m_size(size), m_data(backing)
         {
-            auto ptr = (T*)__builtin_malloc(sizeof(T) * size);
-            VERIFY(ptr != nullptr);
-            m_data = ptr;
         }
 
         T* m_data { nullptr };
