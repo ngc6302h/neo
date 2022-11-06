@@ -384,6 +384,7 @@ namespace neo
             {
                 hit.~HashmapRecord<TKey, TValue>();
                 hit.m_next = nullptr;
+                m_size--;
                 return true;
             }
             else
@@ -413,6 +414,7 @@ namespace neo
                         next = next->m_next;
                     }
                 }
+                m_size--;
             }
             VERIFY_NOT_REACHED();
         }
