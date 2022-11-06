@@ -80,7 +80,7 @@ namespace neo
                 return *this;
 
             this->~Bitset();
-            new (this) Bitset(move(other));
+            new (this) Bitset(std::move(other));
 
             return *this;
         }
