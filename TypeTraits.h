@@ -541,7 +541,7 @@ namespace neo
     }
 
     template<typename T>
-    static constexpr void OverlappingTypedMove(size_t num, T const* from, T* to)
+    static constexpr void OverlappingTypedMove(size_t num, T* from, T* to)
     {
         if (from > to)
         {
@@ -572,7 +572,7 @@ namespace neo
     }
 
     template<typename T>
-    static constexpr void OverlappingMoveOrCopy(size_t num, T const* from, T* to)
+    static constexpr void OverlappingMoveOrCopy(size_t num, T* from, T* to)
     {
         if constexpr (IsTriviallyCopyable<T>)
             OverlappingUntypedCopy(num, from, to);
@@ -590,14 +590,14 @@ namespace neo
     }
 
     template<typename T>
-    static constexpr void TypedMove(size_t num, T const* from, T* to)
+    static constexpr void TypedMove(size_t num, T* from, T* to)
     {
         for (size_t i = 0; i < num; ++i)
             to[i] = std::move(from[i]);
     }
 
     template<typename T>
-    static constexpr void MoveOrCopy(size_t num, T const* from, T* to)
+    static constexpr void MoveOrCopy(size_t num, T* from, T* to)
     {
         if constexpr (IsTriviallyCopyable<T>)
             Copy(num, from, to);
