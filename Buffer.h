@@ -105,7 +105,7 @@ namespace neo
                 return *this;
 
             this->~Buffer();
-            new (this) Buffer(move(other));
+            new (this) Buffer(std::move(other));
 
             return *this;
         }
