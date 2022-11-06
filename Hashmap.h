@@ -1,18 +1,18 @@
 /*
-    Copyright (C) 2022  Iori Torres (shortanemoia@protonmail.com)
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
+Copyright (C) 2022  Iori Torres (shortanemoia@protonmail.com)
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 
 #pragma once
 #include "Types.h"
@@ -135,7 +135,7 @@ namespace neo
             if (this == &other)
                 return *this;
 
-            new (this) HashmapIteratorContainer { move(other) };
+            new (this) HashmapIteratorContainer { std::move(other) };
             return *this;
         }
 
@@ -223,7 +223,11 @@ namespace neo
             m_buckets(initial_bucket_count, false), m_colliding_key_storage((size_t)4, false), m_size(0)
         {
             for (size_t i = 0; i < initial_bucket_count; ++i)
-                m_buckets.append(Buffer<HashmapRecord<TKey, TValue>>::create_zero_initialized(initial_bucket_capacity));
+            {
+                auto buffer = Buffer<HashmapRecord<TKey, TValue>>::create_zero_initialized(initial_bucket_capacity);
+                ENSURE(buffer.has_value());
+                m_buckets.append(std::move(buffer.value()));
+            }
         }
 
         constexpr Hashmap(Hashmap const& other) :
@@ -234,7 +238,7 @@ namespace neo
         }
 
         constexpr Hashmap(Hashmap&& other) :
-            m_buckets(move(other.m_buckets)), m_colliding_key_storage(move(other.m_colliding_key_storage)), m_size(other.m_size)
+            m_buckets(std::move(other.m_buckets)), m_colliding_key_storage(std::move(other.m_colliding_key_storage)), m_size(other.m_size)
         {
         }
 
@@ -255,7 +259,7 @@ namespace neo
                 return *this;
 
             this->~Hashmap();
-            new (this) Hashmap(move(other));
+            new (this) Hashmap(std::move(other));
 
             return *this;
         }
@@ -292,9 +296,9 @@ namespace neo
                 Hashmap larger_hashmap(m_buckets.size() * 4, m_buckets.first().size());
 
                 for (auto& i : *this)
-                    larger_hashmap.insert(i.m_key, move(i.m_value));
+                    larger_hashmap.insert(i.m_key, std::move(i.m_value));
 
-                *this = move(larger_hashmap);
+                *this = std::move(larger_hashmap);
             }
 
             size_t hash = Hasher::hash(key);
@@ -314,7 +318,11 @@ namespace neo
                     return false;
 
                 if (m_colliding_key_storage.is_empty())
-                    m_colliding_key_storage.construct(Bitset<512> { 512, false }, Buffer<HashmapRecord<TKey, TValue>>::create_zero_initialized(512));
+                {
+                    auto buffer = Buffer<HashmapRecord<TKey, TValue>>::create_zero_initialized(512);
+                    ENSURE(buffer.has_value());
+                    m_colliding_key_storage.construct(Bitset<512> { 512, false }, std::move(buffer.value()));
+                }
 
                 for (auto& p : m_colliding_key_storage)
                 {
@@ -329,7 +337,10 @@ namespace neo
                     }
                 }
                 // at this point, all spill buffers are full. let's create one more
-                m_colliding_key_storage.construct(Bitset<512> { 512, false }, Buffer<HashmapRecord<TKey, TValue>>::create_zero_initialized(512));
+
+                auto buffer = Buffer<HashmapRecord<TKey, TValue>>::create_zero_initialized(512);
+                ENSURE(buffer.has_value());
+                m_colliding_key_storage.construct(Bitset<512> { 512, false }, std::move(buffer.value()));
                 m_colliding_key_storage.last().template get<Bitset<512>>().set(0, true);
                 new (&m_colliding_key_storage.last().template get<Buffer<HashmapRecord<TKey, TValue>>>()[0]) HashmapRecord<TKey, TValue> { key, value, nullptr };
                 m_size++;
@@ -360,7 +371,9 @@ namespace neo
                     }
                 }
                 // at this point, all spill buffers are full. let's create one more
-                m_colliding_key_storage.construct(Bitset<512> { 512, false }, Buffer<HashmapRecord<TKey, TValue>>::create_zero_initialized(512));
+                auto buffer = Buffer<HashmapRecord<TKey, TValue>>::create_zero_initialized(512);
+                ENSURE(buffer.has_value());
+                m_colliding_key_storage.construct(Bitset<512> { 512, false }, std::move(buffer.value()));
                 m_colliding_key_storage.last().template get<Bitset<512>>().set(0, true);
                 new (&m_colliding_key_storage.last().template get<Buffer<HashmapRecord<TKey, TValue>>>()[0]) HashmapRecord<TKey, TValue> { key, value, nullptr };
                 next->m_next = &m_colliding_key_storage.last().template get<Buffer<HashmapRecord<TKey, TValue>>>()[0];
