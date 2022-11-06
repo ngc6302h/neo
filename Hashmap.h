@@ -484,6 +484,11 @@ namespace neo
             return get(key).has_value();
         }
 
+        constexpr size_t size() const
+        {
+            return m_size;
+        }
+
     private:
         Vector<Buffer<HashmapRecord<TKey, TValue>>> m_buckets;
         Vector<Pair<Bitset<512>, Buffer<HashmapRecord<TKey, TValue>>>> m_colliding_key_storage;
