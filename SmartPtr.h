@@ -18,6 +18,7 @@
 #include "Atomic.h"
 #include "Types.h"
 #include "TypeTraits.h"
+#include "New.h"
 
 namespace neo
 {
