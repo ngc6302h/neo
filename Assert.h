@@ -27,10 +27,7 @@ static char __backtrace_buffer[sizeof(void*) * 256];
 {
     __builtin_printf("Backtrace for failed thread:\n");
     auto num_addresses = backtrace(reinterpret_cast<void**>(__backtrace_buffer), 256);
-    char** resolved_symbols = backtrace_symbols(reinterpret_cast<void* const*>(__backtrace_buffer), num_addresses);
-    for (int i = 0; i < num_addresses; ++i)
-        __builtin_printf("%s\n", resolved_symbols[i]);
-    __builtin_free(resolved_symbols);
+    backtrace_symbols_fd(reinterpret_cast<void* const*>(__backtrace_buffer), num_addresses, 1);
     __assert_fail(__assertion, __file, __line, __function);
 }
 
@@ -41,9 +38,9 @@ static char __backtrace_buffer[sizeof(void*) * 256];
 #endif
 
 #if DEBUG_ASSERTS == 1
-    #define VERIFY(expr)                                                     \
-        if (!(expr)) [[unlikely]]                                            \
-        {                                                                    \
+    #define VERIFY(expr)                                                         \
+        if (!(expr)) [[unlikely]]                                                \
+        {                                                                        \
             __NEO_ASSERT_FAILED(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
         }
     #define VERIFY_NOT_REACHED() __NEO_ASSERT_FAILED("Reached unreachable code!", __FILE__, __LINE__, __PRETTY_FUNCTION__)
@@ -52,8 +49,8 @@ static char __backtrace_buffer[sizeof(void*) * 256];
     #define VERIFY_NOT_REACHED() print_backtrace_and_fail("Reached unreachable code!", __FILE__, __LINE__, __PRETTY_FUNCTION__)
 #endif
 
-#define ENSURE(expr)                                                     \
-    if (!(expr)) [[unlikely]]                                            \
-    {                                                                    \
+#define ENSURE(expr)                                                         \
+    if (!(expr)) [[unlikely]]                                                \
+    {                                                                        \
         __NEO_ASSERT_FAILED(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
     }
