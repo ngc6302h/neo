@@ -175,7 +175,7 @@ namespace neo
 
     private:
         constexpr explicit Buffer(T* backing, size_t size) :
-            m_size(size), m_data(backing)
+            m_data(backing), m_size(size)
         {
         }
 
