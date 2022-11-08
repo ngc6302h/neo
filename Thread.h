@@ -126,6 +126,7 @@ namespace neo
                 pthread_detach(m_tid);
             m_tid = 0;
             delete m_entry_point_storage;
+            m_entry_point_storage = nullptr;
         }
 
         Thread& operator=(Thread const&) = delete;
@@ -151,7 +152,7 @@ namespace neo
                 return OSError(result);
             return end_code;
         }
-        
+
         bool is_valid_or_alive() const
         {
             return m_tid != 0;
@@ -169,8 +170,8 @@ namespace neo
             return (TFunc*)m_entry_point_storage->function_ptr();
         }
 
-        pthread_t m_tid {0};
-        detail::generic_callable_view* m_entry_point_storage { nullptr};
+        pthread_t m_tid { 0 };
+        detail::generic_callable_view* m_entry_point_storage { nullptr };
     };
 }
 using neo::Thread;

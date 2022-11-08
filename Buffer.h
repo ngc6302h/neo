@@ -70,6 +70,7 @@ namespace neo
                     m_data[i].~T();
             }
             __builtin_free(m_data);
+            m_data = nullptr;
         }
 
         constexpr Buffer(Buffer const& other)

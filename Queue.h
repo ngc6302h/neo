@@ -38,6 +38,8 @@ namespace neo
         {
             delete data;
             delete next;
+            data = nullptr;
+            next = nullptr;
         }
 
         constexpr QueueNode operator++(int)
