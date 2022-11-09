@@ -22,6 +22,13 @@
 #include "New.h"
 #include "Optional.h"
 
+extern "C"
+{
+    extern void* aligned_alloc(size_t __alignment, size_t __size)
+        __THROW __attribute_malloc__ __attribute_alloc_align__((1))
+            __attribute_alloc_size__((2)) __wur;
+}
+
 namespace neo
 {
     template<typename T>
@@ -32,18 +39,26 @@ namespace neo
         using iterator = Iterator<Buffer>;
         using const_iterator = Iterator<const Buffer>;
 
-        static constexpr Optional<Buffer> create_uninitialized(size_t size)
+        static constexpr Optional<Buffer> create_uninitialized(size_t size, size_t alignment = 0)
         {
-            auto ptr = (T*)__builtin_malloc(sizeof(T) * size);
+            T* ptr;
+            if (alignment == 0)
+                ptr = (T*)__builtin_malloc(sizeof(T) * size);
+            else
+                ptr = (T*)aligned_alloc(alignment, sizeof(T) * size);
             if (ptr == nullptr)
                 return {};
             return Buffer(ptr, size);
         }
 
         template<typename... Ts>
-        static constexpr Optional<Buffer> create_initialized(size_t size, Ts... args)
+        static constexpr Optional<Buffer> create_initialized(size_t size, size_t alignment = 0, Ts... args)
         {
-            auto ptr = (T*)__builtin_malloc(sizeof(T) * size);
+            T* ptr;
+            if (alignment == 0)
+                ptr = (T*)__builtin_malloc(sizeof(T) * size);
+            else
+                ptr = (T*)aligned_alloc(alignment, sizeof(T) * size);
             if (ptr == nullptr)
                 return {};
             Buffer mem(ptr, size);
@@ -52,9 +67,13 @@ namespace neo
             return mem;
         }
 
-        static constexpr Optional<Buffer> create_zero_initialized(size_t size)
+        static constexpr Optional<Buffer> create_zero_initialized(size_t size, size_t alignment = 0)
         {
-            auto ptr = (T*)__builtin_malloc(sizeof(T) * size);
+            T* ptr;
+            if (alignment == 0)
+                ptr = (T*)__builtin_malloc(sizeof(T) * size);
+            else
+                ptr = (T*)aligned_alloc(alignment, sizeof(T) * size);
             if (ptr == nullptr)
                 return {};
             Buffer mem(ptr, size);
