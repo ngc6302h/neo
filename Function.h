@@ -84,7 +84,7 @@ namespace neo
 
         Function& operator=(Function&& other)
         {
-            new (this) Function(move(other));
+            new (this) Function(std::move(other));
         }
 
         template<CallableWithReturnType<TReturn, TArgs...> Callable>
@@ -112,7 +112,7 @@ namespace neo
                 return m_callable_ptr->operator()(forward<TArgs>(args)...);
         }
 
-        TReturn operator()() const requires (PackSize<TArgs...> == 0)
+        TReturn operator()() const requires(PackSize<TArgs...> == 0)
         {
             VERIFY(m_callable_ptr != nullptr);
             if constexpr (IsSame<TReturn, void>)
@@ -129,7 +129,7 @@ namespace neo
     private:
         CallableStorageView* m_callable_ptr { nullptr };
     };
-    
+
     template<typename TReturn>
     class Function<TReturn, void>
     {
@@ -139,7 +139,7 @@ namespace neo
             virtual ~CallableStorageView() = default;
             virtual CallableStorageView* clone() = 0;
         };
-        
+
         template<typename TCallable>
         struct CallableStorage : public CallableStorageView
         {
@@ -193,7 +193,7 @@ namespace neo
 
         Function& operator=(Function&& other)
         {
-            new (this) Function(move(other));
+            new (this) Function(std::move(other));
         }
 
         template<CallableWithReturnType<TReturn> Callable>
@@ -220,7 +220,7 @@ namespace neo
             else
                 return m_callable_ptr->operator()();
         }
-        
+
         bool is_valid()
         {
             return m_callable_ptr != nullptr;
