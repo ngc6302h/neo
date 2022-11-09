@@ -36,6 +36,13 @@ namespace neo
             m_buffer[m_write_index++] = value;
         }
 
+        void enqueue(T&& value)
+        {
+            if (m_write_index == m_buffer.capacity() && m_read_index == 0)
+                m_buffer.resize(m_buffer.size() * 2);
+            m_buffer[m_write_index++] = std::move(value);
+        }
+
         Optional<T> dequeue()
         {
             if (m_read_index == m_write_index)
