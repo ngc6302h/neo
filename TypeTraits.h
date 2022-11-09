@@ -382,10 +382,8 @@ namespace neo
     template<typename T, typename... Ts>
     constexpr bool UniqueType = detail::UniqueType<T, Ts...> == 1;
 
-    template<typename T, typename... Ts>
-    constexpr size_t PackSize = 1 + PackSize<Ts...>;
-    template<typename T>
-    constexpr size_t PackSize<T> = 1;
+    template<typename... Ts>
+    constexpr size_t PackSize = sizeof...(Ts);
 
     template<typename T>
     constexpr void swap(T& a, T& b)
