@@ -273,6 +273,7 @@ namespace neo
         T& m_mutex;
     };
 }
+using neo::HybridMutex;
 using neo::Mutex;
 using neo::RecursiveMutex;
 using neo::ScopedLock;
