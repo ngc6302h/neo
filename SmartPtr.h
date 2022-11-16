@@ -297,6 +297,17 @@ namespace neo
             return m_data != nullptr;
         }
 
+        // The current object that this call is performed on will be invalid when the function returns. Use the returned object.
+        [[nodiscard]] constexpr RefPtr<T, true> make_thread_safe()
+        {
+            RefPtr<T, true> thread_safe;
+            thread_safe.m_control = m_control;
+            thread_safe.m_data = m_data;
+            m_control = nullptr;
+            m_data = nullptr;
+            return thread_safe;
+        }
+
         RefPtr() = default;
 
     private:
