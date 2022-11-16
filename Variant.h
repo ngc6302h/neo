@@ -116,11 +116,34 @@ namespace neo
             return *this;
         }
 
-        template<typename T>
-        requires(PackContains<T, Types...>) constexpr Variant& operator=(const T& other)
+        template<InPack<Types...> T>
+        constexpr Variant& operator=(T&& other)
         {
-            destructor_helper<0>(this->m_active_type);
-            *reinterpret_cast<T*>(this->m_storage) = other;
+            if (IndexOfType<T, Types...> != this->m_active_type)
+            {
+                destructor_helper<0>(this->m_active_type);
+                new (this->m_storage) T(std::move(other));
+            }
+            else
+            {
+                *reinterpret_cast<T*>(this->m_storage) = std::move(other);
+            }
+            this->m_active_type = IndexOfType<T, Types...>;
+            return *this;
+        }
+
+        template<InPack T>
+        constexpr Variant& operator=(const T& other)
+        {
+            if (IndexOfType<T, Types...> != this->m_active_type)
+            {
+                destructor_helper<0>(this->m_active_type);
+                new (this->m_storage) T(std::move(other));
+            }
+            else
+            {
+                *reinterpret_cast<T*>(this->m_storage) = std::move(other);
+            }
             this->m_active_type = IndexOfType<T, Types...>;
             return *this;
         }
@@ -130,15 +153,6 @@ namespace neo
         {
             destructor_helper<0>(this->m_active_type);
             *reinterpret_cast<T*>(this->m_storage) = std::move(*reinterpret_cast<T*>(other.m_storage));
-            this->m_active_type = IndexOfType<T, Types...>;
-            return *this;
-        }
-
-        template<typename T>
-        requires(PackContains<T, Types...>) constexpr Variant& operator=(const T&& other)
-        {
-            destructor_helper<0>(this->m_active_type);
-            *reinterpret_cast<T*>(this->m_storage) = std::move(other);
             this->m_active_type = IndexOfType<T, Types...>;
             return *this;
         }
