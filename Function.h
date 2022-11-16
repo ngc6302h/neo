@@ -188,12 +188,18 @@ namespace neo
 
         Function& operator=(Function const& other)
         {
+            if (this == &other)
+                return *this;
             new (this) Function(other);
+            return *this;
         }
 
         Function& operator=(Function&& other)
         {
+            if (this == &other)
+                return *this;
             new (this) Function(std::move(other));
+            return *this;
         }
 
         template<CallableWithReturnType<TReturn> Callable>
