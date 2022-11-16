@@ -79,12 +79,18 @@ namespace neo
 
         Function& operator=(Function const& other)
         {
+            if (this == &other)
+                return *this;
             new (this) Function(other);
+            return *this;
         }
 
         Function& operator=(Function&& other)
         {
+            if (this == &other)
+                return *this;
             new (this) Function(std::move(other));
+            return *this;
         }
 
         template<CallableWithReturnType<TReturn, TArgs...> Callable>
@@ -171,16 +177,14 @@ namespace neo
 
         Function(Function const& other)
         {
-            if (m_callable_ptr != nullptr)
-                delete m_callable_ptr;
+            delete m_callable_ptr;
 
             m_callable_ptr = other.m_callable_ptr->clone();
         }
 
         Function(Function&& other)
         {
-            if (m_callable_ptr != nullptr)
-                delete m_callable_ptr;
+            delete m_callable_ptr;
 
             m_callable_ptr = other.m_callable_ptr;
             other.m_callable_ptr = m_callable_ptr;
