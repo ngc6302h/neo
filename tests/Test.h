@@ -31,35 +31,41 @@
 
 struct LifetimeLogger
 {
-    LifetimeLogger()
+    LifetimeLogger(char const* msg = "") :
+        msg(msg)
     {
-        __builtin_printf("Object constructed\n");
+        __builtin_printf("Object \"%s\" constructed\n", msg);
     }
 
     ~LifetimeLogger()
     {
-        __builtin_printf("Object destroyed\n");
+        __builtin_printf("Object \"%s\" destroyed\n", msg);
     }
 
-    LifetimeLogger(LifetimeLogger const&)
+    LifetimeLogger(LifetimeLogger const& other)
     {
-        __builtin_printf("Object copied\n");
+        msg = other.msg;
+        __builtin_printf("Object \"%s\" copied\n", msg);
     }
 
-    LifetimeLogger(LifetimeLogger&&)
+    LifetimeLogger(LifetimeLogger&& other)
     {
-        __builtin_printf("Object moved\n");
+        msg = other.msg;
+        other.msg = "(moved away)";
+        __builtin_printf("Object \"%s\" moved\n", msg);
     }
 
     LifetimeLogger& operator=(LifetimeLogger const&)
     {
-        __builtin_printf("Object copy assigned\n");
+        __builtin_printf("Object \"%s\" copy assigned\n", msg);
         return *this;
     }
 
     LifetimeLogger& operator=(LifetimeLogger&&)
     {
-        __builtin_printf("Object move assigned\n");
+        __builtin_printf("Object \"%s\" move assigned\n", msg);
         return *this;
     }
+
+    char const* msg;
 };
