@@ -23,7 +23,7 @@ extern "C"
 }
 
 static char __backtrace_buffer[sizeof(void*) * 256];
-[[maybe_unused]] [[noreturn]] static void print_backtrace_and_fail(const char* __assertion, const char* __file, unsigned int __line, const char* __function)
+[[maybe_unused]] [[noreturn]] [[gnu::noinline]] static void print_backtrace_and_fail(const char* __assertion, const char* __file, unsigned int __line, const char* __function)
 {
     __builtin_printf("Backtrace for failed thread:\n");
     auto num_addresses = backtrace(reinterpret_cast<void**>(__backtrace_buffer), 256);
