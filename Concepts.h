@@ -293,6 +293,9 @@ namespace neo
 
     template<typename T>
     concept POD = IsTrivial<T>;
+
+    template<typename T, typename... Ts>
+    concept InPack = PackContains<T, Ts...>;
 }
 using neo::Addable;
 using neo::Arithmetic;
@@ -318,6 +321,7 @@ using neo::GreaterThanComparable;
 using neo::Incrementable;
 using neo::Indexable;
 using neo::InequalityComparable;
+using neo::InPack;
 using neo::Integral;
 using neo::Iterable;
 using neo::IterableContainer;
