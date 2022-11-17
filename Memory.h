@@ -65,3 +65,4 @@ namespace neo
 }
 using neo::create;
 using neo::create_refcounted;
+using neo::destroy;
