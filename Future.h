@@ -17,6 +17,7 @@
 
 #include "SmartPtr.h"
 #include "Optional.h"
+#include "Memory.h"
 
 namespace neo
 {
@@ -75,11 +76,11 @@ namespace neo
     template<typename T>
     class Promise
     {
-        using state = RefPtr<detail::FutureState<T>, true>;
+        using state = RefPtr<detail::FutureState<T>>;
 
     public:
         Promise() :
-            m_state(state::make())
+            m_state(create_refcounted<typename state::type>().release_nonnull())
         {
         }
 
@@ -159,7 +160,7 @@ namespace neo
     class Future
     {
         friend Promise<T>;
-        using state = RefPtr<detail::FutureState<T>, true>;
+        using state = RefPtr<detail::FutureState<T>>;
 
     public:
         Future() = delete;

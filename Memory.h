@@ -23,20 +23,20 @@ namespace neo
     };
 
     template<typename TObject, typename TAllocator = MallocAllocator, typename... TArgs>
-    OwnPtr<TObject> create(TArgs&&... args)
+    NullableOwnPtr<TObject> create(TArgs&&... args)
     {
         void* storage = TAllocator::allocate(sizeof(TObject));
         if (storage == nullptr)
-            return OwnPtr<TObject>(nullptr);
+            return NullableOwnPtr<TObject>(nullptr);
 
         new (storage) TObject { forward<TArgs>(args)... };
-        return OwnPtr<TObject>(static_cast<TObject*>(storage));
+        return NullableOwnPtr<TObject>(static_cast<TObject*>(storage));
     }
 
     template<typename TObject, typename TAllocator = MallocAllocator, typename... TArgs>
-    RefPtr<TObject, false> create_refcounted(TArgs&&... args)
+    NullableRefPtr<TObject> create_refcounted(TArgs&&... args)
     {
-        return RefPtr<TObject, false>(create<TObject, TAllocator, TArgs...>(forward<TArgs>(args)...).release());
+        return NullableRefPtr<TObject>(create<TObject, TAllocator, TArgs...>(forward<TArgs>(args)...).release());
     }
 
     template<typename TObject, typename TAllocator = MallocAllocator>

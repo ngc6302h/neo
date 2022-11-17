@@ -68,17 +68,17 @@ namespace neo
     {
     public:
         template<VoidCallable TFunc>
-        [[nodiscard]] static ResultOrError<RefPtr<Thread, true>, OSError> create(TFunc&& start_function)
+        [[nodiscard]] static ResultOrError<RefPtr<Thread>, OSError> create(TFunc&& start_function)
         {
             auto entry_point_storage = new detail::callable_storage<TFunc>(forward<TFunc>(start_function));
             if (entry_point_storage == nullptr)
                 return OSError::OutOfMemory;
 
-            RefPtr<Thread, true> thread(new Thread(entry_point_storage));
+            RefPtr<Thread> thread(new Thread(entry_point_storage));
             if (!thread.is_valid())
                 return OSError(OSError::OutOfMemory);
 
-            RefPtr<Thread, true>* temp_storage = new RefPtr<Thread, true>(thread);
+            RefPtr<Thread>* temp_storage = new RefPtr<Thread>(thread);
 
             asm volatile(""
                          :
@@ -88,18 +88,18 @@ namespace neo
             auto result = pthread_create(
                 &thread->m_tid, nullptr, [](void* thread_ptr) -> void*
                 {
-                    auto* this_thread = reinterpret_cast<RefPtr<Thread, true>*>(thread_ptr);
+                    auto* this_thread = reinterpret_cast<RefPtr<Thread>*>(thread_ptr);
                     u64 result;
 
                     if constexpr(!CallableWithReturnType<TFunc, void>)
-                    result = (*this_thread->leak()->template get_start_function_ptr<TFunc>())();
+                    result = (*this_thread->leak_ref().template get_start_function_ptr<TFunc>())();
                     else
                     {
-                        (*this_thread->leak()->template get_start_function_ptr<TFunc>())();
+                        (*this_thread->leak_ref().template get_start_function_ptr<TFunc>())();
                         result = 0;
                     }
 
-                    this_thread->leak()->m_tid = 0;
+                    this_thread->leak_ref().m_tid = 0;
                     return (void*)(ptr_t)result; },
                 temp_storage);
 
