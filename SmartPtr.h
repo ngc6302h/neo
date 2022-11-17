@@ -13,6 +13,7 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
 #pragma once
 #include "Assert.h"
 #include "Atomic.h"
@@ -22,56 +23,41 @@
 
 namespace neo
 {
-    template<typename T>
-    class OwnPtr
+    template<typename T, bool Nullable>
+    class OwnPtrImpl
     {
     public:
-        OwnPtr& operator=(const OwnPtr&) = delete;
-        OwnPtr(OwnPtr const&) = delete;
+        OwnPtrImpl& operator=(OwnPtrImpl const&) = delete;
+        OwnPtrImpl(OwnPtrImpl const&) = delete;
 
-        constexpr explicit OwnPtr(T* obj) :
+        constexpr explicit OwnPtrImpl(T* obj) :
             m_data(obj)
         {
-            VERIFY(obj != nullptr);
+            if constexpr (!Nullable)
+                ENSURE(obj != nullptr);
         }
 
-        constexpr OwnPtr(OwnPtr&& other) :
+        constexpr OwnPtrImpl(OwnPtrImpl&& other) :
             m_data(other.m_data)
         {
             other.m_data = nullptr;
         }
 
-        template<typename... Args>
-        static constexpr OwnPtr make(Args&&... args)
-        {
-            return OwnPtr(new T(forward<Args>(args)...));
-        }
-
-        constexpr OwnPtr& operator=(OwnPtr&& other)
+        constexpr OwnPtrImpl& operator=(OwnPtrImpl&& other)
         {
             if (this == &other)
                 return *this;
 
-            this->~OwnPtr();
-            new (this) OwnPtr(std::move(other));
+            this->~OwnPtrImpl();
+            new (this) OwnPtrImpl(std::move(other));
 
             return *this;
         }
 
-        constexpr ~OwnPtr()
+        constexpr ~OwnPtrImpl()
         {
             delete m_data;
             m_data = nullptr;
-        }
-
-        [[nodiscard]] constexpr const T* leak_ptr() const
-        {
-            return m_data;
-        }
-
-        [[nodiscard]] constexpr T* leak_ptr()
-        {
-            return m_data;
         }
 
         [[nodiscard]] constexpr T* release()
@@ -81,147 +67,193 @@ namespace neo
             return ptr;
         }
 
-        [[nodiscard]] constexpr T& operator*()
+        [[nodiscard]] constexpr T const* leak_ptr() const requires(Nullable)
         {
+            return m_data;
+        }
+
+        [[nodiscard]] constexpr T* leak_ptr() requires(Nullable)
+        {
+            return m_data;
+        }
+
+        [[nodiscard]] constexpr T const& leak_ref() const
+        {
+            ENSURE(m_data != nullptr);
             return *m_data;
         }
 
-        [[nodiscard]] constexpr const T& operator*() const
+        [[nodiscard]] constexpr T& leak_ref()
         {
+            ENSURE(m_data != nullptr);
+            return *m_data;
+        }
+
+        [[nodiscard]] constexpr T& operator*()
+        {
+            ENSURE(m_data != nullptr);
+            return *m_data;
+        }
+
+        [[nodiscard]] constexpr T const& operator*() const
+        {
+            ENSURE(m_data != nullptr);
             return *m_data;
         }
 
         [[nodiscard]] constexpr T* operator->()
         {
+            ENSURE(m_data != nullptr);
             return m_data;
         }
 
-        [[nodiscard]] constexpr const T* operator->() const
+        [[nodiscard]] constexpr T const* operator->() const
         {
+            ENSURE(m_data != nullptr);
             return m_data;
         }
 
-        [[nodiscard]] constexpr bool is_null() const
+        [[nodiscard]] constexpr OwnPtrImpl<T, false> release_nonnull()
         {
-            return m_data == nullptr;
+            ENSURE(m_data != nullptr);
+            auto* data = m_data;
+            m_data = nullptr;
+            return OwnPtrImpl<T, false>(data);
         }
 
     private:
-        OwnPtr() = default;
+        OwnPtrImpl() = delete;
 
         T* m_data { nullptr };
     };
 
-    template<typename, bool>
+    template<typename T>
+    using OwnPtr = OwnPtrImpl<T, false>;
+    template<typename T>
+    using NullableOwnPtr = OwnPtrImpl<T, true>;
+
+    template<typename>
     class WeakPtr;
 
-    struct ControlBlock
+    namespace detail
     {
-        Atomic<size_t> reference_count;
-        Atomic<size_t> weak_reference_count;
-    };
+        struct RefPtrControlBlock
+        {
+            Atomic<size_t> reference_count;
+            Atomic<size_t> weak_reference_count;
+        };
+    }
 
-    template<typename T, bool SharedBetweenThreads = false>
-    class RefPtr
+    template<typename T, bool Nullable>
+    class RefPtrImpl
     {
-        friend WeakPtr<T, SharedBetweenThreads>;
+        friend WeakPtr<T>;
 
-        template<typename TF, bool SharedBetweenThreadsF>
-        friend class RefPtr;
+        template<typename T_, bool B>
+        friend class RefPtrImpl;
 
     public:
-        constexpr explicit RefPtr(T* obj) :
+        using type = T;
+        static constexpr bool nullable = Nullable;
+
+        constexpr explicit RefPtrImpl(T* obj) :
             m_data(obj)
         {
-            VERIFY(obj != nullptr);
-            m_control = new ControlBlock { 1, 0 };
+            if constexpr (!Nullable)
+                ENSURE(obj != nullptr);
+            m_control = new detail::RefPtrControlBlock { 1, 0 };
         }
 
-        constexpr RefPtr(const RefPtr& other) :
+        constexpr RefPtrImpl(const RefPtrImpl& other) :
             m_data(other.m_data), m_control(other.m_control)
         {
             VERIFY(other.m_data != nullptr);
-            if constexpr (SharedBetweenThreads)
-                m_control->reference_count.add_fetch(1, MemoryOrder::Release);
-            else
-                m_control->reference_count.add_fetch(1, MemoryOrder::Relaxed);
+            ENSURE(m_control != nullptr);
+            m_control->reference_count.add_fetch(1, MemoryOrder::AcquireRelease);
         }
 
-        constexpr RefPtr(RefPtr&& other) :
+        constexpr RefPtrImpl(RefPtrImpl&& other) :
             m_data(other.m_data), m_control(other.m_control)
         {
             other.m_data = nullptr;
             other.m_control = nullptr;
         }
 
-        template<typename... Args>
-        static constexpr RefPtr make(Args&&... args)
-        {
-            return RefPtr(new T(forward<Args>(args)...));
-        }
-
         template<typename TBase>
         requires BaseOf<TBase, T>
-        constexpr operator RefPtr<TBase, SharedBetweenThreads>()
+        constexpr operator RefPtrImpl<TBase, Nullable>()
         {
-            if constexpr (SharedBetweenThreads)
-                m_control->reference_count.add_fetch(1, MemoryOrder::Release);
-            else
-                m_control->reference_count.add_fetch(1, MemoryOrder::Relaxed);
+            m_control->reference_count.add_fetch(1, MemoryOrder::AcquireRelease);
 
-            RefPtr<TBase, SharedBetweenThreads> base;
+            RefPtrImpl<TBase, Nullable> base;
             base.m_control = m_control;
             base.m_data = m_data;
             return base;
         }
 
+        constexpr operator RefPtrImpl<T, true>() requires(!Nullable)
+        {
+            return release_nonnull();
+        }
+
+        constexpr RefPtrImpl<T, false> release_nonnull()
+        {
+            ENSURE(m_data != nullptr);
+
+            m_control->reference_count.add_fetch(1, MemoryOrder::AcquireRelease);
+
+            RefPtrImpl<T, false> copy;
+            copy.m_data = m_data;
+            copy.m_control = m_control;
+
+            return copy;
+        }
+
         template<typename TDerived>
         requires BaseOf<T, TDerived>
-        constexpr RefPtr<T, SharedBetweenThreads>(RefPtr<TDerived, SharedBetweenThreads> const& other) :
+        constexpr RefPtrImpl(RefPtrImpl<TDerived, Nullable> const& other) :
             m_data(other.m_data), m_control(other.m_control)
         {
             VERIFY(other.m_data != nullptr);
-            if constexpr (SharedBetweenThreads)
-                m_control->reference_count.add_fetch(1, MemoryOrder::Release);
-            else
-                m_control->reference_count.add_fetch(1, MemoryOrder::Relaxed);
+            ENSURE(m_control != nullptr);
+            m_control->reference_count.add_fetch(1, MemoryOrder::AcquireRelease);
         }
 
-        constexpr WeakPtr<T, SharedBetweenThreads> make_weak() const
+        constexpr WeakPtr<T> make_weak() const
         {
-            return WeakPtr<T, SharedBetweenThreads>(*this);
+            return WeakPtr<T>(*this);
         }
 
-        constexpr RefPtr& operator=(RefPtr const& other)
+        constexpr RefPtrImpl& operator=(RefPtrImpl const& other)
         {
             if (this == &other)
                 return *this;
 
             VERIFY(other.m_control != nullptr);
 
-            this->~RefPtr();
-            new (this) RefPtr(other);
+            this->~RefPtrImpl();
+            new (this) RefPtrImpl(other);
 
             return *this;
         }
 
-        constexpr RefPtr& operator=(const T*& other)
+        constexpr RefPtrImpl& operator=(const T*& other)
         {
             if (this == &other)
                 return *this;
 
-            this->~RefPtr();
-            new (this) RefPtr(other);
+            this->~RefPtrImpl();
+            new (this) RefPtrImpl(other);
 
             return *this;
         }
 
-        constexpr RefPtr& operator=(RefPtr&& other)
+        constexpr RefPtrImpl& operator=(RefPtrImpl&& other)
         {
             VERIFY(other.m_control != nullptr);
 
             unref();
-            new (this) RefPtr(std::move(other));
+            new (this) RefPtrImpl(std::move(other));
 
             return *this;
         }
@@ -230,11 +262,7 @@ namespace neo
         {
             if (m_control != nullptr)
             {
-                size_t refs;
-                if constexpr (SharedBetweenThreads)
-                    refs = m_control->reference_count.sub_fetch(1, AcquireRelease);
-                else
-                    refs = m_control->reference_count.sub_fetch(1, Relaxed);
+                size_t refs = m_control->reference_count.sub_fetch(1, AcquireRelease);
 
                 if (refs == 0)
                 {
@@ -252,38 +280,72 @@ namespace neo
             }
         }
 
-        constexpr ~RefPtr()
+        constexpr ~RefPtrImpl()
         {
             unref();
         }
 
-        [[nodiscard]] constexpr const T* leak() const
+        [[nodiscard]] constexpr T const* leak_ptr() const requires(Nullable)
         {
             return m_data;
         }
 
-        [[nodiscard]] constexpr T* leak()
+        [[nodiscard]] constexpr T* leak_ptr() requires(Nullable)
         {
             return m_data;
         }
 
-        [[nodiscard]] constexpr const T& operator*() const
+        [[nodiscard]] constexpr T const& leak_ref() const
         {
+            if constexpr (!Nullable)
+            {
+                ENSURE(m_data != nullptr);
+            }
+            else
+                VERIFY(m_data != nullptr);
             return *m_data;
+        }
+
+        [[nodiscard]] constexpr T& leak_ref()
+        {
+            if constexpr (!Nullable)
+            {
+                ENSURE(m_data != nullptr);
+            }
+            else
+                VERIFY(m_data != nullptr);
+            return *m_data;
+        }
+
+        [[nodiscard]] constexpr T const& operator*() const
+        {
+            return leak_ref();
         }
 
         [[nodiscard]] constexpr T& operator*()
         {
-            return *m_data;
+            return leak_ref();
         }
 
-        [[nodiscard]] constexpr const T* operator->() const
+        [[nodiscard]] constexpr T const* operator->() const
         {
+            if constexpr (!Nullable)
+            {
+                ENSURE(m_data != nullptr);
+            }
+            else
+                VERIFY(m_data != nullptr);
             return m_data;
         }
 
         [[nodiscard]] constexpr T* operator->()
         {
+            if constexpr (!Nullable)
+            {
+                ENSURE(m_data != nullptr);
+            }
+            else
+                VERIFY(m_data != nullptr);
             return m_data;
         }
 
@@ -297,26 +359,19 @@ namespace neo
             return m_data != nullptr;
         }
 
-        // The current object that this call is performed on will be invalid when the function returns. Use the returned object.
-        [[nodiscard]] constexpr RefPtr<T, true> make_thread_safe()
-        {
-            RefPtr<T, true> thread_safe;
-            thread_safe.m_control = m_control;
-            thread_safe.m_data = m_data;
-            m_control = nullptr;
-            m_data = nullptr;
-            return thread_safe;
-        }
-
-        RefPtr() = default;
-
     private:
+        RefPtrImpl() = default;
 
         T* m_data { nullptr };
-        ControlBlock* m_control { nullptr };
+        detail::RefPtrControlBlock* m_control { nullptr };
     };
 
-    template<typename T, bool SharedBetweenThreads = false>
+    template<typename T>
+    using RefPtr = RefPtrImpl<T, false>;
+    template<typename T>
+    using NullableRefPtr = RefPtrImpl<T, true>;
+
+    template<typename T>
     class WeakPtr
     {
     public:
@@ -324,19 +379,13 @@ namespace neo
             m_data(other.m_data), m_control(other.m_control)
         {
             VERIFY(other.is_valid());
-            if constexpr (SharedBetweenThreads)
-                m_control->weak_reference_count.add_fetch(1, AcquireRelease);
-            else
-                m_control->weak_reference_count.add_fetch(1, Relaxed);
+            m_control->weak_reference_count.add_fetch(1, AcquireRelease);
         }
 
         constexpr WeakPtr(WeakPtr const& other) :
             m_data(other.m_data), m_control(other.m_control)
         {
-            if constexpr (SharedBetweenThreads)
-                m_control->weak_reference_count.add_fetch(1, AcquireRelease);
-            else
-                m_control->weak_reference_count.add_fetch(1, Relaxed);
+            m_control->weak_reference_count.add_fetch(1, AcquireRelease);
         }
 
         constexpr WeakPtr(WeakPtr&& other) :
@@ -371,11 +420,7 @@ namespace neo
             if (m_control == nullptr)
                 return;
 
-            size_t refs;
-            if constexpr (SharedBetweenThreads)
-                refs = m_control->weak_reference_count.sub_fetch(1, AcquireRelease);
-            else
-                refs = m_control->weak_reference_count.sub_fetch(1, Relaxed);
+            size_t refs = m_control->weak_reference_count.sub_fetch(1, AcquireRelease);
             if (m_control->reference_count.load(Acquire) == 0 && refs == 0)
             {
                 delete m_data;
@@ -387,13 +432,11 @@ namespace neo
 
         [[nodiscard]] constexpr T* leak()
         {
-            VERIFY(is_valid());
             return m_data;
         }
 
         [[nodiscard]] constexpr const T* leak() const
         {
-            VERIFY(is_valid());
             return m_data;
         }
 
@@ -426,6 +469,11 @@ namespace neo
             return m_control->reference_count;
         }
 
+        [[nodiscard]] constexpr size_t weak_ref_count() const
+        {
+            return m_control->reference_count;
+        }
+
         [[nodiscard]] constexpr bool is_valid() const
         {
             return m_data != nullptr;
@@ -435,9 +483,11 @@ namespace neo
         WeakPtr() = default;
 
         T* m_data;
-        ControlBlock* m_control;
+        detail::RefPtrControlBlock* m_control;
     };
 }
+using neo::NullableOwnPtr;
+using neo::NullableRefPtr;
 using neo::OwnPtr;
 using neo::RefPtr;
 using neo::WeakPtr;
