@@ -54,7 +54,7 @@ namespace neo
         constexpr Optional(T&& other) :
             m_has_value(true)
         {
-            new (m_storage) T(forward<T>(other));
+            new (m_storage) T(std::move(other));
         }
 
         constexpr Optional(Optional&& other) :
@@ -82,7 +82,7 @@ namespace neo
             if (this == &other)
                 return *this;
 
-            ~Optional();
+            this->~Optional();
             new (this) Optional(other);
 
             return *this;
@@ -94,7 +94,7 @@ namespace neo
                 return *this;
 
             this->~Optional();
-            new (this) Optional(move(other));
+            new (this) Optional(std::move(other));
 
             return *this;
         }
