@@ -21,7 +21,7 @@
 #include "Iterator.h"
 #include "Optional.h"
 #include "Util.h"
-
+#include <typeinfo>
 namespace neo
 {
    //TODO: replace with a fast algorithm
@@ -241,11 +241,14 @@ namespace neo
 
    namespace detail
    {
+       template<typename T>
+       using RefwrapIfNeeded = Conditional<IsLvalueReference<T>, ReferenceWrapper<T>, T>;
+
        template<IteratorLike TFirstA, IteratorLike TFirstB, IteratorLike... TRest>
        class SequenceZipIterator : public SequenceZipIterator<TRest...>
        {
        public:
-           using type = Tuple<ReferenceWrapper<typename TFirstA::type>, ReferenceWrapper<typename TRest::type>...>;
+           using type = Tuple<RefwrapIfNeeded<typename TFirstA::type>, RefwrapIfNeeded<typename TRest::type>...>;
            using underlying_container_type = typename TFirstA::underlying_container_type;
 
            template<IteratorLike TTFirstBegin, IteratorLike TTFirstEnd, IteratorLike... TTRest>
@@ -374,7 +377,7 @@ namespace neo
            constexpr decltype(auto) deref(Ts&... ts)
            {
                VERIFY(m_begin != m_end);
-               return make_tuple(ReferenceWrapper<Ts>(ts)..., ReferenceWrapper(*m_begin));
+               return make_tuple(RefwrapIfNeeded<Ts>(ts)..., RefwrapIfNeeded<decltype(*m_begin)>(*m_begin));
            }
 
        private:
