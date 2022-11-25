@@ -91,6 +91,17 @@ namespace neo
         return StringView(cstring, length);
     }
 
+#ifndef NEO_DO_NOT_DEFINE_STD
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wliteral-suffix"
+
+    [[nodiscard]] constexpr StringView operator""sv(const char* cstring, size_t length)
+    {
+        return StringView { cstring, length };
+    }
+    #pragma GCC diagnostic pop
+#endif
+
     // BEGIN STRINGCOMMON DEFINITIONS
 
     template<typename T, typename TIterator>
@@ -471,3 +482,4 @@ namespace neo
 }
 using neo::StringView;
 using neo::operator""_sv;
+using neo::operator""sv;

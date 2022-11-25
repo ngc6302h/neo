@@ -177,6 +177,17 @@ namespace neo
         return { cstring, length };
     }
 
+#ifndef NEO_DO_NOT_DEFINE_STD
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wliteral-suffix"
+
+    [[nodiscard]] constexpr String operator""s(const char* cstring, size_t length)
+    {
+        return String { cstring, length };
+    }
+    #pragma GCC diagnostic pop
+#endif
+
     template<typename>
     struct StringHasher;
 
@@ -210,4 +221,5 @@ namespace neo
 }
 using neo::String;
 using neo::operator""_s;
+using neo::operator""s;
 using neo::StringHasher;
