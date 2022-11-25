@@ -19,19 +19,10 @@
 
 namespace neo
 {
-    template<template<typename T, auto...> typename TContainer, typename T>
-    struct IContainer
-    {
-        using type = T;
-        template<typename U>
-        using container_type = TContainer<U>;
-    };
-
     template<size_t Size>
     struct IFixedSizeContainer
     {
         static constexpr size_t size() { return Size; }
     };
 }
-using neo::IContainer;
 using neo::IFixedSizeContainer;
