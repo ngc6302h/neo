@@ -20,7 +20,7 @@
 #include "ResultOrError.h"
 #include "Span.h"
 #include "String.h"
-#include "Vector.h"
+#include "Buffer.h"
 #include <stdio.h>
 #ifdef _WIN32
     #include <io.h>
@@ -99,11 +99,15 @@ namespace neo
             return File(file);
         }
 
-        [[nodiscard]] static ResultOrError<Vector<u8>, OSError> read_to_buffer(const String& path, size_t max_bytes_to_read)
+        [[nodiscard]] static ResultOrError<Tuple<Buffer<u8>, size_t>, OSError> read_to_buffer(const String& path, size_t max_bytes_to_read)
         {
             VERIFY(!path.is_empty());
 
-            Vector<u8> buffer((size_t)max_bytes_to_read, true);
+            auto maybe_buffer = Buffer<u8>::create_uninitialized(max_bytes_to_read);
+            if (!maybe_buffer.has_value())
+                return OSError::OutOfMemory;
+
+            auto buffer = maybe_buffer.release_value();
 
             auto file_or_error = open(path, "r");
             if (file_or_error.has_error())
@@ -116,22 +120,21 @@ namespace neo
             auto maybe_error = file.close();
             if (maybe_error.has_value())
                 return maybe_error.value();
-            buffer.change_capacity(result_or_error.result());
-            return buffer;
+            return make_tuple(buffer, result_or_error.result());
         }
 
-        [[nodiscard]] static ResultOrError<Vector<u8>, OSError> read_all(const String& path)
+        [[nodiscard]] static ResultOrError<Buffer<u8>, OSError> read_all(const String& path)
         {
             auto file_or_error = open(path, "r");
-            if (file_or_error.has_error())
-                return (OSError)errno;
+            returnerr(file_or_error);
             auto size_or_error = file_or_error.result().size();
-            if (size_or_error.has_error())
-                return (OSError)errno;
-            Vector<u8> buffer((size_t)size_or_error.result(), true);
+            returnerr(size_or_error);
+            auto maybe_buffer = Buffer<u8>::create_uninitialized(size_or_error.result());
+            if (!maybe_buffer.has_value())
+                return OSError::OutOfMemory;
+            auto buffer = maybe_buffer.release_value();
             auto bytes_read_or_error = file_or_error.result().read(buffer.span(), buffer.size());
-            if (bytes_read_or_error.has_error())
-                return (OSError)errno;
+            returnerr(bytes_read_or_error);
             return buffer;
         }
 

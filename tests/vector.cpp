@@ -36,23 +36,5 @@ int main()
     Vector<int> pure_heap2 = pure_heap;
     TEST_EQUAL(pure_heap2, reference);
     print(pure_heap2);
-    Vector<int, 10> pure_inline = pure_heap;
-    TEST_EQUAL(pure_inline, reference);
-    print(pure_inline);
-    Vector<int, 10> pure_inline2 = pure_inline;
-    TEST_EQUAL(pure_inline2, reference);
-    print(pure_inline2);
-    Vector<int, 5> mixed_from_pure_heap = pure_heap;
-    TEST_EQUAL(mixed_from_pure_heap, reference);
-    print(mixed_from_pure_heap);
-    Vector<int, 5> mixed_from_pure_inline = pure_inline;
-    TEST_EQUAL(mixed_from_pure_inline, reference);
-    print(mixed_from_pure_inline);
-    pure_heap = mixed_from_pure_inline;
-    TEST_EQUAL(pure_heap, reference);
-    print(pure_heap);
-    pure_inline = mixed_from_pure_heap;
-    TEST_EQUAL(pure_inline, reference);
-    print(pure_inline);
     return 0;
 }

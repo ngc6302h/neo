@@ -24,8 +24,9 @@ namespace neo
     class BufferedStream final : public OutputStream
     {
         explicit BufferedStream(OutputStream& base, size_t buffer_size) :
-            m_base(base), m_buffer(buffer_size, true)
+            m_base(base), m_buffer(Vector<u8>::create_with_capacity(buffer_size))
         {
+            m_buffer.change_size(buffer_size);
         }
 
         virtual void write(Span<u8> const& from) override

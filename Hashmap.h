@@ -220,7 +220,7 @@ namespace neo
         Hashmap() = delete;
 
         constexpr Hashmap(size_t initial_bucket_count, size_t initial_bucket_capacity) :
-            m_buckets(initial_bucket_count, false), m_colliding_key_storage((size_t)4, false), m_size(0)
+            m_buckets(Vector<Buffer<HashmapRecord<TKey, TValue>>>::create_with_capacity(initial_bucket_count)), m_colliding_key_storage(Vector<Pair<Bitset<512>, Buffer<HashmapRecord<TKey, TValue>>>>::create_with_capacity(4)), m_size(0)
         {
             for (size_t i = 0; i < initial_bucket_count; ++i)
             {
@@ -231,7 +231,7 @@ namespace neo
         }
 
         constexpr Hashmap(Hashmap const& other) :
-            m_buckets(other.m_buckets.capacity(), false), m_colliding_key_storage(other.m_colliding_key_storage.capacity(), false), m_size(other.m_size)
+            m_buckets(Vector<Buffer<HashmapRecord<TKey, TValue>>>::create_with_capacity(other.m_buckets.capacity())), m_colliding_key_storage(Vector<Pair<Bitset<512>, Buffer<HashmapRecord<TKey, TValue>>>>::create_with_capacity(other.m_colliding_key_storage.capacity())), m_size(other.m_size)
         {
             for (auto& i : other)
                 insert(i.m_key, i.m_value);

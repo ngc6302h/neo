@@ -26,8 +26,9 @@ namespace neo
     {
     public:
         explicit MemoryStream(size_t initial_size) :
-            m_backing(initial_size, true), m_read_pos(), m_write_pos()
+            m_backing(Vector<u8>::create_with_capacity(initial_size)), m_read_pos(), m_write_pos()
         {
+            m_backing.change_size(initial_size);
         }
 
         virtual size_t read(Span<u8>& to) override
@@ -40,7 +41,8 @@ namespace neo
 
         virtual void write(Span<u8> const& from) override
         {
-            m_backing.append(from);
+            for (size_t i = 0; i < from.size(); i++)
+                m_backing.append(from[i]);
             m_write_pos += from.size();
         }
 

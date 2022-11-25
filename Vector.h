@@ -26,671 +26,378 @@
 #include "Types.h"
 #include "Concepts.h"
 #include "New.h"
+#include "SmartPtr.h"
+#include "Memory.h"
 
 namespace neo
 {
-    template<typename T, size_t InlineStorage = 0 /*, typename Allocator = neo::DefaultAllocator */>
-    class Vector : public IContainer<Vector, T>, public IterableExtensions<Vector<T, InlineStorage>, RemoveReferenceWrapper<T>>
-    {
-        template<typename, size_t>
-        friend class Vector;
 
+    namespace detail
+    {
+        template<typename T, size_t InlineStorage>
+        struct VectorInlineStorage
+        {
+            u8 m_untyped_inline_storage[InlineStorage * sizeof(T)];
+        };
+
+        template<typename T>
+        struct VectorInlineStorage<T, 0>
+        {
+        };
+    }
+
+    template<typename T>
+    class Vector : public IterableExtensions<Vector<T>, RemoveReferenceWrapper<T>>
+    {
     public:
+        using type = T;
         using iterator = Iterator<Vector>;
         using const_iterator = Iterator<const Vector>;
-        static constexpr size_t DEFAULT_SIZE { 16 };
-        static constexpr size_t InlineStorageSize = InlineStorage;
+        static constexpr size_t default_capacity { 16 };
 
-        constexpr Vector() :
-            m_capacity(DEFAULT_SIZE)
+        T* allocate_space(size_t capacity)
         {
-            allocate(DEFAULT_SIZE);
+            T* storage = (T*)MallocAllocator::allocate(capacity * sizeof(T));
+            ENSURE(storage != nullptr);
+            return storage;
+        }
+
+        Vector() :
+            m_capacity(default_capacity)
+        {
+            m_storage = allocate_space(default_capacity);
         }
 
         ~Vector()
         {
-            clean();
-            deallocate();
+            clear();
+            MallocAllocator::deallocate(m_storage);
+            m_storage = nullptr;
+            m_capacity = 0;
+            m_size = 0;
         }
 
-        explicit constexpr Vector(size_t initial_capacity, bool resize_to_capacity = false) :
-            m_capacity(initial_capacity), m_size(resize_to_capacity ? initial_capacity : 0)
+        template<ConvertibleTo<T>... items>
+        Vector(items&&... items_)
         {
-            VERIFY(initial_capacity > 0);
-            allocate(initial_capacity);
+            ensure_capacity(sizeof...(items));
+            (append(items_), ...);
         }
 
-        template<size_t OtherInlineSize>
-        constexpr Vector(Vector<T, OtherInlineSize> const& other)
+        Vector(Vector&& other)
         {
-            clean();
-            ensure_capacity(max(1UL, other.size()));
+            if (this == &other)
+                return;
 
-            if constexpr (InlineStorage != 0)
-            {
-                if (other.size() < InlineStorage)
-                {
-                    if constexpr (OtherInlineSize != 0)
-                    {
-                        Copy(other.size(), other.inline_storage(), inline_storage());
-                        if (other.size() > OtherInlineSize)
-                            Copy(other.size() - OtherInlineSize, other.m_data, inline_storage() + OtherInlineSize);
-                    }
-                    else
-                    {
-                        Copy(other.size(), other.m_data, inline_storage());
-                    }
-                }
-                else
-                {
-                    if constexpr (OtherInlineSize != 0)
-                    {
-                        if constexpr (InlineStorage > OtherInlineSize)
-                        {
-                            Copy(OtherInlineSize, other.inline_storage(), inline_storage());
-                            if (other.m_size <= InlineStorage)
-                                Copy(other.m_size - OtherInlineSize, other.m_data, inline_storage() + OtherInlineSize);
-                            else
-                            {
-                                Copy(InlineStorage - OtherInlineSize, other.m_data, inline_storage() + OtherInlineSize);
-                                Copy(other.m_size - InlineStorage, other.m_data + InlineStorage - OtherInlineSize, m_data);
-                            }
-                        }
-                        else
-                        {
-                            Copy(InlineStorage, other.inline_storage(), inline_storage());
-                            if (other.m_size > OtherInlineSize)
-                            {
-                                Copy(OtherInlineSize - InlineStorage, other.inline_storage() + InlineStorage, m_data);
-                                Copy(other.m_size - OtherInlineSize, other.m_data, m_data + OtherInlineSize);
-                            }
-                            else
-                            {
-                                Copy(other.m_size - InlineStorage, other.inline_storage() + InlineStorage, m_data);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        Copy(InlineStorage, other.m_data, inline_storage());
-                        if (InlineStorage < other.m_size)
-                            Copy(other.m_size - InlineStorage, other.m_data + InlineStorage, m_data);
-                    }
-                }
-            }
-            else
-            {
-                if constexpr (OtherInlineSize != 0)
-                {
-                    Copy(min(other.m_size, OtherInlineSize), other.inline_storage(), m_data);
-                    if (other.m_size > OtherInlineSize)
-                        Copy(other.m_size - OtherInlineSize, other.m_data, m_data + OtherInlineSize);
-                }
-                else
-                {
-                    Copy(other.m_size, other.m_data, m_data);
-                }
-            }
+            clear();
+
+            m_storage = other.m_storage;
+            other.m_storage = nullptr;
             m_size = other.m_size;
-        }
-
-        template<size_t OtherInlineSize>
-        constexpr Vector(Vector<T, OtherInlineSize>&& other)
-        {
-            clean();
-            ensure_capacity(max(1UL, other.size()));
-
-            if (m_size != 0)
-            {
-                if constexpr (InlineStorage != 0)
-                {
-                    if (other.size() < InlineStorage)
-                    {
-                        if constexpr (OtherInlineSize != 0)
-                        {
-                            MoveOrCopy(other.size(), other.inline_storage(), inline_storage());
-                            if (other.size() > OtherInlineSize)
-                                MoveOrCopy(other.size() - OtherInlineSize, other.m_data,
-                                    inline_storage() + OtherInlineSize);
-                        }
-                        else
-                        {
-                            MoveOrCopy(other.size(), other.m_data, inline_storage());
-                        }
-                    }
-                    else
-                    {
-                        if constexpr (OtherInlineSize != 0)
-                        {
-                            if constexpr (InlineStorage > OtherInlineSize)
-                            {
-                                MoveOrCopy(OtherInlineSize, other.inline_storage(), inline_storage());
-                                if (other.m_size < InlineStorage)
-                                    MoveOrCopy(other.m_size - OtherInlineSize, other.m_data,
-                                        inline_storage() + OtherInlineSize);
-                                else
-                                {
-                                    MoveOrCopy(InlineStorage - OtherInlineSize, other.m_data,
-                                        inline_storage() + OtherInlineSize);
-                                    MoveOrCopy(other.m_size - InlineStorage,
-                                        other.m_data + InlineStorage - OtherInlineSize, m_data);
-                                }
-                            }
-                            else
-                            {
-                                MoveOrCopy(InlineStorage, other.inline_storage(), inline_storage());
-                                if (other.m_size > OtherInlineSize)
-                                {
-                                    MoveOrCopy(OtherInlineSize - InlineStorage, other.inline_storage() + InlineStorage,
-                                        m_data);
-                                    MoveOrCopy(other.m_size - OtherInlineSize, other.m_data, m_data + OtherInlineSize);
-                                }
-                                else
-                                {
-                                    MoveOrCopy(other.m_size - InlineStorage, other.inline_storage() + InlineStorage,
-                                        m_data);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            MoveOrCopy(InlineStorage, other.m_data, inline_storage());
-                            if (InlineStorage < other.m_size)
-                                MoveOrCopy(other.m_size - InlineStorage, other.m_data + InlineStorage,
-                                    m_data + InlineStorage);
-                        }
-                    }
-                }
-                else
-                {
-                    if constexpr (OtherInlineSize != 0)
-                    {
-                        MoveOrCopy(min(OtherInlineSize, other.m_size), other.inline_storage(), m_data);
-                        if (other.m_size > OtherInlineSize)
-                            MoveOrCopy(other.m_size - OtherInlineSize, other.m_data, m_data + OtherInlineSize);
-                    }
-                    else
-                    {
-                        MoveOrCopy(other.m_size, other.m_data, m_data);
-                    }
-                }
-            }
-            m_size = other.m_size;
-            other.m_data = nullptr;
             other.m_size = 0;
+            m_capacity = other.m_capacity;
             other.m_capacity = 0;
         }
 
-        /*
-        constexpr Vector(Vector const& other)
+        Vector(Vector const& other)
         {
-            ensure_capacity(max(1UL, other.m_size));
+            if (this == &other)
+                return;
+
+            clear();
+            ensure_capacity(other.m_capacity);
+
             m_size = other.m_size;
-            if constexpr (InlineStorage != 0)
-            {
-                Copy(other.m_size, other.m_inline_storage, m_inline_storage);
-                if (other.m_size > InlineStorage)
-                    Copy(other.m_size - InlineStorage, other.m_data, m_data);
-            }
-            else
-            {
-                Copy(other.m_size, other.m_data, m_data);
-            }
+            m_capacity = other.m_capacity;
+
+            for (size_t i = 0; i < m_size; i++)
+                m_storage[i] = other.m_storage[i];
         }
 
-        constexpr Vector(Vector&& other) :
-            m_data(other.m_data), m_capacity(other.m_capacity), m_size(other.m_size)
+        Vector& operator=(Vector&& other)
         {
-            other.m_capacity = 0;
-            other.m_size = 0;
-            other.m_data = nullptr;
-        }
-         */
-
-        explicit constexpr Vector(Span<T> const& other) :
-            m_capacity(other.size()), m_size(other.size())
-        {
-            clean();
-            ensure_capacity(max(1UL, other.size()));
-            Copy(other.size(), other.data(), m_data);
-            m_size = other.size();
-        }
-
-    private:
-        template<size_t ItemsLeft, typename TFirst, typename... TRest>
-        constexpr void initializer_list_copy_helper(size_t index, TFirst&& first, TRest&&... rest)
-        {
-            if constexpr (ItemsLeft != 0)
-            {
-                if constexpr (InlineStorage != 0)
-                {
-                    if (index < InlineStorage)
-                        new (inline_storage() + index) T(first);
-                    else
-                        new (m_data + index - InlineStorage) T(first);
-                }
-                else
-                    new (m_data + index) T(first);
-                if constexpr (ItemsLeft - 1 != 0)
-                    initializer_list_copy_helper<ItemsLeft - 1, TRest...>(index + 1, forward<TRest>(rest)...);
-            }
-        }
-
-    public:
-        template<typename... Ts>
-        explicit constexpr Vector(Ts&&... items) :
-            m_capacity(sizeof...(Ts)), m_size(sizeof...(Ts))
-        {
-            allocate(sizeof...(items));
-            initializer_list_copy_helper<sizeof...(Ts), Ts...>(0, forward<Ts>(items)...);
-        }
-
-        template<size_t OtherInlineSize = 0>
-        constexpr Vector& operator=(Vector<T, OtherInlineSize> const& other)
-        {
-            if ((ptr_t)&other == (ptr_t)this)
+            if (this == &other)
                 return *this;
 
-            this->~Vector();
-            new (this) Vector(other);
+            clear();
+
+            m_storage = other.m_storage;
+            other.m_storage = nullptr;
+            m_size = other.m_size;
+            other.m_size = 0;
+            m_capacity = other.m_capacity;
+            other.m_capacity = 0;
 
             return *this;
         }
 
-        template<size_t OtherInlineSize = 0>
-        constexpr Vector& operator=(Vector<T, OtherInlineSize>&& other)
+        Vector& operator=(Vector const& other)
         {
-            if ((ptr_t)&other == (ptr_t)this)
+            if (this == &other)
                 return *this;
 
-            this->~Vector();
-            new (this) Vector(std::move(other));
+            clear();
+            ensure_capacity(other.m_capacity);
+
+            m_size = other.m_size;
+            m_capacity = other.m_capacity;
+
+            for (size_t i = 0; i < m_size; i++)
+                m_storage[i] = other.m_storage[i];
 
             return *this;
         }
 
-        template<typename TT>
-        requires Same<T, TT> || BaseOf<Naked<T>, Naked<TT>>
-        constexpr void append(TT&& e)
+        void clear()
         {
-            ensure_capacity(m_size + 1);
-            if constexpr (InlineStorage != 0)
-            {
-                if (m_size < InlineStorage)
-                    new (&inline_storage()[m_size++]) T { forward<TT>(e) };
-                else
-                    new (&m_data[m_size++ - InlineStorage]) T { forward<TT>(e) };
-            }
-            else
-            {
-                new (&m_data[m_size++]) T { forward<TT>(e) };
-            }
+            for (size_t i = m_size; i-- > 0;)
+                destroy_at(i);
         }
 
-        constexpr void append(Span<T>&& items)
+        T& operator[](size_t index)
         {
-            ensure_capacity(m_size + items.size());
-
-            if constexpr (InlineStorage != 0)
-            {
-                if (m_size < InlineStorage)
-                {
-                    MoveOrCopy<T>(InlineStorage - m_size, items.data(), inline_storage() + m_size);
-                    MoveOrCopy<T>(items.size() - (InlineStorage - m_size), items.data() + InlineStorage - m_size, m_data + m_size);
-                }
-                else
-                {
-                    MoveOrCopy<T>(items.size(), items.data(), m_data + m_size - InlineStorage);
-                }
-            }
-            else
-            {
-                MoveOrCopy<T>(items.size(), items.data(), m_data + m_size);
-            }
-            m_size += items.size();
+            return m_storage[index];
         }
 
-        constexpr void append(Span<T> const& items)
+        T const& operator[](size_t index) const
         {
-            ensure_capacity(m_size + items.size());
-
-            if constexpr (InlineStorage != 0)
-            {
-                if (m_size < InlineStorage)
-                {
-                    Copy<T>(InlineStorage - m_size, items.data(), inline_storage() + m_size);
-                    Copy<T>(items.size() - (InlineStorage - m_size), items.data() + InlineStorage - m_size, m_data + m_size);
-                }
-                else
-                {
-                    Copy<T>(items.size(), items.data(), m_data + m_size - InlineStorage);
-                }
-            }
-            else
-            {
-                Copy<T>(items.size(), items.data(), m_data + m_size);
-            }
-            m_size += items.size();
+            return m_storage[index];
         }
 
-        constexpr void resize(size_t new_size)
+        auto begin()
         {
-            ensure_capacity(new_size);
-            m_size = new_size;
+            return iterator { *this };
         }
 
-        constexpr void remove_at(size_t index)
+        auto end()
         {
-            VERIFY(index < m_size);
-            if (index != m_size - 1)
+            return iterator { *this, m_size };
+        }
+
+        auto begin() const
+        {
+            return const_iterator { *this };
+        }
+
+        auto end() const
+        {
+            return const_iterator { *this, m_size };
+        }
+
+        T* data()
+        {
+            return m_storage;
+        }
+
+        T const* data() const
+        {
+            return m_storage;
+        }
+
+        Span<T> span()
+        {
+            return { m_storage, m_size };
+        }
+
+        Span<const T> span() const
+        {
+            return { m_storage, m_size };
+        }
+
+        T& first()
+        {
+            VERIFY(m_size > 0);
+            return m_storage[0];
+        }
+
+        T const& first() const
+        {
+            VERIFY(m_size > 0);
+            return m_storage[0];
+        }
+
+        T& last()
+        {
+            VERIFY(m_size > 0);
+            return m_storage[m_size - 1];
+        }
+
+        T& last() const
+        {
+            VERIFY(m_size > 0);
+            return m_storage[m_size - 1];
+        }
+
+        T take_first()
+        {
+            T first_ = std::move(first());
+            if (m_size > 1)
             {
-                if constexpr (InlineStorage != 0)
-                {
-                    if (index < InlineStorage)
-                    {
-                        MoveOrCopy(InlineStorage - index - 1, inline_storage() + index + 1, inline_storage() + index);
-                        inline_storage()[InlineStorage - 1] = m_data[0];
-                        MoveOrCopy(m_size - InlineStorage, m_data + 1, m_data);
-                    }
-                    else
-                    {
-                        MoveOrCopy(m_size - InlineStorage - 1, m_data + index - InlineStorage + 1, m_data + index - InlineStorage);
-                    }
-                }
-                else
-                    MoveOrCopy(m_size - index - 1, m_data + index + 1, m_data + index);
+                for (size_t i = 0; i < m_size - 1; i++)
+                    m_storage[i] = m_storage[i + 1];
             }
             m_size--;
+
+            return first_;
         }
 
-        template<typename... Args>
-        constexpr T& construct(Args... args)
+        T take_last()
         {
-            ensure_capacity(m_size + 1);
-            if (InlineStorage != 0)
-            {
-                if (m_size < InlineStorage)
-                {
-                    inline_storage()[m_size] = T { forward<Args>(args)... };
-                }
-                else
-                {
-                    m_data[m_size - InlineStorage] = T { forward<Args>(args)... };
-                }
-            }
-            else
-            {
-                m_data[m_size] = T { forward<Args>(args)... };
-            }
-            if (InlineStorage != 0)
-            {
-                if (m_size < InlineStorage)
-                    return inline_storage()[m_size++];
-            }
-            return m_data[m_size++];
+            T last_ = std::move(last());
+            m_size--;
+            return last_;
         }
 
-        [[nodiscard]] constexpr size_t size() const
+        size_t size() const
         {
             return m_size;
         }
 
-        [[nodiscard]] constexpr size_t capacity() const
-        {
-            return m_capacity;
-        }
-
-        [[nodiscard]] constexpr bool is_empty() const
+        bool is_empty() const
         {
             return m_size == 0;
         }
 
-        constexpr void change_capacity(size_t new_capacity)
+        size_t capacity() const
         {
-            VERIFY(new_capacity > 0);
-
-            if constexpr (InlineStorage != 0)
-            {
-                if (new_capacity < InlineStorage)
-                    return;
-            }
-
-            T* new_buf = (T*)__builtin_calloc(new_capacity - InlineStorage, sizeof(T));
-
-            if (m_data != nullptr)
-            {
-                MoveOrCopy(m_size - InlineStorage, m_data, new_buf);
-                clean();
-                deallocate();
-            }
-            m_data = new_buf;
-            m_capacity = new_capacity;
+            return m_capacity;
         }
 
-        constexpr void ensure_capacity(size_t needed_capacity)
-        {
-            VERIFY(needed_capacity > 0);
-            if constexpr (InlineStorage != 0)
-            {
-                if (needed_capacity <= InlineStorage)
-                    return;
-            }
-            if (m_capacity < needed_capacity)
-            {
-                change_capacity(needed_capacity * 2);
-            }
-        }
-
-        [[nodiscard]] constexpr T& at(size_t index)
+        void destroy_at(size_t index)
         {
             VERIFY(index < m_size);
-            if constexpr (InlineStorage != 0)
+            if (m_size > 1)
             {
-                if (index < InlineStorage)
-                    return inline_storage()[index];
-            }
-            return m_data[index - InlineStorage];
-        }
-
-        [[nodiscard]] constexpr const T& at(size_t index) const
-        {
-            VERIFY(index < m_size);
-            if constexpr (InlineStorage != 0)
-            {
-                if (index < InlineStorage)
-                    return inline_storage()[index];
-            }
-            return m_data[index - InlineStorage];
-        }
-
-        [[nodiscard]] constexpr const T& first() const
-        {
-            return at(0);
-        }
-
-        [[nodiscard]] constexpr const T& last() const
-        {
-            return at(m_size - 1);
-        }
-
-        [[nodiscard]] constexpr T& first()
-        {
-            return at(0);
-        }
-
-        [[nodiscard]] constexpr T& last()
-        {
-            return at(m_size - 1);
-        }
-
-        constexpr T take_first()
-        {
-            T value = std::move(first());
-            m_size--;
-            if constexpr (InlineStorage == 0)
-            {
-                if (m_size < InlineStorage)
-                {
-                    MoveOrCopy(m_size, inline_storage() + 1, inline_storage());
-                }
-                else
-                {
-                    MoveOrCopy(InlineStorage - 1, inline_storage() + 1, inline_storage());
-                    inline_storage()[InlineStorage - 1] = m_data[0];
-                    MoveOrCopy(m_size - InlineStorage, m_data + 1, m_data);
-                }
+                for (size_t i = index; i < m_size - 1; i++)
+                    m_storage[index] = std::move(m_storage[i + 1]);
             }
             else
             {
-                MoveOrCopy(m_size, m_data + 1, m_data);
+                m_storage[index].~T();
             }
-            return value;
-        }
-
-        constexpr T take_last()
-        {
-            T value = std::move(last());
-            last().~T();
             m_size--;
-            return value;
         }
 
-        [[nodiscard]] constexpr T& operator[](size_t index)
+        void append(T const& item)
         {
-            return at(index);
+            if (m_size + 1 > m_capacity)
+                ensure_capacity(m_capacity * 2);
+
+            m_storage[m_size] = item;
+            m_size++;
         }
 
-        [[nodiscard]] constexpr const T& operator[](size_t index) const
+        void append(T&& item)
         {
-            return at(index);
+            if (m_size + 1 > m_capacity)
+                ensure_capacity(m_capacity * 2);
+
+            m_storage[m_size] = std::move(item);
+            m_size++;
         }
 
-        template<typename TOtherVector>
-        [[nodiscard]] constexpr bool operator==(TOtherVector const& other)
+        template<typename... TArgs>
+        T& construct(TArgs&&... args)
         {
-            if (size() != other.size())
+            append(T { forward<TArgs>(args)... });
+            return last();
+        }
+
+        T& at(size_t index)
+        {
+            return (*this)[index];
+        }
+
+        T const& at(size_t index) const
+        {
+            return (*this)[index];
+        }
+
+        void change_capacity(size_t new_capacity)
+        {
+            T* new_storage = allocate_space(new_capacity);
+            for (size_t i = 0; i < m_size; i++)
+                new_storage[i] = std::move(m_storage[i]);
+            MallocAllocator::deallocate(m_storage);
+            m_storage = new_storage;
+        }
+
+        void ensure_capacity(size_t needed_capacity)
+        {
+            if (m_capacity < needed_capacity)
+                change_capacity(needed_capacity);
+        }
+
+        void change_size(size_t needed_size)
+        {
+            if (needed_size < m_capacity)
+                ensure_capacity(needed_size);
+            m_size = needed_size;
+        }
+
+        bool operator==(Vector const& other) const
+        {
+            if (this == &other)
+                return true;
+
+            if (m_size != other.m_size)
                 return false;
 
-            if (size() == 0 && other.size() == 0)
-                return true;
-
-            if ((ptr_t)this == (ptr_t)&other)
-                return true;
-
-            auto this_begin = begin();
-            auto other_begin = other.begin();
-            while (*this_begin++ == *other_begin++)
+            for (size_t i = 0; i < m_size; i++)
             {
-                if (this_begin.is_end())
-                    return true;
+                if (m_storage[i] != other.m_storage[i])
+                    return false;
             }
 
-            return false;
+            return true;
         }
 
-        [[nodiscard]] constexpr T* data() requires(InlineStorage == 0)
+        bool operator!=(Vector const& other) const
         {
-            return m_data;
+            return !((*this) != other);
         }
 
-        [[nodiscard]] constexpr const T* data() const requires(InlineStorage == 0)
+        template<IteratorLike TIterator>
+        static Vector from_range(TIterator begin, TIterator end)
         {
-            return m_data;
+            Vector vec;
+            while (begin != end)
+            {
+                vec.append(*begin++);
+            }
+
+            return vec;
         }
 
-        constexpr void shrink_to_fit()
+        static Vector create_with_capacity(size_t capacity)
         {
-            VERIFY(m_size > 0);
-            change_capacity(m_size);
-        }
-
-        constexpr void clear()
-        {
-            clean();
-            m_size = 0;
-        }
-
-        [[nodiscard]] constexpr Span<T> span() const requires(InlineStorage == 0)
-        {
-            return { m_data, m_size };
-        }
-
-        [[nodiscard]] constexpr const_iterator begin() const
-        {
-            return { *this };
-        }
-
-        [[nodiscard]] constexpr iterator begin()
-        {
-            return { *this };
-        }
-
-        [[nodiscard]] constexpr const_iterator end() const
-        {
-            return { *this, m_size };
-        }
-
-        [[nodiscard]] constexpr iterator end()
-        {
-            return { *this, m_size };
+            Vector vec;
+            vec.ensure_capacity(capacity);
+            return vec;
         }
 
     private:
-        constexpr void clean()
-        {
-            if constexpr (!IsTriviallyDestructible<T>)
-            {
-                if constexpr (InlineStorage != 0)
-                {
-                    for (size_t i = 0; i < (m_size < InlineStorage ? m_size : InlineStorage); ++i)
-                    {
-                        inline_storage()[i].~T();
-                    }
-
-                    if (m_size > InlineStorage)
-                    {
-                        for (size_t i = 0; i < m_size - InlineStorage; ++i)
-                            m_data[i].~T();
-                    }
-                }
-                else
-                {
-                    for (size_t i = 0; i < m_size; ++i)
-                        m_data[i].~T();
-                }
-            }
-        }
-
-        // size is number of T elements
-        constexpr void allocate(size_t size)
-        {
-            if (size <= InlineStorage)
-                return;
-            m_data = (T*)__builtin_calloc(size - InlineStorage, sizeof(T));
-        }
-
-        constexpr void deallocate()
-        {
-            __builtin_free(m_data);
-            m_data = nullptr;
-        }
-
-        T* inline_storage()
-        {
-            return reinterpret_cast<T*>(m_untyped_inline_storage);
-        }
-
-        T const* inline_storage() const
-        {
-            return reinterpret_cast<T const*>(m_untyped_inline_storage);
-        }
-
-        T* m_data { nullptr };
-        u8 m_untyped_inline_storage[InlineStorage * sizeof(T)];
-
-        size_t m_capacity { 0 };
+        T* m_storage { nullptr };
         size_t m_size { 0 };
+        size_t m_capacity { 0 };
     };
 
+    template<typename T>
+    using OwnPtrVector = Vector<OwnPtr<T>>;
+
+    template<typename T>
+    using NullableOwnPtrVector = Vector<NullableOwnPtr<T>>;
+
+    template<typename T>
+    using RefPtrVector = Vector<RefPtr<T>>;
+
+    template<typename T>
+    using NullableRefPtrVector = Vector<NullableRefPtr<T>>;
+
+    // todo: fix vector for smart ptrs
 }
+using neo::NullableOwnPtrVector;
+using neo::NullableRefPtrVector;
+using neo::OwnPtrVector;
+using neo::RefPtrVector;
 using neo::Vector;

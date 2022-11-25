@@ -43,7 +43,7 @@ namespace neo
     {
         struct MultilineStringIterator
         {
-            MultilineStringIterator(StringIterator iterator) :
+            MultilineStringIterator(StringViewIterator const& iterator) :
                 it(iterator), linepos()
             {
             }
@@ -113,7 +113,7 @@ namespace neo
         [[nodiscard]] Vector<GenericLexerToken> tokenize(String const& source)
         {
             Vector<GenericLexerToken> tokens;
-            MultilineStringIterator current = source.begin(), end = source.end(), tmp = source.begin();
+            MultilineStringIterator current = source.to_view().begin(), end = source.to_view().end(), tmp = source.to_view().begin();
             String chunk;
 
             while (current != end)
