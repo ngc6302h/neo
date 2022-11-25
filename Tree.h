@@ -257,31 +257,51 @@ namespace neo
                 if (begin == end || seq_begin == seq_end)
                     break;
             }
-            if (begin == end && seq_begin == seq_end) // if both reach the end, replace current value
-                node.data = data;
-            else if (seq_begin != seq_end && begin != end)
+            if (begin != end)
             {
-                Node* closest_match = nullptr;
-                for (Node& n : node.children)
+                if (seq_begin == seq_end)
                 {
-                    size_t length = 0;
-                    auto n_begin = n.sequence.begin();
-                    auto begin_ = begin;
-                    while (n_begin != n.sequence.end() && begin_ != end && *begin_ == *n_begin)
-                        length++;
-                    if (length > 0)
-                        closest_match = &n;
+                    Node* closest_match = nullptr;
+                    for (Node& n : node.children)
+                    {
+                        size_t length = 0;
+                        auto n_begin = n.sequence.begin();
+                        auto begin_ = begin;
+                        while (n_begin != n.sequence.end() && begin_ != end && *begin_ == *n_begin)
+                        {
+                            length++;
+                            begin_++;
+                            n_begin++;
+                        }
+                        if (length > 0)
+                        {
+                            closest_match = &n;
+                            break;
+                        }
+                    }
+                    if (closest_match != nullptr)
+                        insert_internal(*closest_match, begin, end, data);
+                    else
+                        node.children.template construct(Vector<sequence_type>::from_range(begin, end), data, Vector<Node> {});
                 }
-                if (closest_match != nullptr)
-                    insert_internal(*closest_match, begin, end, data);
-                else
+                else // (seq_begin != seq_end)
                 {
                     reorganize(node, seq_begin);
                     insert_internal(node, begin_copy, end, data);
                 }
             }
-            else
-                node.children.template construct(Vector<sequence_type>::from_range(begin, end), data, Vector<Node> {});
+            else // (begin == end)
+            {
+                if (seq_begin == seq_end)
+                {
+                    node.data = data;
+                }
+                else // (seq_begin != seq_end)
+                {
+                    reorganize(node, seq_begin);
+                    insert_internal(node, begin_copy, end, data);
+                }
+            }
         }
 
         Optional<TData> get_internal(Node const& node, TIterator begin, TIterator const& end) const
@@ -342,11 +362,14 @@ namespace neo
 
     private:
 
-        void debug_print_internal(Node& node, int depth)
+        void debug_print_internal(Node& node, size_t depth)
         {
-            __builtin_printf("%d ", depth);
+            __builtin_printf("%lu", depth);
+            for (size_t i = 0; i < depth; i++)
+                __builtin_printf("-");
             for (auto k : node.sequence)
                 __builtin_printf("%c", k);
+            __builtin_printf(": %d", node.data.value_or(0));
             __builtin_printf("\n");
             for (auto& c : node.children)
                 debug_print_internal(c, depth + 1);
