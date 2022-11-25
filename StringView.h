@@ -31,6 +31,7 @@ namespace neo
     {
     public:
         using character_type = Utf32Char;
+        using type = character_type;
         using storage_type = char;
         using iterator = StringViewIterator;
 
@@ -161,7 +162,8 @@ namespace neo
     }
 
     template<typename T, typename TIterator>
-    constexpr T IString<T, TIterator>::substring(TIterator start) const
+    template<IteratorLike TIterator_>
+    constexpr T IString<T, TIterator>::substring(TIterator_ start) const
     {
         auto& o = static_cast<T const&>(*this);
         return T { start.ptr(), size_t(o.data() + o.byte_size() - start.ptr()) };
@@ -181,7 +183,8 @@ namespace neo
     }
 
     template<typename T, typename TIterator>
-    constexpr T IString<T, TIterator>::substring(const TIterator& start, const TIterator& end)
+    template<IteratorLike TIterator_>
+    constexpr T IString<T, TIterator>::substring(const TIterator_& start, const TIterator_& end)
     {
         VERIFY(!start.is_end());
         VERIFY(start.ptr() < end.ptr());
@@ -189,7 +192,8 @@ namespace neo
     }
 
     template<typename T, typename TIterator>
-    constexpr T IString<T, TIterator>::substring(TIterator start, size_t codepoint_length) const
+    template<IteratorLike TIterator_>
+    constexpr T IString<T, TIterator>::substring(TIterator_ start, size_t codepoint_length) const
     {
         VERIFY(codepoint_length <= length());
         VERIFY(codepoint_length != 0);

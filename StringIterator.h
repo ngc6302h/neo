@@ -22,6 +22,7 @@ namespace neo
 {
     using Utf32Char = u32;
 
+    template<typename TString>
     class StringIteratorContainer
     {
         friend class StringView;
@@ -30,8 +31,12 @@ namespace neo
     public:
 
         using type = Utf32Char;
+        using underlying_container_type = TString;
 
-        explicit constexpr StringIteratorContainer(const char* base, const char* end, const char* current) :
+        constexpr StringIteratorContainer(StringIteratorContainer const&) = default;
+        constexpr StringIteratorContainer& operator=(StringIteratorContainer const&) = default;
+
+        constexpr StringIteratorContainer(const char* base, const char* end, const char* current) :
             m_base(base),
             m_end(end),
             m_current(current)
@@ -120,8 +125,10 @@ namespace neo
         const char* m_current;
     };
 
-    using StringIterator = StringIteratorContainer;
-    using StringViewIterator = StringIteratorContainer;
+    class String;
+    using StringIterator = StringIteratorContainer<String>;
+    class StringView;
+    using StringViewIterator = StringIteratorContainer<StringView>;
 
 }
 using neo::StringIterator;

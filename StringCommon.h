@@ -40,10 +40,13 @@ namespace neo
         [[nodiscard]] constexpr TIterator end() const;
         [[nodiscard]] constexpr size_t length() const;
         [[nodiscard]] constexpr bool is_empty() const;
-        [[nodiscard]] constexpr T substring(TIterator start) const;
+        template<IteratorLike TIterator_>
+        [[nodiscard]] constexpr T substring(TIterator_ start) const;
         [[nodiscard]] constexpr T substring(size_t index_codepoint_start) const;
-        [[nodiscard]] static constexpr T substring(TIterator const& start, TIterator const& end);
-        [[nodiscard]] constexpr T substring(TIterator start, size_t codepoint_length) const;
+        template<IteratorLike TIterator_>
+        [[nodiscard]] static constexpr T substring(TIterator_ const& start, TIterator_ const& end);
+        template<IteratorLike TIterator_>
+        [[nodiscard]] constexpr T substring(TIterator_ start, size_t codepoint_length) const;
         [[nodiscard]] constexpr T substring(size_t codepoint_start, size_t codepoint_length) const;
         [[nodiscard]] Vector<T> split(Utf32Char by) const;
         [[nodiscard]] Vector<T> split(StringView const& by) const;
