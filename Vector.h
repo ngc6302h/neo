@@ -283,7 +283,8 @@ namespace neo
             if (m_size + 1 > m_capacity)
                 ensure_capacity(m_capacity * 2);
 
-            m_storage[m_size] = item;
+            new (&m_storage[m_size]) T { item };
+
             m_size++;
         }
 
@@ -292,7 +293,7 @@ namespace neo
             if (m_size + 1 > m_capacity)
                 ensure_capacity(m_capacity * 2);
 
-            m_storage[m_size] = std::move(item);
+            new (&m_storage[m_size]) T { std::move(item) };
             m_size++;
         }
 
