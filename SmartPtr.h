@@ -317,7 +317,9 @@ namespace neo
                 ENSURE(m_data != nullptr);
             }
             else
+            {
                 VERIFY(m_data != nullptr);
+            }
             return *m_data;
         }
 
@@ -328,7 +330,9 @@ namespace neo
                 ENSURE(m_data != nullptr);
             }
             else
+            {
                 VERIFY(m_data != nullptr);
+            }
             return *m_data;
         }
 
@@ -349,7 +353,9 @@ namespace neo
                 ENSURE(m_data != nullptr);
             }
             else
+            {
                 VERIFY(m_data != nullptr);
+            }
             return m_data;
         }
 
@@ -360,7 +366,9 @@ namespace neo
                 ENSURE(m_data != nullptr);
             }
             else
+            {
                 VERIFY(m_data != nullptr);
+            }
             return m_data;
         }
 
