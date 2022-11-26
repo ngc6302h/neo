@@ -368,40 +368,32 @@ namespace neo
         }
 
     public:
-        Optional<ReferenceWrapper<const TData>> get(TIterator begin, TIterator const& end) const
+        Optional<const ReferenceWrapper<TData>> get(TIterator begin, TIterator const& end) const
         {
             Node const* maybe_node = get_internal(m_root, begin, end);
             if (maybe_node && maybe_node->data.has_value())
-                return Optional<ReferenceWrapper<const TData>>(maybe_node->data.value());
+                return { ref(maybe_node->data.value()) };
             else
-                return Optional<ReferenceWrapper<const TData>> {};
+                return {};
         }
 
-        Optional<ReferenceWrapper<const TData>> get(auto const& sequence) const
+        Optional<const ReferenceWrapper<TData>> get(auto const& sequence) const
         {
-            Node const* maybe_node = get_internal(m_root, sequence.begin(), sequence.end());
-            if (maybe_node && maybe_node->data.has_value())
-                return Optional<ReferenceWrapper<const TData>>(maybe_node->data.value());
-            else
-                return Optional<ReferenceWrapper<const TData>> {};
+            return get(sequence.begin(), sequence.end());
         }
 
         Optional<ReferenceWrapper<TData>> get(TIterator begin, TIterator const& end)
         {
             Node* maybe_node = const_cast<Node*>(get_internal(m_root, begin, end));
             if (maybe_node && maybe_node->data.has_value())
-                return Optional<ReferenceWrapper<TData>>(maybe_node->data.value());
+                return { ref(maybe_node->data.value()) };
             else
-                return Optional<ReferenceWrapper<TData>> {};
+                return {};
         }
 
         Optional<ReferenceWrapper<TData>> get(auto const& sequence)
         {
-            Node* maybe_node = const_cast<Node*>(get_internal(m_root, sequence.begin(), sequence.end()));
-            if (maybe_node && maybe_node->data.has_value())
-                return Optional<ReferenceWrapper<TData>>(maybe_node->data.value());
-            else
-                return Optional<ReferenceWrapper<TData>> {};
+            return get(sequence.begin(), sequence.end());
         }
 
         Node const* get_node(auto const& sequence) const
