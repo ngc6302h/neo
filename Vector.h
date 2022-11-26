@@ -372,7 +372,7 @@ namespace neo
         static Vector create_with_capacity(size_t capacity)
         {
             Vector vec;
-            vec.ensure_capacity(capacity);
+            vec.change_capacity(capacity);
             return vec;
         }
 
