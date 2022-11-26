@@ -1,18 +1,18 @@
 /*
-    Copyright (C) 2022  Iori Torres (shortanemoia@protonmail.com)
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
+Copyright (C) 2022  Iori Torres (shortanemoia@protonmail.com)
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 
 #pragma once
 #include "Assert.h"
@@ -62,23 +62,16 @@ namespace neo
             }
         }
 
-    private:
-        template<size_t ItemsLeft, typename TFirst, typename... TRest>
-        constexpr void initializer_list_copy_helper(size_t index, TFirst&& first, TRest&&... rest)
+    public:
+        constexpr Array() requires(Size == 0)
         {
-            if constexpr (ItemsLeft != 0)
-            {
-                m_storage[index] = forward<TFirst>(first);
-                if constexpr (ItemsLeft - 1 != 0)
-                    initializer_list_copy_helper<ItemsLeft - 1, TRest...>(index + 1, forward<TRest>(rest)...);
-            }
         }
 
-    public:
         template<typename... Ts>
         requires(IsSameValue<Size, sizeof...(Ts)>) constexpr Array(Ts&&... items)
         {
-            initializer_list_copy_helper<sizeof...(Ts), Ts...>(0, forward<Ts>(items)...);
+            size_t i = 0;
+            ((m_storage[i++] = items), ...);
         }
 
         constexpr explicit Array(T const& repeat)
@@ -180,7 +173,7 @@ namespace neo
 
         union
         {
-            u8 m_storage_untyped[sizeof(T) * Size] = { 0 };
+            u8 m_storage_untyped[sizeof(T) * Size] {};
             T m_storage[Size];
         };
     };
