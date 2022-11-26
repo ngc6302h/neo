@@ -31,12 +31,12 @@ namespace neo
         constexpr Aligned(T value) :
             m_value(value)
         {
-            VERIFY(value % Alignment == 0);
+            VERIFY((ptr_t)value % (ptr_t)Alignment == 0);
         }
 
         constexpr Aligned& operator=(T value)
         {
-            VERIFY(value % Alignment == 0);
+            VERIFY((ptr_t)value % (ptr_t)Alignment == 0);
             m_value = value;
         }
 
@@ -45,7 +45,7 @@ namespace neo
             if constexpr (Pointer<T>)
             {
                 T v = reinterpret_cast<T>(__builtin_assume_aligned(m_value, Alignment));
-                __builtin_assume(reinterpret_cast<size_t>(v) % Alignment == 0);
+                __builtin_assume(static_cast<ptr_t>(v) % Alignment == 0);
                 return v;
             }
             else
@@ -60,7 +60,7 @@ namespace neo
             if constexpr (Pointer<T>)
             {
                 T v = reinterpret_cast<T>(__builtin_assume_aligned(m_value, Alignment));
-                __builtin_assume(reinterpret_cast<size_t>(v) % Alignment == 0);
+                __builtin_assume(static_cast<ptr_t>(v) % Alignment == 0);
                 return v;
             }
             else
