@@ -208,6 +208,11 @@ namespace neo
     template<class T>
     constexpr bool IsLvalueReference<T&> = true;
 
+    template<typename T>
+    constexpr bool IsConstLvalueReference = false;
+    template<typename T>
+    constexpr bool IsConstLvalueReference<T const&> = true;
+
     template<class T>
     constexpr bool IsRvalueReference = false;
     template<class T>
@@ -651,6 +656,7 @@ using neo::IdentityType;
 using neo::IndexOfType;
 using neo::IsBoolean;
 using neo::IsCharacter;
+using neo::IsConstLvalueReference;
 using neo::IsFloatingPoint;
 using neo::IsFundamental;
 using neo::IsIntegral;
