@@ -165,6 +165,9 @@ namespace neo
 
     template<typename T>
     constexpr ReferenceWrapper<T> ref(T& obj) { return ReferenceWrapper(obj); }
+
+    template<typename T>
+    constexpr ReferenceWrapper<T> ref(T const& obj) { return ReferenceWrapper(obj); }
 }
 using nullptr_t = decltype(nullptr);
 
