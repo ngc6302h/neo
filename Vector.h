@@ -151,7 +151,7 @@ namespace neo
         void clear()
         {
             for (size_t i = m_size; i-- > 0;)
-                destroy_at(i);
+                remove_at(i);
         }
 
         T& operator[](size_t index)
@@ -263,7 +263,7 @@ namespace neo
             return m_capacity;
         }
 
-        void destroy_at(size_t index)
+        void remove_at(size_t index)
         {
             VERIFY(index < m_size);
             if (m_size > 1)
