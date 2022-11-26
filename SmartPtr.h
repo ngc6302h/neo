@@ -121,7 +121,7 @@ namespace neo
             return m_data;
         }
 
-        [[nodiscard]] constexpr OwnPtrImpl<T, false> release_nonnull()
+        [[nodiscard]] constexpr OwnPtrImpl<T, false> release_nonnull() requires(Nullable)
         {
             ENSURE(m_data != nullptr);
             auto* data = m_data;
@@ -129,8 +129,7 @@ namespace neo
             return OwnPtrImpl<T, false>(data);
         }
 
-    private:
-        OwnPtrImpl() = default;
+    private : OwnPtrImpl() = default;
 
         T* m_data { nullptr };
     };
