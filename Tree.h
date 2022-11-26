@@ -189,9 +189,31 @@ namespace neo
 
     namespace detail
     {
+
+        template<typename TNode>
+        class NodeIteratorContainer
+        {
+            constexpr auto& operator*()
+            {
+                return m_node->data;
+            }
+
+            constexpr auto const& operator*() const
+            {
+                return m_node->data;
+            }
+
+            constexpr NodeIteratorContainer& operator++()
+            {
+            }
+
+            TNode* m_node;
+        };
+
         template<typename TIterator, typename TData>
         struct Node
         {
+            using iterator = Iterator<Node>;
             Node() = default;
 
             Node(Node&& other) :
@@ -214,6 +236,16 @@ namespace neo
                 children = std::move(other.children);
 
                 return *this;
+            }
+
+            auto begin()
+            {
+                return iterator { *this };
+            }
+
+            auto end()
+            {
+                return iterator { *this };
             }
 
             Vector<typename TIterator::type> sequence;
@@ -310,10 +342,10 @@ namespace neo
             }
         }
 
-        Optional<TData> get_internal(Node const& node, TIterator begin, TIterator const& end) const
+        Node const* get_internal(Node const& node, TIterator begin, TIterator const& end) const
         {
             if (begin == end)
-                return node.data;
+                return &node;
 
             for (auto& child : node.children)
             {
@@ -328,7 +360,7 @@ namespace neo
                     return get_internal(child, begin, end);
                 }
             }
-            return {};
+            return nullptr;
         }
 
         void remove_internal(Node& node, TIterator begin, TIterator const& end)
@@ -336,14 +368,60 @@ namespace neo
         }
 
     public:
-        Optional<TData> get(TIterator begin, TIterator const& end) const
+        Optional<ReferenceWrapper<const TData>> get(TIterator begin, TIterator const& end) const
+        {
+            Node const* maybe_node = get_internal(m_root, begin, end);
+            if (maybe_node && maybe_node->data.has_value())
+                return Optional<ReferenceWrapper<const TData>>(maybe_node->data.value());
+            else
+                return Optional<ReferenceWrapper<const TData>> {};
+        }
+
+        Optional<ReferenceWrapper<const TData>> get(auto const& sequence) const
+        {
+            Node const* maybe_node = get_internal(m_root, sequence.begin(), sequence.end());
+            if (maybe_node && maybe_node->data.has_value())
+                return Optional<ReferenceWrapper<const TData>>(maybe_node->data.value());
+            else
+                return Optional<ReferenceWrapper<const TData>> {};
+        }
+
+        Optional<ReferenceWrapper<TData>> get(TIterator begin, TIterator const& end)
+        {
+            Node* maybe_node = const_cast<Node*>(get_internal(m_root, begin, end));
+            if (maybe_node && maybe_node->data.has_value())
+                return Optional<ReferenceWrapper<TData>>(maybe_node->data.value());
+            else
+                return Optional<ReferenceWrapper<TData>> {};
+        }
+
+        Optional<ReferenceWrapper<TData>> get(auto const& sequence)
+        {
+            Node* maybe_node = const_cast<Node*>(get_internal(m_root, sequence.begin(), sequence.end()));
+            if (maybe_node && maybe_node->data.has_value())
+                return Optional<ReferenceWrapper<TData>>(maybe_node->data.value());
+            else
+                return Optional<ReferenceWrapper<TData>> {};
+        }
+
+        Node const* get_node(auto const& sequence) const
+        {
+            return get_internal(m_root, sequence.begin(), sequence.end());
+        }
+
+        Node* get_node(TIterator begin, TIterator const& end) const
         {
             return get_internal(m_root, begin, end);
         }
 
-        Optional<TData> get(auto const& sequence) const
+        Node* get_node(auto const& sequence)
         {
-            return get_internal(m_root, sequence.begin(), sequence.end());
+            return const_cast<Node*>(get_internal(m_root, sequence.begin(), sequence.end()));
+        }
+
+        Node* get_node(TIterator begin, TIterator const& end)
+        {
+            return const_cast<Node*>(get_internal(m_root, begin, end));
         }
 
         void insert(TIterator begin, TIterator const& end, TData const& data)
@@ -368,24 +446,26 @@ namespace neo
 
     private:
 
-        void debug_print_internal(Node& node, size_t depth)
+        template<typename SequencePrinter, typename DataPrinter>
+        void debug_print_internal(Node& node, SequencePrinter sequencePrinter, DataPrinter dataPrinter, size_t depth)
         {
-            __builtin_printf("%lu", depth);
+            __builtin_printf("%lu ", depth);
             for (size_t i = 0; i < depth; i++)
                 __builtin_printf("-");
-            for (auto k : node.sequence)
-                __builtin_printf("%c", k);
-            __builtin_printf(": %d", node.data.value_or(0));
+            sequencePrinter(node.sequence);
+            __builtin_printf(":");
+            dataPrinter(node.data);
             __builtin_printf("\n");
             for (auto& c : node.children)
-                debug_print_internal(c, depth + 1);
+                debug_print_internal(c, sequencePrinter, dataPrinter, depth + 1);
         }
 
     public:
-        void debug_print()
+        template<typename SequencePrinter, typename DataPrinter>
+        void debug_print(SequencePrinter sequencePrinter, DataPrinter dataPrinter)
         {
             __builtin_printf("-----\n");
-            debug_print_internal(m_root, 0);
+            debug_print_internal(m_root, sequencePrinter, dataPrinter, 0);
             __builtin_printf("-----\n");
         }
 
