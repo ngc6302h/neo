@@ -188,7 +188,7 @@ namespace neo
 
     namespace detail
     {
-        template<typename TIterator, typename TData, size_t InlineStorage>
+        template<typename TIterator, typename TData>
         struct Node
         {
             Node() = default;
@@ -221,10 +221,10 @@ namespace neo
         };
     }
 
-    template<typename TIterator, typename TData, size_t InlineStorage = 0>
+    template<typename TIterator, typename TData>
     class RadixTree
     {
-        using Node = detail::Node<TIterator, TData, InlineStorage>;
+        using Node = detail::Node<TIterator, TData>;
         using sequence_type = typename TIterator::type;
 
     public:
