@@ -203,7 +203,7 @@ namespace neo
                 return *this;
 
             this->~Optional();
-            new (this) Optional(move(other));
+            new (this) Optional(std::move(other));
 
             return *this;
         }
@@ -301,7 +301,7 @@ namespace neo
                 return *this;
 
             this->~Optional();
-            new (this) Optional(move(other));
+            new (this) Optional(std::move(other));
 
             return *this;
         }
@@ -377,7 +377,7 @@ namespace neo
                 return *this;
 
             this->~Optional();
-            new (this) Optional(move(other));
+            new (this) Optional(std::move(other));
 
             return *this;
         }
@@ -470,7 +470,7 @@ namespace neo
                 return *this;
 
             this->~Optional();
-            new (this) Optional(move(other));
+            new (this) Optional(std::move(other));
 
             return *this;
         }
