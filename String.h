@@ -221,5 +221,7 @@ namespace neo
 }
 using neo::String;
 using neo::operator""_s;
+#ifndef NEO_DO_NOT_DEFINE_STD
 using neo::operator""s;
+#endif
 using neo::StringHasher;

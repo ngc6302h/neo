@@ -482,4 +482,6 @@ namespace neo
 }
 using neo::StringView;
 using neo::operator""_sv;
+#ifndef NEO_DO_NOT_DEFINE_STD
 using neo::operator""sv;
+#endif
