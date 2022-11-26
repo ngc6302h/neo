@@ -25,7 +25,7 @@ namespace neo
     {
     public:
         explicit CircularBuffer(size_t capacity) :
-            m_buffer(capacity, true)
+            m_buffer(Vector<T>::create_with_capacity(capacity))
         {
         }
 
@@ -39,7 +39,7 @@ namespace neo
         void enqueue(T&& value)
         {
             if (m_write_index == m_buffer.capacity() && m_read_index == 0)
-                m_buffer.resize(m_buffer.size() * 2);
+                m_buffer.change_size(m_buffer.size() * 2);
             m_buffer[m_write_index++] = std::move(value);
         }
 
