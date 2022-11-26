@@ -239,6 +239,38 @@ namespace neo
        }
    }
 
+   template<IteratorLike TIteratorA, IteratorLike TIteratorB>
+   constexpr bool sequence_same(TIteratorA a_begin, TIteratorA const& a_end, TIteratorB b_begin, TIteratorB const& b_end)
+   requires (EqualityComparable<decltype(*declval<TIteratorA>())>, EqualityComparable<decltype(*declval<TIteratorB>())>)
+   {
+       while(a_begin != a_end && b_begin != b_end)
+       {
+           if (*a_begin != *b_begin)
+               return false;
+           a_begin++;
+           b_begin++;
+       }
+       if ((a_begin == a_end && b_begin != b_end) || (a_begin != a_end && b_begin == b_end))
+           return false;
+       return true;
+   }
+
+   template<IteratorLike TIteratorA, IteratorLike TIteratorB>
+   constexpr bool sequence_starts_with(TIteratorA a_begin, TIteratorA const& a_end, TIteratorB subsequence_begin, TIteratorB const& subsequence_end)
+   requires (EqualityComparable<decltype(*declval<TIteratorA>())>, EqualityComparable<decltype(*declval<TIteratorB>())>)
+   {
+       while(a_begin != a_end && subsequence_begin != subsequence_end)
+       {
+           if (*a_begin != *subsequence_begin)
+               return false;
+           a_begin++;
+           subsequence_begin++;
+       }
+       if (subsequence_begin == subsequence_end)
+           return true;
+       return false;
+   }
+
    namespace detail
    {
        template<typename T>
@@ -534,7 +566,7 @@ namespace neo
    class LazyIteratorWrapper
    {
    public:
-       using type = ReturnType<TDereferenceFunc, typename TIterator::type>;
+       using type = ReturnType<TDereferenceFunc, typename TIterator::type&>;
        using iterator_type = TIterator;
        using underlying_container_type = typename TIterator::underlying_container_type;
 
@@ -570,7 +602,7 @@ namespace neo
            return copy;
        }
 
-       constexpr decltype(auto) operator*()
+       constexpr type operator*()
        {
            return m_dereference(*m_iterator);
        }
@@ -607,7 +639,7 @@ namespace neo
        class IndexingIteratorWrapper
        {
        public:
-           using type = typename TIterator::type;
+           using type = ReturnType<TDereferenceWithIndexFunc, size_t, typename TIterator::type&>;
            using iterator_type = TIterator;
            using underlying_container_type = typename TIterator::underlying_container_type;
 
@@ -646,7 +678,7 @@ namespace neo
                return copy;
            }
 
-           constexpr decltype(auto) operator*()
+           constexpr type operator*()
            {
                VERIFY(!is_end());
                return m_dereference(index(), *m_iterator);
@@ -810,6 +842,11 @@ namespace neo
            return neo::aggregate(begin(), end(), forward<TAggregatorFunc>(aggregator), initial_value);
        }
 
+       constexpr type aggregate(type initial_value = {}) requires (Addable<type>)
+       {
+           return neo::aggregate(begin(), end(), [](type& agg, type const& i) { agg = agg + i; }, initial_value);
+       }
+
        constexpr auto reverse()
        {
            return IterableCollection<detail::IteratorReverseWrapper<TIterator>>
@@ -848,11 +885,18 @@ namespace neo
            if (!predicate(*begin_initialized))
                increment(begin_initialized);
 
-
-           return IterableCollection<decltype(LazyIteratorWrapper { m_begin, m_end, default_dereference, increment, decrement })> {
-               LazyIteratorWrapper { begin_initialized, m_end, default_dereference, increment, decrement },
-               LazyIteratorWrapper { m_end, m_end, default_dereference, increment, decrement }
-           };
+           if constexpr (IsConstLvalueReference<decltype(*declval<TIterator>())>)
+           {
+               return IterableCollection<decltype(LazyIteratorWrapper { m_begin, m_end, default_dereference_constref, increment, decrement })> {
+                   LazyIteratorWrapper { begin_initialized, m_end, default_dereference_constref, increment, decrement },
+                       LazyIteratorWrapper { m_end, m_end, default_dereference_constref, increment, decrement }};
+           }
+           else
+           {
+               return IterableCollection<decltype(LazyIteratorWrapper { m_begin, m_end, default_dereference_ref, increment, decrement })> {
+                   LazyIteratorWrapper { begin_initialized, m_end, default_dereference_ref, increment, decrement },
+                       LazyIteratorWrapper { m_end, m_end, default_dereference_ref, increment, decrement }};
+           }
        }
 
        template<CallableWithReturnTypeNonVoid<type> TSelectorFunc>
@@ -921,7 +965,8 @@ namespace neo
 
    private:
        static constexpr auto identity = [](auto& v) constexpr { return v; };
-       static constexpr auto default_dereference = [](auto const& v) constexpr { return v; };
+       static constexpr auto default_dereference_constref = [](auto const& v) constexpr -> auto const&  { return v; };
+       static constexpr auto default_dereference_ref = [](auto& v) constexpr -> auto& { return v; };
        static constexpr auto default_increment = [](auto& v) constexpr -> auto& { return ++v; };
        static constexpr auto default_decrement = [](auto& v) constexpr -> auto& { return --v; };
 
@@ -975,3 +1020,5 @@ using neo::copy;
 using neo::starts_with;
 using neo::ends_with;
 using neo::IterableCollection;
+using neo::sequence_same;
+using neo::sequence_starts_with;
