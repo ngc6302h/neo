@@ -35,14 +35,14 @@ namespace neo
         using storage_type = char;
         using iterator = StringIterator;
 
-        constexpr String() = default;
-        constexpr ~String()
+        inline String() = default;
+        inline ~String()
         {
             delete[] m_buffer;
             m_buffer = nullptr;
         }
 
-        constexpr String(const String& other) :
+        inline String(const String& other) :
             m_byte_length(other.m_byte_length)
         {
             m_buffer = new char[other.m_byte_length + 1];
@@ -51,14 +51,14 @@ namespace neo
             __builtin_memcpy(m_buffer, other.m_buffer, other.m_byte_length);
         }
 
-        constexpr String(String&& other) :
+        inline String(String&& other) :
             m_buffer(other.m_buffer), m_byte_length(other.m_byte_length)
         {
             other.m_buffer = nullptr;
             other.m_byte_length = 0;
         }
 
-        constexpr String(const AsciiString& other) :
+        inline String(const AsciiString& other) :
             m_byte_length(other.length())
         {
             m_buffer = new char[other.length() + 1];
@@ -67,7 +67,7 @@ namespace neo
             __builtin_memcpy(m_buffer, other.m_buffer, other.length());
         }
 
-        constexpr String(AsciiString&& other) :
+        inline String(AsciiString&& other) :
             m_byte_length(other.length())
         {
             m_buffer = other.m_buffer;
@@ -76,7 +76,7 @@ namespace neo
             other.m_buffer = nullptr;
         }
 
-        constexpr String(const char* cstring)
+        inline String(const char* cstring)
         {
             size_t length = __builtin_strlen(cstring);
 
@@ -86,7 +86,7 @@ namespace neo
             __builtin_memcpy(m_buffer, cstring, length);
         }
 
-        constexpr String(const char* cstring, size_t length)
+        inline String(const char* cstring, size_t length)
         {
             size_t size = length;
 
@@ -96,7 +96,7 @@ namespace neo
             __builtin_memcpy(m_buffer, cstring, size);
         }
 
-        constexpr String(StringIterator begin, StringIterator end) :
+        inline String(StringIterator begin, StringIterator end) :
             m_byte_length((size_t)(end.m_current - begin.m_current))
         {
             VERIFY(begin.m_base == end.m_base);
@@ -104,7 +104,7 @@ namespace neo
             new (this) String(begin.m_current, (size_t)(end.m_current - begin.m_current));
         }
 
-        constexpr String(const StringView& other) :
+        inline String(const StringView& other) :
             m_byte_length(other.byte_size())
         {
             m_buffer = new char[other.byte_size() + 1];
@@ -112,17 +112,17 @@ namespace neo
             __builtin_memcpy(m_buffer, other.span().data(), other.byte_size());
         }
 
-        [[nodiscard]] constexpr StringView to_view() const
+        [[nodiscard]] inline StringView to_view() const
         {
             return { m_buffer, m_byte_length };
         }
 
-        constexpr operator StringView() const
+        inline operator StringView() const
         {
             return { m_buffer, m_byte_length };
         }
 
-        constexpr String& operator=(const String& other)
+        inline String& operator=(const String& other)
         {
             if (&other == this)
                 return *this;
@@ -133,7 +133,7 @@ namespace neo
             return *this;
         }
 
-        constexpr String& operator=(String&& other)
+        inline String& operator=(String&& other)
         {
             if (&other == this)
                 return *this;
@@ -145,17 +145,17 @@ namespace neo
         }
 
         // Size in bytes
-        [[nodiscard]] constexpr size_t byte_size() const
+        [[nodiscard]] inline size_t byte_size() const
         {
             return m_byte_length;
         }
 
-        [[nodiscard]] constexpr char* null_terminated_characters() const
+        [[nodiscard]] inline char* null_terminated_characters() const
         {
             return m_buffer;
         }
 
-        [[nodiscard]] constexpr storage_type* data() const
+        [[nodiscard]] inline storage_type* data() const
         {
             return m_buffer;
         }
@@ -165,14 +165,14 @@ namespace neo
         size_t m_byte_length { 0 };
     };
 
-    constexpr String operator+(StringView const& left, StringView const& right)
+    inline String operator+(StringView const& left, StringView const& right)
     {
         String sum(left.data(), left.byte_size() + right.byte_size());
         __builtin_memcpy(sum.data() + left.byte_size(), right.data(), right.byte_size());
         return sum;
     }
 
-    [[nodiscard]] constexpr String operator""_s(const char* cstring, size_t length)
+    [[nodiscard]] inline String operator""_s(const char* cstring, size_t length)
     {
         return { cstring, length };
     }
@@ -181,7 +181,7 @@ namespace neo
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wliteral-suffix"
 
-    [[nodiscard]] constexpr String operator""s(const char* cstring, size_t length)
+    [[nodiscard]] inline String operator""s(const char* cstring, size_t length)
     {
         return String { cstring, length };
     }
@@ -194,7 +194,7 @@ namespace neo
     template<>
     struct StringHasher<String>
     {
-        static constexpr size_t hash(String const& str)
+        static inline size_t hash(String const& str)
         {
             VERIFY(str.length() != 0);
 
@@ -213,7 +213,7 @@ namespace neo
     template<>
     struct DefaultHasher<String>
     {
-        static constexpr size_t hash(const String& str)
+        static inline size_t hash(const String& str)
         {
             return StringHasher<String>::hash(str);
         }
