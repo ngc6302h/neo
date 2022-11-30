@@ -19,6 +19,6 @@
 #include "Types.h"
 
 #ifndef NEO_DO_NOT_DEFINE_STD
-void* operator new(size_t, void* where) { return where; }
-void* operator new[](size_t, void* where) { return where; }
+constexpr void* operator new(size_t, void* where) { return where; }
+constexpr void* operator new[](size_t, void* where) { return where; }
 #endif
