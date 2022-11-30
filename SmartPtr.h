@@ -60,6 +60,24 @@ namespace neo
             m_data = nullptr;
         }
 
+        template<BaseOf<T> TBase>
+        constexpr operator OwnPtrImpl<TBase, Nullable>()
+        {
+            OwnPtrImpl<TBase, Nullable> base { release() };
+            return base;
+        }
+
+        template<DerivedOf<T> TDerived>
+        explicit constexpr operator OwnPtrImpl<TDerived, Nullable>()
+        {
+#ifdef __cpp_rtti
+            OwnPtrImpl<TDerived, Nullable> derived { dynamic_cast<TDerived*>(release()) };
+#else
+            OwnPtrImpl<TDerived, Nullable> derived { static_cast<TDerived*>(release()) };
+#endif
+            return derived;
+        }
+
         static constexpr OwnPtrImpl adopt(T* ptr)
         {
             if constexpr (!Nullable)
