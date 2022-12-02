@@ -30,6 +30,11 @@ namespace neo
         OwnPtrImpl& operator=(OwnPtrImpl const&) = delete;
         OwnPtrImpl(OwnPtrImpl const&) = delete;
 
+        constexpr OwnPtrImpl() requires(Nullable) :
+            m_data(nullptr)
+        {
+        }
+
         constexpr explicit OwnPtrImpl(T* obj) :
             m_data(obj)
         {
