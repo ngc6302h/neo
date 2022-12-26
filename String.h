@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include "AsciiString.h"
 #include "Assert.h"
 #include "Iterator.h"
 #include "Optional.h"
@@ -35,20 +34,28 @@ namespace neo
         using storage_type = char;
         using iterator = StringIterator;
 
-        inline String() = default;
+        inline String() :
+            m_buffer(nullptr), m_byte_length(0) { }
         inline ~String()
         {
-            delete[] m_buffer;
+            if (sizeof(m_inline) <= m_byte_length)
+                delete[] m_buffer;
             m_buffer = nullptr;
         }
 
-        inline String(const String& other) :
+        inline String(String const& other) :
             m_byte_length(other.m_byte_length)
         {
-            m_buffer = new char[other.m_byte_length + 1];
-            m_buffer[other.m_byte_length] = 0;
-
-            __builtin_memcpy(m_buffer, other.m_buffer, other.m_byte_length);
+            if (sizeof(m_inline) > other.m_byte_length)
+            {
+                __builtin_memcpy(m_inline, other.m_inline, sizeof(m_inline));
+            }
+            else
+            {
+                m_buffer = new char[other.m_byte_length + 1];
+                m_buffer[other.m_byte_length] = 0;
+                __builtin_memcpy(m_buffer, other.m_buffer, other.m_byte_length);
+            }
         }
 
         inline String(String&& other) :
@@ -58,42 +65,37 @@ namespace neo
             other.m_byte_length = 0;
         }
 
-        inline String(const AsciiString& other) :
-            m_byte_length(other.length())
-        {
-            m_buffer = new char[other.length() + 1];
-            m_buffer[other.length()] = 0;
-            m_byte_length = other.length();
-            __builtin_memcpy(m_buffer, other.m_buffer, other.length());
-        }
-
-        inline String(AsciiString&& other) :
-            m_byte_length(other.length())
-        {
-            m_buffer = other.m_buffer;
-            m_byte_length = other.m_length;
-            other.m_length = 0;
-            other.m_buffer = nullptr;
-        }
-
         inline String(const char* cstring)
         {
             size_t length = __builtin_strlen(cstring);
-
-            m_buffer = new char[length + 1];
-            m_buffer[length] = 0;
             m_byte_length = length;
-            __builtin_memcpy(m_buffer, cstring, length);
+
+            if (sizeof(m_inline) > length)
+            {
+                __builtin_memcpy(m_inline, cstring, length);
+            }
+            else
+            {
+                m_buffer = new char[length + 1];
+                m_buffer[length] = 0;
+                __builtin_memcpy(m_buffer, cstring, length);
+            }
         }
 
         inline String(const char* cstring, size_t length)
         {
-            size_t size = length;
+            m_byte_length = length;
 
-            m_buffer = new char[size + 1];
-            m_buffer[size] = 0;
-            m_byte_length = size;
-            __builtin_memcpy(m_buffer, cstring, size);
+            if (sizeof(m_inline) > length)
+            {
+                __builtin_memcpy(m_inline, cstring, length);
+            }
+            else
+            {
+                m_buffer = new char[length + 1];
+                m_buffer[length] = 0;
+                __builtin_memcpy(m_buffer, cstring, length);
+            }
         }
 
         inline String(StringIterator begin, StringIterator end) :
@@ -104,22 +106,29 @@ namespace neo
             new (this) String(begin.m_current, (size_t)(end.m_current - begin.m_current));
         }
 
-        inline String(const StringView& other) :
+        inline String(StringView const& other) :
             m_byte_length(other.byte_size())
         {
-            m_buffer = new char[other.byte_size() + 1];
-            m_buffer[other.byte_size()] = 0;
-            __builtin_memcpy(m_buffer, other.span().data(), other.byte_size());
+            if (sizeof(m_inline) > other.byte_size())
+            {
+                __builtin_memcpy(m_inline, other.data(), other.byte_size());
+            }
+            else
+            {
+                m_buffer = new char[other.byte_size() + 1];
+                m_buffer[other.byte_size()] = 0;
+                __builtin_memcpy(m_buffer, other.span().data(), other.byte_size());
+            }
         }
 
         [[nodiscard]] inline StringView to_view() const
         {
-            return { m_buffer, m_byte_length };
+            return { data(), m_byte_length };
         }
 
         inline operator StringView() const
         {
-            return { m_buffer, m_byte_length };
+            return { data(), m_byte_length };
         }
 
         inline String& operator=(const String& other)
@@ -150,18 +159,22 @@ namespace neo
             return m_byte_length;
         }
 
-        [[nodiscard]] inline char* null_terminated_characters() const
+        [[nodiscard]] inline char const* null_terminated_characters() const
         {
-            return m_buffer;
+            return data();
         }
 
         [[nodiscard]] inline storage_type* data() const
         {
-            return m_buffer;
+            return (char*)(sizeof(m_inline) > m_byte_length ? m_inline : m_buffer);
         }
 
     private:
-        char* m_buffer { nullptr };
+        union
+        {
+            char* m_buffer;
+            char m_inline[sizeof(char*)];
+        };
         size_t m_byte_length { 0 };
     };
 
@@ -198,7 +211,7 @@ namespace neo
         {
             VERIFY(str.length() != 0);
 
-            char* data = str.null_terminated_characters();
+            char const* data = str.null_terminated_characters();
             size_t size = str.byte_size();
             size_t result = data[size - 1];
             while (size--)
