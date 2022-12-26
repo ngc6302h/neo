@@ -34,7 +34,7 @@ namespace neo
             return false;
         }
     }
-    
+
     [[nodiscard]] constexpr bool isdigit(u32 c)
     {
         return c >= '0' && c <= '9';

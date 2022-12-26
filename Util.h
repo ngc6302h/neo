@@ -19,16 +19,16 @@
 #include "Assert.h"
 constexpr bool compile_time()
 {
-    if consteval
-    {
-        return true;
-    }
+    if
+        consteval
+        {
+            return true;
+        }
     else
     {
         return false;
     }
 }
-
 
 template<typename T>
 constexpr T max(const T& a, const T& b)
