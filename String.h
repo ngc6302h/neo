@@ -65,7 +65,8 @@ namespace neo
             other.m_byte_length = 0;
         }
 
-        inline String(const char* cstring)
+        inline String(const char* cstring) :
+            m_buffer(nullptr)
         {
             size_t length = __builtin_strlen(cstring);
             m_byte_length = length;
@@ -82,7 +83,8 @@ namespace neo
             }
         }
 
-        inline String(const char* cstring, size_t length)
+        inline String(const char* cstring, size_t length) :
+            m_buffer(nullptr)
         {
             m_byte_length = length;
 
@@ -107,7 +109,7 @@ namespace neo
         }
 
         inline String(StringView const& other) :
-            m_byte_length(other.byte_size())
+            m_buffer(nullptr), m_byte_length(other.byte_size())
         {
             if (sizeof(m_inline) > other.byte_size())
             {
