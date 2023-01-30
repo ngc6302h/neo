@@ -28,19 +28,21 @@ namespace neo
         static constexpr size_t DEFAULT_CAPACITY = 32;
 
         StringBuilder() :
-            m_string(new char[DEFAULT_CAPACITY]), m_current_offset(0), m_capacity(DEFAULT_CAPACITY)
+            m_string((char*)MallocAllocator::allocate_and_zero(DEFAULT_CAPACITY)),
+			m_current_offset(0),
+			m_capacity(DEFAULT_CAPACITY)
         {
         }
 
         explicit StringBuilder(const StringView& string) :
-            m_string(new char[max(DEFAULT_CAPACITY, string.byte_size())]), m_current_offset(string.byte_size()), m_capacity(max(DEFAULT_CAPACITY, string.byte_size()))
+            m_string((char*)MallocAllocator::allocate_and_zero(max(DEFAULT_CAPACITY, string.byte_size()))), m_current_offset(string.byte_size()), m_capacity(max(DEFAULT_CAPACITY, string.byte_size()))
         {
             __builtin_memcpy(m_string, string.non_null_terminated_buffer(), string.byte_size());
         }
 
         ~StringBuilder()
         {
-            delete[] m_string;
+            MallocAllocator::deallocate(m_string);
             m_string = nullptr;
         }
 
@@ -134,7 +136,7 @@ namespace neo
                 return *this;
 
             size_t new_size = max(m_current_offset - hits.size() * what.byte_size() + hits.size() * with.byte_size(), m_capacity);
-            char* new_buffer = new char[new_size];
+            char* new_buffer = (char*)MallocAllocator::allocate_and_zero(new_size);
 
             size_t new_current_offset = 0;
             size_t old_current_offset = 0;
@@ -151,7 +153,7 @@ namespace neo
 
             __builtin_memcpy(new_buffer + new_current_offset, m_string + old_current_offset, m_current_offset - hits[hits.size() - 1] - 1);
 
-            delete[] m_string;
+            MallocAllocator::deallocate(m_string);
             m_string = new_buffer;
             m_current_offset = new_size;
             m_capacity = new_size;
@@ -188,15 +190,15 @@ namespace neo
         void resize(size_t new_size)
         {
             m_capacity = new_size;
-            char* new_buffer = new char[new_size];
+            char* new_buffer = (char*)MallocAllocator::allocate_and_zero(new_size);
             __builtin_memcpy(new_buffer, m_string, m_current_offset);
-            delete[] m_string;
+            MallocAllocator::deallocate(m_string);
             m_string = new_buffer;
         }
 
         char* m_string { nullptr };
         size_t m_current_offset { 0 };
-        size_t m_capacity { 0 };
+        size_t m_capacity;
     };
 }
 using neo::StringBuilder;
