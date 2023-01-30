@@ -15,20 +15,27 @@
  */
 
 #pragma once
-#include "execinfo.h"
-
+#if not defined(_MSC_VER) and not defined(__MINGW32__)
+#include <execinfo.h>
 extern "C"
 {
     [[noreturn]] extern void __assert_fail(const char* __assertion, const char* __file, unsigned int __line, const char* __function) noexcept(true);
 }
+#else
+#define __assert_fail
+#endif
 
 static char __backtrace_buffer[sizeof(void*) * 256];
 [[maybe_unused]] [[noreturn]] [[gnu::noinline]] static void print_backtrace_and_fail(const char* __assertion, const char* __file, unsigned int __line, const char* __function)
 {
+#if not defined(_MSC_VER) and not defined(__MINGW32__)
     __builtin_printf("Backtrace for failed thread:\n");
     auto num_addresses = backtrace(reinterpret_cast<void**>(__backtrace_buffer), 256);
     backtrace_symbols_fd(reinterpret_cast<void* const*>(__backtrace_buffer), num_addresses, 1);
     __assert_fail(__assertion, __file, __line, __function);
+#endif
+	__builtin_printf("Assertion '%s' failed!\nAt file %s, line %i\nFunction:\n%s", __assertion, __file, __line, __function);
+	while(true);
 }
 
 #if VERBOSE_ASSERTS == 1
