@@ -38,8 +38,8 @@ namespace neo
             m_buffer(nullptr), m_byte_length(0) { }
         inline ~String()
         {
-            if (sizeof(m_inline) <= m_byte_length)
-                delete[] m_buffer;
+            if (sizeof(m_inline) <= m_byte_length && m_buffer != nullptr)
+                MallocAllocator::deallocate(m_buffer);
             m_buffer = nullptr;
         }
 
@@ -52,7 +52,7 @@ namespace neo
             }
             else
             {
-                m_buffer = new char[other.m_byte_length + 1];
+				m_buffer = (char*)MallocAllocator::allocate_and_zero(other.m_byte_length + 1);
                 m_buffer[other.m_byte_length] = 0;
                 __builtin_memcpy(m_buffer, other.m_buffer, other.m_byte_length);
             }
@@ -77,7 +77,7 @@ namespace neo
             }
             else
             {
-                m_buffer = new char[length + 1];
+                m_buffer = (char*)MallocAllocator::allocate_and_zero(length + 1);
                 m_buffer[length] = 0;
                 __builtin_memcpy(m_buffer, cstring, length);
             }
@@ -94,7 +94,7 @@ namespace neo
             }
             else
             {
-                m_buffer = new char[length + 1];
+                m_buffer = (char*)MallocAllocator::allocate_and_zero(length + 1);
                 m_buffer[length] = 0;
                 __builtin_memcpy(m_buffer, cstring, length);
             }
@@ -117,7 +117,7 @@ namespace neo
             }
             else
             {
-                m_buffer = new char[other.byte_size() + 1];
+                m_buffer = (char*)MallocAllocator::allocate_and_zero(other.byte_size() + 1);
                 m_buffer[other.byte_size()] = 0;
                 __builtin_memcpy(m_buffer, other.span().data(), other.byte_size());
             }
@@ -174,7 +174,7 @@ namespace neo
     private:
         union
         {
-            char* m_buffer;
+            char* m_buffer = nullptr;
             char m_inline[sizeof(char*)];
         };
         size_t m_byte_length { 0 };
