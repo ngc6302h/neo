@@ -280,17 +280,17 @@ namespace neo
 
         void append(T const& item)
         {
-            if (m_size + 1 > m_capacity)
+            if (m_size == m_capacity)
                 ensure_capacity(m_capacity * 2);
 
             new (&m_storage[m_size]) T { item };
-
+			
             m_size++;
         }
 
         void append(T&& item)
         {
-            if (m_size + 1 > m_capacity)
+            if (m_size == m_capacity)
                 ensure_capacity(m_capacity * 2);
 
             new (&m_storage[m_size]) T { std::move(item) };
@@ -318,9 +318,10 @@ namespace neo
         {
             T* new_storage = allocate_space(new_capacity);
             for (size_t i = 0; i < m_size; i++)
-                new_storage[i] = std::move(m_storage[i]);
+                new(&new_storage[i]) T {std::move(m_storage[i])};
             MallocAllocator::deallocate(m_storage);
             m_storage = new_storage;
+			m_capacity = new_capacity;
         }
 
         void ensure_capacity(size_t needed_capacity)
