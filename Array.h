@@ -29,8 +29,8 @@ namespace neo
     struct Array : IterableExtensions<Array<T, Size>, RemoveReferenceWrapper<T>>
     {
         using type = T;
-        using ArrayIterator = Iterator<Array>;
-        using ConstantArrayIterator = Iterator<const Array>;
+		using iterator = Iterator<Array>;
+        using const_iterator = Iterator<const Array>;
 
         constexpr ~Array()
         {
@@ -127,24 +127,24 @@ namespace neo
             return { m_storage, Size };
         }
 
-        [[nodiscard]] constexpr ArrayIterator begin()
+        [[nodiscard]] constexpr iterator begin()
         {
-            return ArrayIterator(*this);
+            return iterator(*this);
         }
 
-        [[nodiscard]] constexpr ConstantArrayIterator begin() const
+        [[nodiscard]] constexpr const_iterator begin() const
         {
-            return ConstantArrayIterator(*this);
+            return const_iterator(*this);
         }
 
-        [[nodiscard]] constexpr ArrayIterator end()
+        [[nodiscard]] constexpr iterator end()
         {
-            return ArrayIterator(*this, Size);
+            return iterator(*this, Size);
         }
 
-        [[nodiscard]] constexpr ConstantArrayIterator end() const
+        [[nodiscard]] constexpr const_iterator end() const
         {
-            return ConstantArrayIterator(*this, Size);
+            return const_iterator(*this, Size);
         }
 
         template<typename K, typename = EnableIf<InequalityComparable<K>>>
