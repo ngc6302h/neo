@@ -424,7 +424,7 @@ namespace neo
         = __is_integral(T);
 #else
     template<typename T>
-    constexpr bool IsIntegral = IsSame<T, signed char> || IsSame<T, unsigned char> || IsSame<T, unsigned short> || IsSame<T, unsigned int> || IsSame<T, unsigned long> || IsSame<T, long long> || IsSame<T, char> || IsSame<T, short> || IsSame<T, int> || IsSame<T, long> || IsSame<T, long long> || IsCharacter<T>;
+    constexpr bool IsIntegral = IsSame<T, signed char> || IsSame<T, unsigned char> || IsSame<T, unsigned short> || IsSame<T, unsigned int> || IsSame<T, unsigned long> || IsSame<T, long long> || IsSame<T, unsigned long long> || IsSame<T, char> || IsSame<T, short> || IsSame<T, int> || IsSame<T, long> || IsSame<T, long long> || IsCharacter<T>;
 #endif
 #if __has_builtin(__is_floating_point)
     template<typename T>
