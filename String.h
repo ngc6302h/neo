@@ -163,21 +163,23 @@ namespace neo
 
         [[nodiscard]] inline storage_type* data() const
         {
-            return (char*)(INLINE_CAPACITY > byte_size() ? m_inline : m_buffer);
+            return (char*)(byte_size() <= INLINE_CAPACITY ? m_inline : m_buffer);
         }
 
     private:
         static constexpr size_t INLINE_CAPACITY = sizeof(size_t) + sizeof(char*) - 2;
         union
         {
-            struct{
+            struct
+            {
                 char* m_buffer = nullptr;
                 size_t m_byte_length { 0 };
             };
-            struct{
-                char m_inline[INLINE_CAPACITY+1];
-                u8 m_inline_byte_length : 7;
-                u8 m_inline_flag : 1;
+            struct
+            {
+                char m_inline[INLINE_CAPACITY + 1];
+                u8 m_inline_byte_length:7;
+                u8 m_inline_flag:1;
             };
         };
     };
