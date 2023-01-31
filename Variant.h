@@ -59,6 +59,12 @@ namespace neo
     public:
         static constexpr size_t TYPE_COUNT = sizeof...(Types);
 
+        template<typename T>
+        constexpr operator T&()
+        {
+            return get<T>();
+        }
+
         ~Variant()
         {
             if (this->m_active_type != (size_t)-1)
