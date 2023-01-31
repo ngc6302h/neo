@@ -24,6 +24,7 @@
 #include "Types.h"
 #include "Vector.h"
 #include "Span.h"
+#include "NumericLimits.h"
 
 namespace neo
 {
@@ -34,11 +35,13 @@ namespace neo
         using storage_type = char;
         using iterator = StringIterator;
 
+        static constexpr size_t MAX_SIZE = NumericLimits<size_t>::max() >> 1;
+
         inline String() :
             m_buffer(nullptr), m_byte_length(0) { }
         inline ~String()
         {
-            if (sizeof(m_inline) <= m_byte_length && m_buffer != nullptr)
+            if (m_inline_flag == 0 && m_buffer != nullptr)
                 MallocAllocator::deallocate(m_buffer);
             m_buffer = nullptr;
         }
@@ -46,16 +49,14 @@ namespace neo
         inline String(String const& other) :
             m_byte_length(other.m_byte_length)
         {
-            if (sizeof(m_inline) > other.m_byte_length)
+            if (m_inline_flag)
             {
-                __builtin_memcpy(m_inline, other.m_inline, sizeof(m_inline));
+                m_buffer = other.m_buffer;
+                return;
             }
-            else
-            {
-				m_buffer = (char*)MallocAllocator::allocate_and_zero(other.m_byte_length + 1);
-                m_buffer[other.m_byte_length] = 0;
-                __builtin_memcpy(m_buffer, other.m_buffer, other.m_byte_length);
-            }
+            m_buffer = (char*)MallocAllocator::allocate_and_zero(other.m_byte_length + 1);
+            m_buffer[other.m_byte_length] = 0;
+            __builtin_memcpy(m_buffer, other.m_buffer, other.m_byte_length);
         }
 
         inline String(String&& other) :
@@ -69,35 +70,26 @@ namespace neo
             m_buffer(nullptr)
         {
             size_t length = __builtin_strlen(cstring);
-            m_byte_length = length;
-
-            if (sizeof(m_inline) > length)
-            {
-                __builtin_memcpy(m_inline, cstring, length);
-            }
-            else
-            {
-                m_buffer = (char*)MallocAllocator::allocate_and_zero(length + 1);
-                m_buffer[length] = 0;
-                __builtin_memcpy(m_buffer, cstring, length);
-            }
+            new (this) String(cstring, length);
+            return;
         }
 
         inline String(const char* cstring, size_t length) :
             m_buffer(nullptr)
         {
-            m_byte_length = length;
-
-            if (sizeof(m_inline) > length)
+            if (length <= INLINE_CAPACITY)
             {
                 __builtin_memcpy(m_inline, cstring, length);
+                m_inline[length] = 0;
+                m_inline_byte_length = length;
+                m_inline_flag = 1;
+                return;
             }
-            else
-            {
-                m_buffer = (char*)MallocAllocator::allocate_and_zero(length + 1);
-                m_buffer[length] = 0;
-                __builtin_memcpy(m_buffer, cstring, length);
-            }
+            m_byte_length = length;
+
+            m_buffer = (char*)MallocAllocator::allocate_and_zero(length + 1);
+            m_buffer[length] = 0;
+            __builtin_memcpy(m_buffer, cstring, length);
         }
 
         inline String(StringIterator begin, StringIterator end) :
@@ -111,9 +103,12 @@ namespace neo
         inline String(StringView const& other) :
             m_buffer(nullptr), m_byte_length(other.byte_size())
         {
-            if (sizeof(m_inline) > other.byte_size())
+            if (INLINE_CAPACITY >= other.byte_size())
             {
                 __builtin_memcpy(m_inline, other.data(), other.byte_size());
+                m_inline[other.byte_size()] = 0;
+                m_inline_byte_length = other.byte_size();
+                m_inline_flag = 1;
             }
             else
             {
@@ -125,12 +120,12 @@ namespace neo
 
         [[nodiscard]] inline StringView to_view() const
         {
-            return { data(), m_byte_length };
+            return { data(), byte_size() };
         }
 
         inline operator StringView() const
         {
-            return { data(), m_byte_length };
+            return { data(), byte_size() };
         }
 
         inline String& operator=(const String& other)
@@ -158,7 +153,7 @@ namespace neo
         // Size in bytes
         [[nodiscard]] inline size_t byte_size() const
         {
-            return m_byte_length;
+            return m_inline_flag != 0 ? m_inline_byte_length : m_byte_length;
         }
 
         [[nodiscard]] inline char const* null_terminated_characters() const
@@ -168,16 +163,23 @@ namespace neo
 
         [[nodiscard]] inline storage_type* data() const
         {
-            return (char*)(sizeof(m_inline) > m_byte_length ? m_inline : m_buffer);
+            return (char*)(INLINE_CAPACITY > byte_size() ? m_inline : m_buffer);
         }
 
     private:
+        static constexpr size_t INLINE_CAPACITY = sizeof(size_t) + sizeof(char*) - 2;
         union
         {
-            char* m_buffer = nullptr;
-            char m_inline[sizeof(char*)];
+            struct{
+                char* m_buffer = nullptr;
+                size_t m_byte_length { 0 };
+            };
+            struct{
+                char m_inline[INLINE_CAPACITY+1];
+                u8 m_inline_byte_length : 7;
+                u8 m_inline_flag : 1;
+            };
         };
-        size_t m_byte_length { 0 };
     };
 
     inline String operator+(StringView const& left, StringView const& right)
