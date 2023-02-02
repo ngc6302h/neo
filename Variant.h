@@ -17,7 +17,7 @@
 #pragma once
 #include "Assert.h"
 #include "TypeTraits.h"
-#include <Concepts.h>
+#include "Concepts.h"
 #include "Util.h"
 
 namespace neo
