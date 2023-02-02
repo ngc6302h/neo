@@ -24,9 +24,7 @@
 
 extern "C"
 {
-    extern void* aligned_alloc(size_t __alignment, size_t __size)
-        __THROW __attribute_malloc__ __attribute_alloc_align__((1))
-            __attribute_alloc_size__((2)) __wur;
+    extern void* aligned_alloc(size_t __alignment, size_t __size);
 }
 
 namespace neo
