@@ -29,7 +29,7 @@ namespace neo
     {
         static constexpr size_t hash(const T& value)
         {
-            u8* data = reinterpret_cast<u8*>(&value);
+            u8 const* data = reinterpret_cast<u8 const*>(&value);
             size_t size = sizeof(T);
             size_t result = data[size - 1];
             for (size_t i = 0; i < size; ++i)
