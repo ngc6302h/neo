@@ -25,10 +25,19 @@ namespace neo
     class SmallMap
     {
     public:
-        constexpr void insert(TKey&& key, TValue&& value)
+        SmallMap() = default;
+
+        template<typename... TTuples>
+        SmallMap(TTuples&&... key_value_pairs)
+        {
+            (insert(key_value_pairs.template get<TKey>(), key_value_pairs.template get<TValue>()), ...);
+        }
+
+        template<typename TK, typename TV>
+        constexpr void insert(TK&& key, TV&& value)
         {
             VERIFY(m_size != 0xFF);
-            size_t index = lower_bound(m_keys.data(), m_size, value) - 1;
+            size_t index = m_size > 0 ? lower_bound(m_keys.data(), m_size, key) - 1 : 0;
             OverlappingMoveOrCopy(m_size - index, m_keys.data() + index, m_keys.data() + index + 1);
             OverlappingMoveOrCopy(m_size - index, m_value.data() + index, m_value.data() + index + 1);
             m_keys[index] = forward<TKey>(key);
@@ -52,6 +61,16 @@ namespace neo
             OverlappingMoveOrCopy(m_size - index - 1, m_keys.data() + index + 1, m_keys.data() + index);
             OverlappingMoveOrCopy(m_size - index - 1, m_value.data() + index + 1, m_value.data() + index);
             --m_size;
+        }
+
+        constexpr Array<TKey, Capacity> const& keys() const
+        {
+            return m_keys;
+        }
+
+        constexpr Array<TValue, Capacity> const& values() const
+        {
+            return m_value;
         }
 
         constexpr size_t size() const
