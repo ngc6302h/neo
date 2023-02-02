@@ -83,49 +83,58 @@ constexpr void* neo_memmem(void* string, size_t string_length, void* substring, 
     return nullptr;
 }
 
-// Returns the index of target, or -1 if not found. This means this function works with array of size at most max(size_t)-1
-template<typename T>
-constexpr size_t bsearch(T const* array, size_t size, T const& target)
-{
-    size_t low = 0;
-    size_t high = size - 1;
-    while (low <= high)
-    {
-        size_t middle = (low + high) / 2;
-        if (array[middle] < target)
-        {
-            low = middle + 1;
-        }
-        else if (array[middle] > target)
-        {
-            high = middle - 1;
-        }
-        else
-            return middle;
-    }
-    return -1;
-}
-
 // Returns the index of the first element that is greater or equal than target.
 // If all elements are less than target, this means it returns an index equal to the size of the array.
 template<typename T>
 constexpr size_t lower_bound(T const* array, size_t size, T const& target)
 {
+    VERIFY(size != 0);
     size_t low = 0;
     size_t high = size - 1;
-    while (low <= high)
+    while (low < high)
     {
-        size_t middle = (low + high) / 2;
-        if (array[middle] < target)
+        size_t mid = (low + high) / 2 + 1;
+        if (array[mid] < target)
         {
-            low = middle + 1;
+            low = mid+1;
         }
-        else if (array[middle] > target)
+        else if (array[mid] > target)
         {
-            high = middle - 1;
+            high = mid-1;
         }
     }
-    return low + 1;
+    return low +1;
+}
+
+// Returns the index of the first element that is greater or equal than target.
+// If all elements are less than target, this means it returns an index equal to the size of the array.
+template<typename T, typename TComparer>
+constexpr size_t lower_bound(T const* array, size_t size, T const& target, TComparer comparer)
+{
+    VERIFY(size != 0);
+    size_t low = 0;
+    size_t high = size - 1;
+    while (low < high)
+    {
+        size_t mid = (low + high) / 2 + 1;
+        auto comparison = comparer(array[mid], target);
+        if (comparison)
+        {
+            low = mid+1;
+        }
+        else if (array[mid] != target)
+        {
+            high = mid-1;
+        }
+    }
+    return low +1;
+}
+
+// Returns the index of target, or -1 if not found. This means this function works with array of size at most max(size_t)-1
+template<typename T>
+constexpr size_t bsearch(T const* array, size_t size, T const& target)
+{
+    return lower_bound(array, size, target)-1;
 }
 
 constexpr u32 get_next_power_of_2(u32 x)
