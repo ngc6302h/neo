@@ -25,7 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace neo
 {
-    template<typename T, size_t Size>
+    template<typename T, size_t Size> requires (Size > 0)
     struct Array : IterableExtensions<Array<T, Size>, RemoveReferenceWrapper<T>>
     {
         using type = T;
@@ -49,6 +49,8 @@ namespace neo
             {
                 m_storage[i] = other.m_storage[i];
             }
+
+            return *this;
         }
 
         constexpr Array& operator=(Array&& other)
@@ -58,14 +60,16 @@ namespace neo
 
             for (size_t i = 0; i < Size; i++)
             {
-                m_storage[i] = move(other.m_storage[i]);
+                m_storage[i] = std::move(other.m_storage[i]);
             }
+
+            return *this;
         }
 
     public:
-        constexpr Array() requires(Size == 0)
-        {
-        }
+        constexpr Array() {}
+        constexpr Array(Array&&) = default;
+        constexpr Array(Array const&) = default;
 
         template<typename... Ts>
         requires(IsSameValue<Size, sizeof...(Ts)>) constexpr Array(Ts&&... items)
