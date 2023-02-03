@@ -995,9 +995,9 @@ namespace neo
    template<typename TContainer, typename T>
    struct IterableExtensions
    {
-       constexpr auto to_iterable_collection()
+       constexpr auto to_iterable_collection() const
        {
-           return IterableCollection<typename TContainer::iterator>(static_cast<TContainer&>(*this).begin(), static_cast<TContainer&>(*this).end());
+           return IterableCollection<typename TContainer::iterator>(const_cast<TContainer&>(static_cast<TContainer const&>(*this)).begin(), const_cast<TContainer&>(static_cast<TContainer const&>(*this)).end());
        }
    };
 
