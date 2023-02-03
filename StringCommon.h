@@ -58,8 +58,8 @@ namespace neo
         [[nodiscard]] constexpr T trim_whitespace(TrimMode from_where) const;
         [[nodiscard]] constexpr Utf32Char operator[](size_t index) const;
         template<typename I>
-        constexpr Optional<I> to();
+        [[nodiscard]] constexpr Optional<I> to();
         template<typename I>
-        constexpr Optional<I> checked_to();
+        [[nodiscard]] constexpr Optional<I> checked_to();
     };
 }
