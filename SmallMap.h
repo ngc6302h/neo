@@ -21,16 +21,17 @@
 
 namespace neo
 {
-    template<typename TKey, typename TValue, size_t Capacity>
+    template<typename TKey, typename TValue, size_t Capacity = NumericLimits<u8>::max()>
     class SmallMap
     {
     public:
         SmallMap() = default;
 
-        template<typename... TTuples>
-        SmallMap(TTuples&&... key_value_pairs)
+        template<size_t N>
+        constexpr SmallMap(Tuple<TKey, TValue>(&&key_value_pairs)[N])
         {
-            (insert(key_value_pairs.template get<TKey>(), key_value_pairs.template get<TValue>()), ...);
+            for(size_t i = 0; i < N; i++)
+                insert(std::move(key_value_pairs[i].template get<TKey>()), std::move(key_value_pairs[i].template get<TValue>()));
         }
 
         template<typename TK, typename TV>
