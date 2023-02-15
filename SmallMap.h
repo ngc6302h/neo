@@ -48,9 +48,9 @@ namespace neo
 
         constexpr Optional<ReferenceWrapper<TValue>> get(TKey const& key) const
         {
-            auto maybe_index = bsearch(m_keys, m_size, key);
+            auto maybe_index = bsearch(m_keys.data(), m_size, key);
             if (maybe_index != -1)
-                return { m_value[maybe_index] };
+                return { ref(m_value[maybe_index]) };
 
             return {};
         }
