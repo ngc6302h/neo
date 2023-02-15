@@ -30,6 +30,8 @@ namespace neo
         Big
     };
 
+    static constexpr auto HostEndianness = LittleEndian ? SerializationEndianness::Little : SerializationEndianness::Big;
+
     template<typename T>
     struct BinaryFormatter
     {
@@ -40,7 +42,7 @@ namespace neo
     template<Scalar T>
     struct BinaryFormatter<T>
     {
-        template<SerializationEndianness Endianness = SerializationEndianness::Little>
+        template<SerializationEndianness Endianness = HostEndianness>
         static constexpr size_t serialize_into(T const& object, Span<u8> buffer)
         {
             VERIFY(buffer.size() >= sizeof(T));
@@ -104,7 +106,7 @@ namespace neo
     template<>
     struct BinaryFormatter<String>
     {
-        template<SerializationEndianness Endianness = SerializationEndianness::Little>
+        template<SerializationEndianness Endianness = HostEndianness>
         static constexpr size_t serialize_to(String const& str, Span<u8> buffer)
         {
             VERIFY(buffer.size() >= str.byte_size() + sizeof(size_t));
@@ -113,7 +115,7 @@ namespace neo
             return str.byte_size() + sizeof(size_t);
         }
 
-        template<SerializationEndianness Endianness = SerializationEndianness::Little>
+        template<SerializationEndianness Endianness = HostEndianness>
         static constexpr Optional<String> deserialize_from(Span<u8> const& buffer)
         {
             VERIFY(buffer.size() > sizeof(u64));
