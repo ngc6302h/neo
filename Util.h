@@ -178,6 +178,60 @@ static constexpr bool LittleEndian = __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__;
 // true if the architecture is big endian
 static constexpr bool BigEndian = __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__;
 
+static constexpr auto bswap(auto value)
+{
+    if constexpr (sizeof(value) == 1)
+        return value;
+    if constexpr (sizeof(value) == 2)
+        return __builtin_bswap16(value);
+    if constexpr (sizeof(value) == 4)
+        return __builtin_bswap32(value);
+    if constexpr (sizeof(value) == 8)
+        return __builtin_bswap64(value);
+    if constexpr (sizeof(value) == 16)
+        return __builtin_bswap128(value);
+}
+
+static constexpr auto HostToBigEndian(auto value)
+{
+    if constexpr (BigEndian)
+        return value;
+
+    return bswap(value);
+}
+
+static constexpr auto HostToLittleEndian(auto value)
+{
+    if constexpr (LittleEndian)
+        return value;
+
+    return bswap(value);
+}
+
+static constexpr auto BigToHostEndian(auto value)
+{
+    if constexpr (BigEndian)
+        return value;
+    return bswap(value);
+}
+
+static constexpr auto LittleToHostEndian(auto value)
+{
+    if constexpr (LittleEndian)
+        return value;
+    return bswap(value);
+}
+
+static constexpr auto LittleToBigEndian(auto value)
+{
+    return bswap(value);
+}
+
+static constexpr auto BigToLittleEndian(auto value)
+{
+    return bswap(value);
+}
+
 static constexpr size_t KiB = 1024;
 static constexpr size_t MiB = KiB * 1024;
 static constexpr size_t GiB = MiB * 1024;
