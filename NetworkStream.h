@@ -39,6 +39,7 @@ namespace neo
         virtual bool end() const override
         {
             // Check if the socket can read
+            return m_socket->data_available().result_or(0) == 0;
             return false;
         }
 
@@ -74,7 +75,7 @@ namespace neo
         }
 
     private:
-        mutable OwnPtr<Socket> m_socket;
+        mutable OwnPtr<TCPSocket> m_socket;
         SocketError m_last_error { 0 };
     };
 
