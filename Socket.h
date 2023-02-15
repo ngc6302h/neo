@@ -49,12 +49,12 @@ namespace neo
 
             auto port = ip_and_port[1].checked_to<u16>();
             returnerr(port);
-            return Ipv4SocketAddress { ipv4, htons(port.value()) };
+            return Ipv4SocketAddress { ipv4, HostToBigEndian(port.value()) };
         }
 
         constexpr u32 ip() const
         {
-            return ntohl(m_ip_network_order);
+            return BigToHostEndian(m_ip_network_order);
         }
 
         constexpr u32 ip_in_network_order() const
@@ -64,7 +64,7 @@ namespace neo
 
         constexpr u16 port() const
         {
-            return ntohs(m_port_network_order);
+            return BigToHostEndian(m_port_network_order);
         }
 
         constexpr u16 port_in_network_order() const
@@ -110,12 +110,12 @@ namespace neo
 
             auto port = String(++ip_end, address.end()).checked_to<u16>();
             returnerr(port);
-            return Ipv6SocketAddress { ipv6, htons(port.value()) };
+            return Ipv6SocketAddress { ipv6, HostToBigEndian(port.value()) };
         }
 
         constexpr u128 ip() const
         {
-            return __builtin_bswap128(m_ip_network_order);
+            return HostToBigEndian(m_ip_network_order);
         }
 
         constexpr u128 ip_in_network_order() const
@@ -125,7 +125,8 @@ namespace neo
 
         constexpr u16 port() const
         {
-            return ntohs(m_port_network_order);
+
+            return BigToHostEndian(m_port_network_order);
         }
 
         constexpr u16 port_in_network_order() const
