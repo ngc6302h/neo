@@ -26,7 +26,7 @@ namespace neo
 {
    //TODO: replace with a fast algorithm
    template<Iterable TContainer, CallableWithReturnType<bool, typename TContainer::type, typename TContainer::type> TComparerFunc>
-   constexpr void sort(TContainer& what, TComparerFunc comparer)
+   constexpr void sort(TContainer& what, TComparerFunc comparer = neo::DefaultLessThanComparer<typename TContainer::type>)
    {
        for (auto& x : what)
        {
