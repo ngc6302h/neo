@@ -109,7 +109,7 @@ namespace neo
             return *this;
         }
 
-        TReturn operator()(TArgs... args) const
+        TReturn operator()(TArgs... args) const requires(PackSize<TArgs...> > 0)
         {
             VERIFY(m_callable_ptr != nullptr);
             if constexpr (IsSame<TReturn, void>)
