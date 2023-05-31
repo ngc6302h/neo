@@ -199,7 +199,7 @@ namespace neo
         {
             VERIFY(other.m_data != nullptr);
             ENSURE(m_control != nullptr);
-            m_control->reference_count.add_fetch(1, MemoryOrder::AcquireRelease);
+            m_control->reference_count.add_fetch(1, MemoryOrder::Relaxed);
         }
 
         constexpr RefPtrImpl(RefPtrImpl&& other) :
@@ -221,7 +221,7 @@ namespace neo
         requires BaseOf<TBase, T>
         constexpr operator RefPtrImpl<TBase, Nullable>()
         {
-            m_control->reference_count.add_fetch(1, MemoryOrder::AcquireRelease);
+            m_control->reference_count.add_fetch(1, MemoryOrder::Relaxed);
 
             RefPtrImpl<TBase, Nullable> base;
             base.m_control = m_control;
@@ -238,7 +238,7 @@ namespace neo
         {
             ENSURE(m_data != nullptr);
 
-            m_control->reference_count.add_fetch(1, MemoryOrder::AcquireRelease);
+            m_control->reference_count.add_fetch(1, MemoryOrder::Relaxed);
 
             RefPtrImpl<T, false> copy;
             copy.m_data = m_data;
@@ -254,7 +254,7 @@ namespace neo
         {
             VERIFY(other.m_data != nullptr);
             ENSURE(m_control != nullptr);
-            m_control->reference_count.add_fetch(1, MemoryOrder::AcquireRelease);
+            m_control->reference_count.add_fetch(1, MemoryOrder::Relaxed);
         }
 
         constexpr WeakPtr<T> make_weak() const
@@ -425,13 +425,13 @@ namespace neo
             m_data(other.m_data), m_control(other.m_control)
         {
             VERIFY(other.is_valid());
-            m_control->weak_reference_count.add_fetch(1, AcquireRelease);
+            m_control->weak_reference_count.add_fetch(1, Relaxed);
         }
 
         constexpr WeakPtr(WeakPtr const& other) :
             m_data(other.m_data), m_control(other.m_control)
         {
-            m_control->weak_reference_count.add_fetch(1, AcquireRelease);
+            m_control->weak_reference_count.add_fetch(1, Relaxed);
         }
 
         constexpr WeakPtr(WeakPtr&& other) :
