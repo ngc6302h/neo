@@ -52,6 +52,14 @@ namespace neo
                 m_read_index = 0;
             return { std::move(m_buffer[previous]) };
         }
+        
+        size_t size() const
+        {
+            if (m_write_index > m_read_index)
+                return m_write_index - m_read_index;
+            else
+                return m_buffer.size() - m_read_index + m_write_index;
+        }
 
     private:
         Vector<T> m_buffer;
