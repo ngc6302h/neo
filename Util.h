@@ -96,14 +96,14 @@ constexpr size_t lower_bound(T const* array, size_t size, T const& target)
         size_t mid = (low + high) / 2 + 1;
         if (array[mid] < target)
         {
-            low = mid+1;
+            low = mid + 1;
         }
         else if (array[mid] > target)
         {
-            high = mid-1;
+            high = mid - 1;
         }
     }
-    return low +1;
+    return low + 1;
 }
 
 // Returns the index of the first element that is greater or equal than target.
@@ -120,21 +120,21 @@ constexpr size_t lower_bound(T const* array, size_t size, T const& target, TComp
         auto comparison = comparer(array[mid], target);
         if (comparison)
         {
-            low = mid+1;
+            low = mid + 1;
         }
         else if (array[mid] != target)
         {
-            high = mid-1;
+            high = mid - 1;
         }
     }
-    return low +1;
+    return low + 1;
 }
 
 // Returns the index of target, or -1 if not found. This means this function works with array of size at most max(size_t)-1
 template<typename T>
 constexpr size_t bsearch(T const* array, size_t size, T const& target)
 {
-    return lower_bound(array, size, target)-1;
+    return lower_bound(array, size, target) - 1;
 }
 
 constexpr u32 get_next_power_of_2(u32 x)
@@ -245,3 +245,7 @@ static constexpr size_t GB = MB * 1000;
 static constexpr size_t TB = GB * 1000;
 static constexpr size_t PB = TB * 1000;
 static constexpr size_t EB = PB * 1000;
+
+#ifdef __x86_64__
+static constexpr size_t L1DataChacheLineSize = 64;
+#endif
